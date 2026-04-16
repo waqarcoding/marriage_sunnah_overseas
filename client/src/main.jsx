@@ -76,12 +76,12 @@ function LoginWrapper() {
 const router = createBrowserRouter([
   { path: '/', element: <RootGuard /> },
   { path: '/login', element: <LoginWrapper /> },
-  { path: '/register', element: <Register /> },
-  { path: '/otp', element: <OtpPage /> },
+  { path: '/register', element: <Register onRegister={() => { }} /> },
+  { path: '/otp', element: <OtpPage onSuccess={() => { }} /> },
   { path: '/how', element: <HowItWorks /> },
   { path: '/subscription', element: <SubscriptionPage /> },
   { path: '/profilesetup', element: <CompleteProfile /> },
-  { path: '/verification', element: <VerificationPage /> },
+  { path: '/verification', element: <VerificationPage onSubmit={() => { }} onSkip={() => { }} /> },
 
   {
     path: '/',
@@ -91,15 +91,16 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: 'explore', element: <ExplorePage /> },
-      { path: 'match', element: <Match /> },
+      { path: 'explore', element: <ExplorePage onProfileClick={() => { }} /> },
+      { path: 'match', element: <Match onProfileClick={() => { }} /> },
       { path: 'interest', element: <Interest /> },
       { path: 'chats', element: <Chat /> },
       { path: 'chat/:receiverId', element: <Chat /> },
       { path: 'guardian', element: <Guardian /> },
       { path: 'myprofile', element: <MyProfile /> },
-      { path: 'profile', element: <Profile /> },
-      { path: 'settings', element: <Profile /> },
+      { path: 'profile', element: <Profile onLike={() => { }} onPass={() => { }} /> },
+      { path: 'settings', element: <Profile onLike={() => { }} onPass={() => { }} /> },
+
 
 
     ],
@@ -148,8 +149,9 @@ export default function Layout() {
     <SocketProvider userId={user?.id}>
       <div className="flex flex-col h-screen bg-primary/2">
         <AppBar
-          links={isGuardian ? guardianLinks : individualLinks}
+          // Removed 'links' prop as AppBar does not accept it
           onLogout={handleLogout}
+          onSidebarLogout={handleLogout}
         />
         <div className="flex flex-1 min-h-0">
           <div className="flex-1 flex flex-col overflow-auto">

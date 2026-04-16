@@ -4,7 +4,7 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { Heart, Shield, Globe, Users, CheckCircle, Star } from "lucide-react";
 import { Button } from "../../components/button";
-import AppBar from "../../components/appbar";
+import AppBar from "../../components/appbar.jsx";
 
 export default function Landing() {
     // Handler for "Learn How It Works" scroll
@@ -19,7 +19,8 @@ export default function Landing() {
     return (
 
         <div className="min-h-screen flex flex-col">
-            <AppBar></AppBar>
+            <AppBar onLogout={() => { }} onSidebarLogout={() => { }} />
+
 
             {/* Hero Section with Background Image */}
             <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -56,10 +57,16 @@ export default function Landing() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <a href="/api/login">
-                                <Button size="lg" className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" data-testid="button-start-journey">
+                            <a href="/register">
+                                <Button
+                                    variant="default"
+                                    size="lg"
+                                    className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
+                                    data-testid="button-start-journey"
+                                >
                                     Start Your Journey
                                 </Button>
+
                             </a>
                             <Button
                                 variant="outline"
@@ -232,11 +239,17 @@ export default function Landing() {
                             Join thousands of families who have found their perfect match
                             through our halal matchmaking platform.
                         </p>
-                        <a href="/api/login">
-                            <Button size="lg" className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" data-testid="button-cta-register">
+                        <a href="/register">
+                            <Button
+                                variant="default"
+                                size="lg"
+                                className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
+                                data-testid="button-cta-register"
+                            >
                                 Register Now - It's Free
                             </Button>
                         </a>
+
                     </motion.div>
                 </div>
             </section>

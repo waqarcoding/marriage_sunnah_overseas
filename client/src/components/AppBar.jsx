@@ -17,7 +17,7 @@ import { useSocket } from "../sockets/SocketContext";
 // You may need to create these or replace with appropriate icons if they do not exist.
 import { XMarkIcon as CloseIcon, Bars3Icon as MenuIcon } from "@heroicons/react/24/outline";
 
-const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const SERVER_URL = process.env.VITE_API_URL || "http://localhost:5000";
 
 // ── Auth helpers ──────────────────────────────────────────────
 function getJwtData() {
