@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./server
+    container_name: marriage-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - db
+
+  frontend:
+    build: ./client
+    container_name: marriage-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: mysql:8.0
+    container_name: marriage-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Root123Root
+      MYSQL_DATABASE: marriage_sunna_overseas
+      MYSQL_USER: waqarcoding
+      MYSQL_PASSWORD: Root123Root
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./marriage_sunna_overseas.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+
+volumes:
+  mysql_data:
