@@ -37,13 +37,26 @@ services:
       - mysql_data:/var/lib/mysql
       - ./marriage_sunna_overseas.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRoot123Root"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRoot123Root" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: marriage-phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: waqarcoding
+      PMA_PASSWORD: Root123Root
+    depends_on:
+      - db
 
 volumes:
   mysql_data:
