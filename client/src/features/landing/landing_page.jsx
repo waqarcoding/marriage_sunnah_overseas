@@ -4,7 +4,9 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { Heart, Shield, Globe, Users, CheckCircle, Star } from "lucide-react";
 import { Button } from "../../components/button";
-import AppBar from "../../components/appbar.jsx";
+
+import AppBar from "../../components/AppBar.jsx";
+
 
 export default function Landing() {
     // Handler for "Learn How It Works" scroll

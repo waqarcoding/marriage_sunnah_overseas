@@ -141,7 +141,31 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
                 {submitting ? (<><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>Submitting…</>) : "Submit for verification"}
             </button>
             <div style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>or</div>
-            <button onClick={onSkip} style={{ width: "100%", background: "transparent", color: "#6b7280", border: "1.5px solid #d1d5db", borderRadius: 10, padding: "13px", fontSize: 14, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }} onMouseEnter={(e) => { e.target.style.borderColor = PRIMARY; e.target.style.color = PRIMARY; }} onMouseLeave={(e) => { e.target.style.borderColor = "#d1d5db"; e.target.style.color = "#6b7280"; }}>
+            <button
+                onClick={onSkip}
+                style={{
+                    width: "100%",
+                    background: "transparent",
+                    color: "#6b7280",
+                    border: "1.5px solid #d1d5db",
+                    borderRadius: 10,
+                    padding: "13px",
+                    fontSize: 14,
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: "pointer"
+                }}
+                onMouseEnter={e => {
+                    const target = e.currentTarget;
+                    target.style.borderColor = PRIMARY;
+                    target.style.color = PRIMARY;
+                }}
+                onMouseLeave={e => {
+                    const target = e.currentTarget;
+                    target.style.borderColor = "#d1d5db";
+                    target.style.color = "#6b7280";
+                }}
+            >
+
                 Skip for now — verify later
             </button>
         </div>
@@ -201,7 +225,18 @@ function PendingPage({ frontId, backId }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: "1.5rem" }}>
                 {[{ label: "Front side", path: frontId }, { label: "Back side", path: backId }].map((doc, i) => (
                     <div key={i} style={{ background: SECONDARY, border: `1px solid ${PRIMARY}18`, borderRadius: 12, overflow: "hidden" }}>
-                        <img src={`http://localhost:5000${doc.path}`} alt={doc.label} style={{ width: "100%", height: 90, objectFit: "cover" }} onError={(e) => { e.target.style.display = "none"; }} />
+                        <img
+                            src={`http://localhost:5000${doc.path}`}
+                            alt={doc.label}
+                            style={{ width: "100%", height: 90, objectFit: "cover" }}
+                            onError={e => {
+                                // Fix: e.target could be an EventTarget, so cast to HTMLImageElement
+                                if (e && e.target && e.target instanceof window.HTMLImageElement) {
+                                    e.target.style.display = "none";
+                                }
+                            }}
+                        />
+
                         <div style={{ padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 500 }}>{doc.label}</span>
                             <span style={{ fontSize: 10, color: "#f0b429", fontWeight: 500, background: "#fef9ec", padding: "2px 7px", borderRadius: 10 }}>Pending</span>

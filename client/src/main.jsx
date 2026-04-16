@@ -21,7 +21,7 @@ import HowItWorks from './features/landing/howitwork.jsx';
 import OtpPage from './features/auth/pages/otp_page.jsx';
 import SubscriptionPage from './features/setting/subscriptions.jsx';
 import CompleteProfile from './features/profile/pages/CompleteProfile.jsx';
-import AppBar from './components/appbar.jsx';
+import AppBar from './components/AppBar.jsx';
 import './theme/index.css';
 import VerificationPage from './features/profile/pages/Verification.jsx';
 

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AuthApi from "../api/AuthService";
-import AppBar from "../../../components/appbar";
+
 
 export default function Register({ onRegister }) {
     const [name, setName] = useState("");
