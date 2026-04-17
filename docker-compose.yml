@@ -4,12 +4,15 @@ services:
     build: ./server
     container_name: marriage-backend
     restart: always
-    network_mode: "host"
+    ports:
+      - "5000:5000"
     env_file:
       - ./server/.env
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - app-network
 
   frontend:
     build: ./client
