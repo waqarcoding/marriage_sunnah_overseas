@@ -11,7 +11,6 @@ module.exports = (sequelize, DataTypes) => {
     Preference.init({
         id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
         individual_id: { type: DataTypes.BIGINT, allowNull: false },
-
         pref_gender: { type: DataTypes.STRING, allowNull: true },
         pref_age_min: { type: DataTypes.INTEGER, allowNull: true },
         pref_age_max: { type: DataTypes.INTEGER, allowNull: true },

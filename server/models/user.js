@@ -50,10 +50,10 @@ module.exports = (sequelize, DataTypes) => {
     password_hash: { type: DataTypes.STRING, allowNull: false },
 
     role: {
-      type: DataTypes.ENUM('individual', 'guardian', 'admin'),
+      type: DataTypes.ENUM('individual', 'guardian', 'admin', 'staff'),
       defaultValue: 'individual',
     },
-
+    avatar_url: { type: DataTypes.STRING, allowNull: true },
     is_online: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_suspended: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },

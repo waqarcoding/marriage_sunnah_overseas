@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "forceConsistentCasingInFileNames": true,
+        "forceConsistentCasingInFileNames": false,
         "checkJs": true,
         "jsx": "react-jsx"
     },

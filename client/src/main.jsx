@@ -24,6 +24,8 @@ import CompleteProfile from './features/profile/pages/CompleteProfile.jsx';
 import AppBar from './components/AppBar.jsx';
 import './theme/index.css';
 import VerificationPage from './features/profile/pages/Verification.jsx';
+import ForgotPassword from './features/auth/pages/forget_page.jsx';
+import GuardianDashboard from './features/guardian/pages/guardian_dashboard.jsx';
 
 // ⚡ Created once at module level — shared across all routes and components
 const queryClient = new QueryClient({
@@ -79,10 +81,11 @@ const router = createBrowserRouter([
   { path: '/register', element: <Register onRegister={() => { }} /> },
   { path: '/otp', element: <OtpPage onSuccess={() => { }} /> },
   { path: '/how', element: <HowItWorks /> },
+  { path: '/forget-password', element: <ForgotPassword /> },
   { path: '/subscription', element: <SubscriptionPage /> },
   { path: '/profilesetup', element: <CompleteProfile /> },
   { path: '/verification', element: <VerificationPage onSubmit={() => { }} onSkip={() => { }} /> },
-
+  { path: '/guardian', element: < GuardianDashboard /> },
   {
     path: '/',
     element: (

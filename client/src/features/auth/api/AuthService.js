@@ -7,46 +7,64 @@ class AuthApi {
         this.base = "/auth";
     }
 
+
     // ---------------- Register ----------------
     register(data, callbacks) {
-        return Api.post(`${this.base}/register`, data, callbacks);
+        return Api.upload(`${this.base}/register`, data, {
+            ...callbacks,
+            onSuccess: (res) => {
+                localStorage.setItem("isLoggedIn", "true")
+                localStorage.setItem("jwtToken", res.token)
+                localStorage.setItem("authData", JSON.stringify(res))
+                if (callbacks?.onSuccess) callbacks.onSuccess(res)
+            },
+            onFailed: callbacks?.onFailed,
+        })
     }
-
     // ---------------- Login ----------------
-    // In your service
     login(data, callbacks) {
         return Api.post(`${this.base}/login`, data, {
             ...callbacks,
             onSuccess: (res) => {
-                const authData = res;
-                const profile = authData.profile;
-
                 localStorage.setItem("isLoggedIn", "true");
-                localStorage.setItem("authData", JSON.stringify(authData));
-                localStorage.setItem("jwtToken", authData.token);
-
-
-
+                localStorage.setItem("authData", JSON.stringify(res));
+                localStorage.setItem("jwtToken", res.token);
                 if (callbacks?.onSuccess) callbacks.onSuccess(res);
             },
             onFailed: callbacks?.onFailed,
         });
     }
-    async checkProfileCompleted() {
+
+    // ---------------- Check Profile ----------------
+    async checkProfile(navigate) {
         const user = await ProfileService.getMyProfile();
+        console.log("User Role:" + user.role);
 
+        if (user.role === 'guardian') {
+            navigate("/guardian", { replace: true });
+        } else if (user.role === 'individual') {
+            try {
+                const user = await ProfileService.getMyProfile();
+                const isProfileCompleted = user?.profile?.is_profile_completed === 1;
+                const isVerified = user?.is_verified === true || user?.is_verified === 1;
 
+                if (!isProfileCompleted) {
+                    navigate("/profilesetup", { replace: true });
+                } else if (!isVerified) {
+                    navigate("/verification", { replace: true });
+                } else {
+                    navigate("/explore", { replace: true });
+                }
 
-
-        return user.profile?.is_profile_completed === 1;
+                return { isProfileCompleted, isVerified };
+            } catch {
+                navigate("/profilesetup", { replace: true });
+                return { isProfileCompleted: false, isVerified: false };
+            }
+        }
     }
 
-    async checkIsVerfied() {
-        const user = await ProfileService.getMyProfile();
-        return user.is_verified === 1;
-    }
-
-    // ---------------- Verify OTP ----------------
+    // ---------------- Verify OTP (registration flow — requires token) ----------------
     verifyOtp(data, callbacks) {
         return Api.post(`${this.base}/verify-otp`, data, {
             ...callbacks,
@@ -58,12 +76,15 @@ class AuthApi {
         });
     }
 
-    // ---------------- Send OTP ----------------
+    // ---------------- Send OTP (registration flow — requires token) ----------------
     sendOtp(data, callbacks) {
         return Api.post(`${this.base}/send-otp`, data, callbacks);
     }
 
-    // ---------------- Resend OTP ----------------
+    // ---------------- Send OTP by Email (forgot password flow — no token) ----------------
+    sendOtpByEmail(data, callbacks) {
+        return Api.post(`${this.base}/send-otp-byemail`, data, callbacks);
+    }
 
     // ---------------- Change Password ----------------
     changePassword(data, callbacks) {
@@ -80,6 +101,11 @@ class AuthApi {
         return Api.post(`${this.base}/reset-password`, data, callbacks);
     }
 
+    // ---------------- Forgot Password Reset (email + otp + newPassword — no token) ----------------
+    forgotPasswordReset(data, callbacks) {
+        return Api.post(`${this.base}/forgot-password-reset`, data, callbacks);
+    }
+
     // ---------------- Logout ----------------
     logout() {
         localStorage.removeItem("isLoggedIn");
@@ -91,8 +117,7 @@ class AuthApi {
     // ---------------- Get Current User ----------------
     getCurrentUser() {
         const authData = JSON.parse(localStorage.getItem("authData"));
-
-        return authData.user || null;
+        return authData?.user || null;
     }
 
     // ---------------- Check Login ----------------
@@ -104,7 +129,8 @@ class AuthApi {
     isOtpVerified() {
         return localStorage.getItem("isOtpVerified") === "true";
     }
-    // utils/auth.js
+
+    // ---------------- Token Utilities ----------------
     getTokenData() {
         try {
             const token = localStorage.getItem("jwtToken");
@@ -113,21 +139,10 @@ class AuthApi {
         } catch { return null; }
     }
 
-    getUserRole() {
-        return getTokenData()?.role ?? null;
-    }
-
-    getUserId() {
-        return getTokenData()?.id ?? null;
-    }
-
-    isGuardian() {
-        return getUserRole() === "guardian";
-    }
-
-    isIndividual() {
-        return getUserRole() === "individual";
-    }
+    getUserRole() { return this.getTokenData()?.role ?? null; }
+    getUserId() { return this.getTokenData()?.id ?? null; }
+    isGuardian() { return this.getUserRole() === "guardian"; }
+    isIndividual() { return this.getUserRole() === "individual"; }
 }
 
 export default new AuthApi();

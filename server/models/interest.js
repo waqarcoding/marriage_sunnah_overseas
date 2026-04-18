@@ -22,7 +22,10 @@ module.exports = (sequelize, DataTypes) => {
       from_user: { type: DataTypes.BIGINT, allowNull: false },
       to_user: { type: DataTypes.BIGINT, allowNull: false },
       is_super_like: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
-
+      is_mutual: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
     },
     {
       sequelize,

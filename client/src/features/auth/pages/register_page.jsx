@@ -1,303 +1,257 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import AuthApi from "../api/AuthService";
-
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import { Heart, User, Pencil, Shield, ChevronLeft } from "lucide-react"
+import AuthApi from "../api/AuthService"
+import Input from "../../../components/ui/input"
+import Select from "../../../components/ui/select"
 
 export default function Register({ onRegister }) {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
+    const [step, setStep] = useState("role")
+    const [role, setRole] = useState("")
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [mobile, setMobile] = useState("")
+    const [gender, setGender] = useState("")
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [profilePhoto, setProfilePhoto] = useState(null)
+    const [photoPreview, setPhotoPreview] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState("")
+    const navigate = useNavigate()
+
+    const handleRoleSelect = (selectedRole) => {
+        setRole(selectedRole)
+        setStep("form")
+    }
+
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+            toast.error("Only JPG, PNG, or WEBP images are allowed.")
+            return
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("Image must be under 2MB.")
+            return
+        }
+        setProfilePhoto(file)
+        setPhotoPreview(URL.createObjectURL(file))
+    }
+
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
+        e.preventDefault()
+        setError("")
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
+        if (!profilePhoto) {
+            toast.error("Profile photo is required.")
+            return
         }
 
-        setLoading(true);
+        if (password !== confirmPassword) {
+            setError("Passwords do not match")
+            return
+        }
 
-        AuthApi.register(
-            { name, email, password },
-            {
-                onSuccess: (data) => {
-                    localStorage.setItem("jwtToken", data.token);
-                    localStorage.setItem("isLoggedIn", "true");
-                    localStorage.setItem("rememberedEmail", email);
-                    localStorage.setItem("rememberedPassword", password);
-                    onRegister?.();
-                    toast.success("Registration successful!");
-                    navigate("/", { replace: true });
-                },
-                onFailed: (err) => {
-                    setError(err.message || "Registration failed");
-                    setLoading(false);
-                    toast.error(err.message || "Registration failed");
-                },
-            }
-        );
-    };
+        setLoading(true)
+
+        const formData = new FormData()
+        formData.append("name", name)
+        formData.append("email", email)
+        formData.append("mobile", mobile)
+        formData.append("password_hash", password)
+        formData.append("role", role)
+        formData.append("gender", gender)
+        formData.append("profilePhoto", profilePhoto)  // ← actual file object
+
+        AuthApi.register(formData, {
+            onSuccess: () => {
+                localStorage.setItem("rememberedEmail", email)
+                onRegister?.()
+                toast.success("Registration successful!")
+                navigate("/otp", { replace: true })
+            },
+            onFailed: (err) => {
+                setError(err.message || "Registration failed")
+                setLoading(false)
+                toast.error(err.message || "Registration failed")
+            },
+        })
+    }
 
     return (
         <>
             <ToastContainer position="top-right" autoClose={3000} />
-            {/* Ensure mobile-friendly with responsive design and improved layout */}
-            <section className="relative min-h-screen flex flex-col justify-center items-center w-full overflow-x-hidden">
+            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-8">
+                <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 
-
-                {/* Responsive Hero Background */}
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src="/hero-banner.png"
-                        alt="Marriage Sunna Overseas"
-                        className="w-full h-full object-cover"
-                        style={{ minHeight: 400 }}
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-900/70 to-emerald-800/50" />
-                </div>
-
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-10" />
-
-                {/* Main Grid: Adjusted for all device sizes */}
-                <div className="relative z-20 w-full flex flex-col-reverse md:flex-row items-center justify-center px-2 sm:px-4 md:px-8">
-                    {/* Left Title -- Responsive font sizes; set on top on mobile */}
-                    <div className="w-full order-1 md:order-none md:w-1/2 flex items-center justify-center py-6 md:py-8 bg-transparent">
-                        <h1
-                            className="text-white text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-snug text-center font-rounded drop-shadow font-bold"
-                            style={{
-                                fontFamily: "var(--font-heading, 'Quicksand', 'Rounded Mplus 1c', 'sans-serif')",
-                                color: "var(--primary-foreground, #fff)",
-                                textShadow: "0 4px 40px rgba(0,0,0,0.53), 0 2px 20px rgba(78,72,219,0.10)"
-                            }}
-                        >
-                            Marriage Sunnah Overseas
-                        </h1>
+                    {/* ── Left panel ── */}
+                    <div className="hidden lg:flex flex-col justify-between p-10"
+                        style={{ background: "var(--primary, #1B4D3E)" }}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                style={{ background: "rgba(245,240,232,0.15)" }}>
+                                <Heart size={18} color="#f5f0e8" />
+                            </div>
+                            <span className="text-sm font-medium" style={{ color: "#f5f0e8" }}>
+                                Marriage Sunnah Overseas
+                            </span>
+                        </div>
+                        <div className="flex flex-col gap-5">
+                            <div className="inline-flex items-center gap-2 w-fit px-3 py-1.5 rounded-full text-xs"
+                                style={{ background: "rgba(245,240,232,0.1)", border: "0.5px solid rgba(245,240,232,0.2)", color: "rgba(245,240,232,0.75)" }}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#5DCAA5]" />
+                                Begin your journey today
+                            </div>
+                            <h1 className="text-3xl font-semibold leading-snug" style={{ color: "#f5f0e8" }}>
+                                Create your profile and find your match
+                            </h1>
+                            <p className="text-sm leading-relaxed" style={{ color: "rgba(245,240,232,0.6)" }}>
+                                Join thousands of families who trust our platform to find righteous, compatible life partners.
+                            </p>
+                        </div>
+                        <p className="text-xs" style={{ color: "rgba(245,240,232,0.3)" }}>
+                            © 2025 Marriage Sunnah Overseas
+                        </p>
                     </div>
-                    {/* Register Card: responsive and scrollable on mobile */}
-                    <div className="w-full md:w-1/2 flex items-center justify-center py-4 md:py-8">
-                        <div
-                            className="shadow-lg rounded-lg px-3 py-5 sm:p-6 md:p-8 w-full max-w-sm sm:max-w-md bg-white/90"
-                            style={{
-                                background: "rgba(255,255,255,0.90)",
-                                backdropFilter: "blur(3px)",
-                                boxShadow: "0 4px 36px rgba(93,89,255,0.09)",
-                                fontFamily: "var(--font-family, 'Inter', 'Helvetica', sans-serif)",
-                                color: "var(--text-main, #222)",
-                            }}
-                        >
-                            <h2
-                                className="text-xl sm:text-2xl font-bold mb-6 text-center"
-                                style={{
-                                    fontFamily: "var(--font-heading, 'Quicksand', 'Rounded Mplus 1c', sans-serif)",
-                                    color: "var(--primary, #4f46e5)",
-                                }}
-                            >Register</h2>
 
-                            {error && (
-                                <div className="bg-red-100 text-red-700 p-2 mb-4 rounded text-sm">
-                                    {error}
-                                </div>
-                            )}
+                    {/* ── Right panel ── */}
+                    <div className="flex flex-col justify-center bg-white p-8 lg:p-10 overflow-y-auto max-h-screen">
 
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* STEP 1 — Role */}
+                        {step === "role" && (
+                            <div className="flex flex-col gap-4">
                                 <div>
-                                    <label
-                                        htmlFor="name"
-                                        className="block mb-1 font-medium text-sm sm:text-base"
-                                        style={{
-                                            color: "var(--label-color, #1e293b)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                    >Full Name</label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="w-full border rounded px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/80"
-                                        style={{
-                                            borderColor: "var(--input-border, #cbd5e1)",
-                                            background: "var(--input-bg, #fff)",
-                                            color: "var(--input-text, #222)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                        placeholder="Your full name"
-                                        required
-                                        autoComplete="name"
-                                    />
+                                    <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>Join as</h2>
+                                    <p className="text-sm text-slate-400 mt-1">Choose how you want to register</p>
                                 </div>
-                                <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block mb-1 font-medium text-sm sm:text-base"
-                                        style={{
-                                            color: "var(--label-color, #1e293b)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                    >Email</label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full border rounded px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/80"
-                                        style={{
-                                            borderColor: "var(--input-border, #cbd5e1)",
-                                            background: "var(--input-bg, #fff)",
-                                            color: "var(--input-text, #222)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                        placeholder="you@example.com"
-                                        required
-                                        autoComplete="email"
-                                    />
+                                <div className="flex flex-col gap-3 mt-2">
+                                    <button
+                                        onClick={() => handleRoleSelect("individual")}
+                                        className="rounded-xl border border-slate-200 p-4 flex items-center gap-4 text-left hover:border-[#1B4D3E] hover:bg-[#f0f5f3] transition-all"
+                                    >
+                                        <div className="w-11 h-11 rounded-xl bg-[#f0f5f3] flex items-center justify-center flex-shrink-0">
+                                            <User size={20} color="#1B4D3E" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Individual</div>
+                                            <div className="text-xs text-slate-400 mt-0.5">Looking for a life partner</div>
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => handleRoleSelect("guardian")}
+                                        className="rounded-xl border border-slate-200 p-4 flex items-center gap-4 text-left hover:border-[#1B4D3E] hover:bg-[#f0f5f3] transition-all"
+                                    >
+                                        <div className="w-11 h-11 rounded-xl bg-[#f0f5f3] flex items-center justify-center flex-shrink-0">
+                                            <Shield size={20} color="#1B4D3E" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Guardian (Wali)</div>
+                                            <div className="text-xs text-slate-400 mt-0.5">Managing on behalf of a family member</div>
+                                        </div>
+                                    </button>
                                 </div>
-                                <div>
-                                    <label
-                                        htmlFor="password"
-                                        className="block mb-1 font-medium text-sm sm:text-base"
-                                        style={{
-                                            color: "var(--label-color, #1e293b)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                    >Password</label>
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full border rounded px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/80"
-                                        style={{
-                                            borderColor: "var(--input-border, #cbd5e1)",
-                                            background: "var(--input-bg, #fff)",
-                                            color: "var(--input-text, #222)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                        placeholder="Enter your password"
-                                        required
-                                        autoComplete="new-password"
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="confirmPassword"
-                                        className="block mb-1 font-medium text-sm sm:text-base"
-                                        style={{
-                                            color: "var(--label-color, #1e293b)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                    >Confirm Password</label>
-                                    <input
-                                        type="password"
-                                        id="confirmPassword"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full border rounded px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#4f46e5]/80"
-                                        style={{
-                                            borderColor: "var(--input-border, #cbd5e1)",
-                                            background: "var(--input-bg, #fff)",
-                                            color: "var(--input-text, #222)",
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                        placeholder="Confirm your password"
-                                        required
-                                        autoComplete="new-password"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full py-2 px-4 rounded hover:opacity-90 transition disabled:opacity-50 shadow text-base font-semibold"
-                                    style={{
-                                        background: "var(--gradient-primary, linear-gradient(90deg, #4f46e5, #06b6d4))",
-                                        color: "var(--btn-text, #fff)",
-                                        fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)",
-                                        boxShadow: "0 4px 14px 0 rgba(79,70,229,0.14)"
-                                    }}
-                                >
-                                    {loading ? "Registering..." : "Sign Up"}
-                                </button>
-                            </form>
-
-                            <div className="flex items-center my-4">
-                                <hr className="flex-1 border-gray-300" style={{ borderColor: "var(--divider, #e5e7eb)" }} />
-                                <span
-                                    className="mx-2 text-gray-500 text-xs sm:text-sm"
-                                    style={{
-                                        color: "var(--text-muted, #64748b)",
-                                        fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)",
-                                    }}
-                                >OR</span>
-                                <hr className="flex-1 border-gray-300" style={{ borderColor: "var(--divider, #e5e7eb)" }} />
-                            </div>
-
-                            <div className="space-y-3">
-                                <button
-                                    onClick={() => toast.info("Google registration coming soon!")}
-                                    className="w-full flex items-center justify-center gap-2 border rounded py-2 hover:bg-gray-100 transition text-sm sm:text-base"
-                                    style={{
-                                        borderColor: "var(--input-border, #cbd5e1)",
-                                        background: "var(--btn-alt-bg, #fff)",
-                                        color: "var(--btn-alt-text, #374151)",
-                                        fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                    }}
-                                    type="button"
-                                >
-                                    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />
-                                    <span>Continue with Google</span>
-                                </button>
-
-                                <button
-                                    onClick={() => toast.info("Apple registration coming soon!")}
-                                    className="w-full flex items-center justify-center gap-2 border rounded py-2 hover:bg-gray-100 transition text-sm sm:text-base"
-                                    style={{
-                                        borderColor: "var(--input-border, #cbd5e1)",
-                                        background: "var(--btn-alt-bg, #fff)",
-                                        color: "var(--btn-alt-text, #374151)",
-                                        fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                    }}
-                                    type="button"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M16.365 1.43c0 1.104-.454 2.168-1.194 2.917-.787.796-1.962 1.223-3.102 1.223-.083-1.131.446-2.207 1.198-2.927.768-.74 1.936-1.25 3.098-1.213.07.006.14.007.201.007zM20.8 13.662c-.018-2.384 2.05-3.536 2.148-3.587-1.178-1.726-3.002-1.959-3.643-1.987-1.545-.156-3.003.907-3.774.907-.77 0-1.963-.887-3.231-.864-1.658.023-3.194.965-4.036 2.443-1.739 3.007-.444 7.465 1.242 9.906.823 1.089 1.793 2.314 3.074 2.273 1.243-.041 1.713-.804 3.213-.804 1.49 0 1.918.804 3.22.777 1.328-.03 2.17-1.105 2.99-2.194.93-1.23 1.316-2.426 1.333-2.488-.03-.01-2.538-1.015-2.556-4.048z" />
-                                    </svg>
-                                    <span>Continue with Apple</span>
-                                </button>
-                            </div>
-
-                            <div className="mt-4 text-center">
-                                <p
-                                    className="text-xs sm:text-sm"
-                                    style={{
-                                        color: "var(--text-muted, #64748b)",
-                                        fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                    }}
-                                >
+                                <p className="text-xs text-center text-slate-400 mt-2">
                                     Already have an account?{" "}
-                                    <a
-                                        href="/login"
-                                        className="hover:underline"
-                                        style={{
-                                            color: "var(--primary, #4f46e5)",
-                                            fontWeight: 500,
-                                            fontFamily: "var(--font-family, 'Inter', Arial, sans-serif)"
-                                        }}
-                                    >Login</a>
+                                    <a href="/login" className="font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Sign in</a>
                                 </p>
                             </div>
-                        </div>
+                        )}
+
+                        {/* STEP 2 — Form */}
+                        {step === "form" && (
+                            <div className="flex flex-col gap-4">
+                                <button onClick={() => setStep("role")}
+                                    className="flex items-center gap-1 text-xs w-fit mb-1"
+                                    style={{ color: "var(--primary, #1B4D3E)", opacity: 0.7 }}>
+                                    <ChevronLeft size={14} /> Change role
+                                </button>
+
+                                <div>
+                                    <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>
+                                        Register as {role === "individual" ? "Individual" : "Guardian (Wali)"}
+                                    </h2>
+                                    <p className="text-sm text-slate-400 mt-1">Fill in your details to create your account</p>
+                                </div>
+
+                                {error && (
+                                    <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs border border-red-100">
+                                        {error}
+                                    </div>
+                                )}
+
+                                {/* Avatar */}
+                                <div className="flex justify-center">
+                                    <div className="relative" style={{ width: 88, height: 88, cursor: "pointer" }}
+                                        onClick={() => document.getElementById("photoInput").click()}>
+                                        <div className="absolute inset-0 rounded-full border-2 border-slate-200" />
+                                        <div className="absolute rounded-full overflow-hidden flex items-center justify-center bg-[#f0f5f3]"
+                                            style={{ inset: 4 }}>
+                                            {photoPreview
+                                                ? <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                                                : <User size={32} color="#94a3b8" />
+                                            }
+                                        </div>
+                                        <button type="button"
+                                            onClick={e => { e.stopPropagation(); document.getElementById("photoInput").click() }}
+                                            className="absolute bottom-0.5 right-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 hover:scale-110 transition-transform"
+                                            style={{ background: "var(--primary, #1B4D3E)", border: "2px solid #fff" }}>
+                                            <Pencil size={10} color="#fff" />
+                                        </button>
+                                    </div>
+                                    <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp"
+                                        className="hidden" onChange={handlePhotoChange} />
+                                </div>
+
+                                <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                                    <Input label="Full Name" type="text" value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        placeholder="Your full name" required autoComplete="name" />
+
+                                    <Input label="Email" type="email" value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                        placeholder="you@example.com" required autoComplete="email" />
+
+                                    <Input label="Mobile" type="tel" value={mobile}
+                                        onChange={e => setMobile(e.target.value)}
+                                        placeholder="+447700100001" required autoComplete="tel" />
+
+                                    <Select label="Gender" value={gender} onChange={setGender}
+                                        placeholder="Select gender"
+                                        options={[
+                                            { value: "male", label: "Male" },
+                                            { value: "female", label: "Female" },
+                                        ]} />
+
+                                    <Input label="Password" type="password" value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        placeholder="Enter your password" required autoComplete="new-password" />
+
+                                    <Input label="Confirm Password" type="password" value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        placeholder="Confirm your password" required autoComplete="new-password"
+                                        error={confirmPassword && password !== confirmPassword ? "Passwords don't match" : ""} />
+
+                                    <button type="submit" disabled={loading}
+                                        className="w-full h-10 rounded-xl text-sm font-medium transition hover:opacity-90 disabled:opacity-50 mt-1"
+                                        style={{ background: "var(--primary, #1B4D3E)", color: "var(--primary-foreground, #f5f0e8)" }}>
+                                        {loading ? "Registering..." : "Sign Up"}
+                                    </button>
+                                </form>
+
+                                <p className="text-xs text-center text-slate-400">
+                                    Already have an account?{" "}
+                                    <a href="/login" className="font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Sign in</a>
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
         </>
-    );
+    )
 }

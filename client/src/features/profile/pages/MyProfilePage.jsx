@@ -197,6 +197,7 @@ export default function MyProfilePage() {
         try {
             const data = await ProfileService.uploadImage(file, idx);
             if (data.success) {
+                // @ts-ignore
                 setPhotos((prev) => { const n = [...prev]; n[idx] = data.imageUrl?.startsWith("http") ? data.imageUrl : `${import.meta.env.VITE_BASE_URL}${data.imageUrl}`; return n; });
             } else { toast.error(data.message || "Upload failed"); }
         } catch { toast.error("Upload failed"); }
@@ -525,7 +526,16 @@ export default function MyProfilePage() {
                                         fontSize: 11, color: "#aaa", marginBottom: 4,
                                         textTransform: "uppercase", letterSpacing: 1
                                     }}>{label}</div>
-                                    <input value={guardianForm[key]} onChange={(e) => setGField(key, e.target.value)} placeholder={placeholder} style={inputStyle} />
+                                    <input
+                                        value={guardianForm[key]}
+                                        onChange={(e) => setGField(key, e.target.value)}
+                                        placeholder={placeholder}
+                                        style={{
+                                            ...inputStyle,
+                                            boxSizing: inputStyle?.boxSizing === "border-box" ? "border-box" : inputStyle?.boxSizing === "content-box" ? "content-box" : undefined
+                                        }}
+                                    />
+
                                 </div>
                             ))}
                         </div>

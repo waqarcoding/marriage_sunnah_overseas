@@ -73,7 +73,7 @@ export default function Landing() {
                             <Button
                                 variant="outline"
                                 size="lg"
-                                className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
+                                className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/5 bg-white/10 backdrop-blur-sm"
                                 onClick={() => window.location.href = "/how"}
                             >
                                 Learn How It Works

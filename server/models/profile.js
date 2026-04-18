@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
     nationality: { type: DataTypes.STRING, allowNull: true },
 
     religion: {
-      type: DataTypes.ENUM('Muslim', 'Christian', 'Hindu', 'Other'),
+      type: DataTypes.ENUM('Islam', 'Christian', 'Hindu', 'Other'),
       allowNull: true,
     },
     sect: {

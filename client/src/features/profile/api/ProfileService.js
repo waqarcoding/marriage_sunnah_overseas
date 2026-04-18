@@ -62,6 +62,7 @@ class ProfileService {
 
         imgs = imgs
             .filter(Boolean)
+            // @ts-ignore
             .map((url) => url.startsWith("http") ? url : `${import.meta.env.VITE_BASE_URL}${url}`);
 
         if (imgs.length === 0) {

@@ -31,7 +31,7 @@ const EmptyState = ({ icon, title, subtitle }) => (
     </div>
 );
 
-export default function GuardianDashboard({ user }) {
+export default function GuardianDashboard({ }) {
     const [activeTab, setActiveTab] = useState("pending");
     const [pendingInterests, setPendingInterests] = useState([]);
     const [allInterests, setAllInterests] = useState([]);
@@ -177,7 +177,7 @@ export default function GuardianDashboard({ user }) {
             <div className="bg-white border-b border-gray-100 px-5 py-4 shadow-sm">
                 <h1 className="text-xl font-bold text-gray-900">Guardian Dashboard</h1>
                 <p className="text-xs text-gray-400 mt-0.5">
-                    Assalamu Alaikum, {user?.name || "Guardian"} — review your ward's interests
+                    Assalamu Alaikum, {"Guardian"} — review your ward's interests
                 </p>
             </div>
             <div className="grid grid-cols-3 gap-3 px-4 pt-4">

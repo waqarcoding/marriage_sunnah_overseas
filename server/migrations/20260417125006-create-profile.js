@@ -54,7 +54,7 @@ module.exports = {
         allowNull: true
       },
       religion: {
-        type: Sequelize.ENUM('Muslim', 'Christian', 'Hindu', 'Other'),
+        type: Sequelize.ENUM('Islam', 'Christian', 'Hindu', 'Other'),
         allowNull: true
       },
       sect: {

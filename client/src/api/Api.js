@@ -30,6 +30,7 @@ class Api {
         console.log(`${this.baseURL}/profile/last-seen`)
         fetch(`${this.baseURL}/profile/last-seen`, {
             method: "GET",
+            // @ts-ignore
             headers: this._getHeaders(),
         }).catch(() => { console.log("erro ping lastseen") });
     }
@@ -174,6 +175,7 @@ class Api {
         if (!token) return false;
 
         try {
+            // @ts-ignore
             const decoded = jwtDecode(token);
             if (decoded.exp < Date.now() / 1000) {
                 this._handleTokenExpired();
@@ -187,4 +189,5 @@ class Api {
     }
 }
 
+// @ts-ignore
 export default new Api(import.meta.env.VITE_BASE_URL + "/api");

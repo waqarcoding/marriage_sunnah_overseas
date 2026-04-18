@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost
--- Generation Time: Apr 16, 2026 at 12:46 AM
--- Server version: 10.4.28-MariaDB
--- PHP Version: 8.1.17
+-- Host: db
+-- Generation Time: Apr 18, 2026 at 09:39 PM
+-- Server version: 8.0.45
+-- PHP Version: 8.3.26
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -28,11 +28,11 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `Dislikes` (
-  `id` bigint(20) NOT NULL,
-  `user_id` bigint(20) NOT NULL,
-  `target_user_id` bigint(20) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `target_user_id` bigint NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -42,15 +42,15 @@ CREATE TABLE `Dislikes` (
 --
 
 CREATE TABLE `Guardians` (
-  `id` bigint(20) NOT NULL,
-  `individual_id` bigint(20) NOT NULL,
-  `guardian_id` bigint(20) NOT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `image` varchar(255) DEFAULT NULL,
-  `relationship` varchar(255) DEFAULT NULL,
-  `contact_hidden` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` bigint NOT NULL,
+  `individual_id` bigint NOT NULL,
+  `guardian_id` bigint NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `image` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `relationship` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `contact_hidden` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -60,38 +60,32 @@ CREATE TABLE `Guardians` (
 --
 
 CREATE TABLE `Interests` (
-  `id` bigint(20) NOT NULL,
-  `status` varchar(255) DEFAULT NULL,
-  `guardian_approved` tinyint(1) DEFAULT 0,
-  `from_user` bigint(20) DEFAULT NULL,
-  `to_user` bigint(20) DEFAULT NULL,
-  `is_mutual` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_super_like` tinyint(1) NOT NULL DEFAULT 0
+  `id` bigint NOT NULL,
+  `status` enum('pending','accepted','declined') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
+  `guardian_approved` tinyint(1) NOT NULL DEFAULT '0',
+  `from_user` bigint DEFAULT NULL,
+  `to_user` bigint DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `is_super_like` tinyint(1) NOT NULL DEFAULT '0',
+  `is_mutual` tinyint(1) DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Interests`
 --
 
-INSERT INTO `Interests` (`id`, `status`, `guardian_approved`, `from_user`, `to_user`, `is_mutual`, `created_at`, `updated_at`, `is_super_like`) VALUES
-(189, 'pending', 0, 60, 1, 0, '2026-04-07 07:35:57', '2026-04-07 07:35:57', 0),
-(190, 'pending', 0, 60, 3, 0, '2026-04-07 07:36:12', '2026-04-07 07:36:12', 0),
-(191, 'pending', 0, 60, 4, 0, '2026-04-07 07:36:21', '2026-04-07 07:36:21', 0),
-(192, 'pending', 0, 60, 5, 0, '2026-04-07 07:36:37', '2026-04-07 07:36:37', 0),
-(193, 'pending', 0, 60, 2, 0, '2026-04-13 14:34:31', '2026-04-13 14:34:31', 0),
-(194, 'pending', 0, 60, 6, 0, '2026-04-13 14:34:41', '2026-04-13 14:34:41', 0),
-(195, 'pending', 0, 60, 7, 0, '2026-04-14 18:51:35', '2026-04-14 18:51:35', 0),
-(196, 'pending', 0, 60, 8, 0, '2026-04-14 20:57:05', '2026-04-14 20:57:05', 0),
-(197, 'pending', 0, 60, 9, 0, '2026-04-14 20:57:11', '2026-04-14 20:57:11', 0),
-(198, 'pending', 0, 60, 10, 0, '2026-04-14 20:57:19', '2026-04-14 20:57:19', 0),
-(199, 'pending', 0, 60, 11, 0, '2026-04-14 20:57:28', '2026-04-14 20:57:28', 0),
-(200, 'pending', 0, 60, 12, 0, '2026-04-14 20:57:40', '2026-04-14 20:57:40', 0),
-(201, 'pending', 0, 60, 13, 0, '2026-04-14 21:04:49', '2026-04-14 21:04:49', 0),
-(202, 'pending', 0, 60, 14, 0, '2026-04-14 21:04:51', '2026-04-14 21:04:51', 0),
-(203, 'pending', 0, 60, 16, 0, '2026-04-14 21:04:57', '2026-04-14 21:04:57', 0),
-(204, 'pending', 0, 60, 17, 0, '2026-04-14 21:04:58', '2026-04-14 21:04:58', 1);
+INSERT INTO `Interests` (`id`, `status`, `guardian_approved`, `from_user`, `to_user`, `created_at`, `updated_at`, `is_super_like`, `is_mutual`) VALUES
+(205, 'pending', 0, 60, 31, '2026-04-18 00:16:37', '2026-04-18 00:16:37', 0, 0),
+(206, 'pending', 0, 60, 22, '2026-04-18 00:16:41', '2026-04-18 00:16:41', 0, 0),
+(207, 'pending', 0, 60, 23, '2026-04-18 00:16:42', '2026-04-18 00:16:42', 0, 0),
+(208, 'pending', 0, 60, 32, '2026-04-18 00:18:20', '2026-04-18 00:18:20', 1, 0),
+(209, 'pending', 0, 60, 30, '2026-04-18 00:23:02', '2026-04-18 00:23:02', 0, 0),
+(210, 'pending', 0, 60, 20, '2026-04-18 00:23:04', '2026-04-18 00:23:04', 0, 0),
+(211, 'pending', 0, 60, 21, '2026-04-18 00:23:06', '2026-04-18 00:23:06', 0, 0),
+(212, 'pending', 0, 60, 33, '2026-04-18 00:23:14', '2026-04-18 00:23:14', 0, 0),
+(213, 'pending', 0, 60, 18, '2026-04-18 00:23:19', '2026-04-18 00:23:19', 0, 0),
+(214, 'pending', 0, 60, 19, '2026-04-18 00:23:26', '2026-04-18 00:23:26', 0, 0);
 
 -- --------------------------------------------------------
 
@@ -100,12 +94,12 @@ INSERT INTO `Interests` (`id`, `status`, `guardian_approved`, `from_user`, `to_u
 --
 
 CREATE TABLE `Matches` (
-  `id` bigint(20) NOT NULL,
-  `user1` bigint(20) NOT NULL,
-  `user2` bigint(20) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `interest_id` bigint(20) DEFAULT NULL
+  `id` bigint NOT NULL,
+  `user1` bigint NOT NULL,
+  `user2` bigint NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `interest_id` bigint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -115,14 +109,14 @@ CREATE TABLE `Matches` (
 --
 
 CREATE TABLE `Messages` (
-  `id` bigint(20) NOT NULL,
-  `sender_id` bigint(20) NOT NULL,
-  `receiver_id` bigint(20) NOT NULL,
-  `message` text NOT NULL,
-  `interest_id` bigint(20) DEFAULT NULL,
-  `is_seen` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` bigint NOT NULL,
+  `sender_id` bigint NOT NULL,
+  `receiver_id` bigint NOT NULL,
+  `message` text COLLATE utf8mb4_general_ci NOT NULL,
+  `interest_id` bigint DEFAULT NULL,
+  `is_seen` tinyint(1) DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -240,12 +234,12 @@ INSERT INTO `Messages` (`id`, `sender_id`, `receiver_id`, `message`, `interest_i
 --
 
 CREATE TABLE `Otps` (
-  `id` bigint(20) NOT NULL,
-  `otp` varchar(10) NOT NULL,
+  `id` bigint NOT NULL,
+  `otp` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
   `expires_at` datetime NOT NULL,
-  `user_id` bigint(20) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `user_id` bigint NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -388,7 +382,37 @@ INSERT INTO `Otps` (`id`, `otp`, `expires_at`, `user_id`, `created_at`, `updated
 (149, '156263', '2026-04-07 08:45:55', 60, '2026-04-07 08:40:55', '2026-04-07 08:40:55'),
 (150, '656497', '2026-04-13 14:13:14', 60, '2026-04-13 14:08:14', '2026-04-13 14:08:14'),
 (151, '983069', '2026-04-13 14:54:05', 60, '2026-04-13 14:49:05', '2026-04-13 14:49:05'),
-(152, '955066', '2026-04-13 15:02:06', 60, '2026-04-13 14:57:06', '2026-04-13 14:57:06');
+(152, '955066', '2026-04-13 15:02:06', 60, '2026-04-13 14:57:06', '2026-04-13 14:57:06'),
+(153, '741235', '2026-04-16 23:04:33', 60, '2026-04-16 22:59:33', '2026-04-16 22:59:33'),
+(154, '314168', '2026-04-16 23:55:41', 60, '2026-04-16 23:50:41', '2026-04-16 23:50:41'),
+(155, '618226', '2026-04-16 23:59:43', 60, '2026-04-16 23:54:43', '2026-04-16 23:54:43'),
+(156, '410986', '2026-04-17 22:24:46', 60, '2026-04-17 22:19:46', '2026-04-17 22:19:46'),
+(157, '917485', '2026-04-18 00:27:19', 60, '2026-04-18 00:22:19', '2026-04-18 00:22:19'),
+(158, '509127', '2026-04-18 10:59:09', 60, '2026-04-18 10:54:09', '2026-04-18 10:54:09'),
+(159, '763909', '2026-04-18 11:04:14', 60, '2026-04-18 10:59:14', '2026-04-18 10:59:14'),
+(160, '207464', '2026-04-18 11:10:41', 60, '2026-04-18 11:05:41', '2026-04-18 11:05:41'),
+(161, '127302', '2026-04-18 11:11:32', 60, '2026-04-18 11:06:32', '2026-04-18 11:06:32'),
+(162, '698689', '2026-04-18 11:19:36', 60, '2026-04-18 11:14:36', '2026-04-18 11:14:36'),
+(163, '631788', '2026-04-18 11:22:02', 60, '2026-04-18 11:17:02', '2026-04-18 11:17:02'),
+(164, '135622', '2026-04-18 11:22:34', 60, '2026-04-18 11:17:34', '2026-04-18 11:17:34'),
+(165, '279147', '2026-04-18 11:24:28', 60, '2026-04-18 11:19:28', '2026-04-18 11:19:28'),
+(166, '353024', '2026-04-18 11:26:10', 60, '2026-04-18 11:21:10', '2026-04-18 11:21:10'),
+(167, '230712', '2026-04-18 11:33:54', 60, '2026-04-18 11:28:54', '2026-04-18 11:28:54'),
+(168, '131607', '2026-04-18 11:35:32', 60, '2026-04-18 11:30:32', '2026-04-18 11:30:32'),
+(169, '261823', '2026-04-18 11:35:38', 60, '2026-04-18 11:30:38', '2026-04-18 11:30:38'),
+(170, '222154', '2026-04-18 11:39:45', 60, '2026-04-18 11:34:45', '2026-04-18 11:34:45'),
+(171, '561688', '2026-04-18 11:45:22', 60, '2026-04-18 11:40:22', '2026-04-18 11:40:22'),
+(172, '949717', '2026-04-18 11:47:37', 60, '2026-04-18 11:42:37', '2026-04-18 11:42:37'),
+(173, '808549', '2026-04-18 11:48:42', 60, '2026-04-18 11:43:42', '2026-04-18 11:43:42'),
+(174, '750430', '2026-04-18 11:49:20', 60, '2026-04-18 11:44:20', '2026-04-18 11:44:20'),
+(175, '387623', '2026-04-18 14:18:28', 60, '2026-04-18 14:13:28', '2026-04-18 14:13:28'),
+(176, '211527', '2026-04-18 14:18:35', 60, '2026-04-18 14:13:35', '2026-04-18 14:13:35'),
+(177, '639043', '2026-04-18 14:30:08', 60, '2026-04-18 14:25:08', '2026-04-18 14:25:08'),
+(178, '694543', '2026-04-18 19:18:37', 60, '2026-04-18 19:13:37', '2026-04-18 19:13:37'),
+(180, '988234', '2026-04-18 19:52:11', 60, '2026-04-18 19:47:11', '2026-04-18 19:47:11'),
+(181, '312778', '2026-04-18 21:19:54', 62, '2026-04-18 21:14:54', '2026-04-18 21:14:54'),
+(182, '941425', '2026-04-18 21:22:05', 62, '2026-04-18 21:17:05', '2026-04-18 21:17:05'),
+(183, '769910', '2026-04-18 21:31:34', 62, '2026-04-18 21:26:34', '2026-04-18 21:26:34');
 
 -- --------------------------------------------------------
 
@@ -397,38 +421,38 @@ INSERT INTO `Otps` (`id`, `otp`, `expires_at`, `user_id`, `created_at`, `updated
 --
 
 CREATE TABLE `Prefs` (
-  `id` bigint(20) NOT NULL,
-  `individual_id` bigint(20) NOT NULL,
-  `pref_gender` varchar(255) DEFAULT NULL,
-  `pref_age_min` int(11) DEFAULT NULL,
-  `pref_age_max` int(11) DEFAULT NULL,
-  `pref_marital_status` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_marital_status`)),
-  `pref_nationality` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_nationality`)),
-  `pref_country` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_country`)),
-  `pref_city` varchar(255) DEFAULT NULL,
-  `pref_religion` enum('Islam','Christian','Hindu','Other') DEFAULT NULL,
-  `pref_sect` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_sect`)),
-  `pref_religious_practice_level` varchar(255) DEFAULT NULL,
-  `pref_height_min_inches` tinyint(3) UNSIGNED DEFAULT NULL,
-  `pref_height_max_inches` tinyint(3) UNSIGNED DEFAULT NULL,
-  `pref_body_type` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_body_type`)),
-  `pref_caste` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_caste`)),
-  `pref_mother_tongue` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_mother_tongue`)),
-  `pref_education` varchar(255) DEFAULT NULL,
-  `pref_employment_type` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`pref_employment_type`)),
-  `pref_monthly_salary` enum('No preference','Less than PKR 100,000','PKR 100,000 – PKR 200,000','PKR 200,000 – PKR 600,000','PKR 600,000 – PKR 1,000,000','PKR 1,000,000+') DEFAULT NULL,
-  `pref_has_children` enum('No Children','Has Children','No Preference') DEFAULT NULL,
-  `pref_willing_to_relocate` tinyint(1) DEFAULT 0,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `id` bigint NOT NULL,
+  `individual_id` bigint NOT NULL,
+  `pref_gender` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_age_min` int DEFAULT NULL,
+  `pref_age_max` int DEFAULT NULL,
+  `pref_marital_status` text COLLATE utf8mb4_general_ci,
+  `pref_nationality` text COLLATE utf8mb4_general_ci,
+  `pref_country` text COLLATE utf8mb4_general_ci,
+  `pref_city` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_religion` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_sect` text COLLATE utf8mb4_general_ci,
+  `pref_religious_practice_level` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_height_min_inches` tinyint DEFAULT NULL,
+  `pref_height_max_inches` tinyint DEFAULT NULL,
+  `pref_body_type` text COLLATE utf8mb4_general_ci,
+  `pref_caste` text COLLATE utf8mb4_general_ci,
+  `pref_mother_tongue` text COLLATE utf8mb4_general_ci,
+  `pref_education` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_employment_type` text COLLATE utf8mb4_general_ci,
+  `pref_monthly_salary` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_has_children` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_willing_to_relocate` tinyint(1) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL
+) ;
 
 --
 -- Dumping data for table `Prefs`
 --
 
 INSERT INTO `Prefs` (`id`, `individual_id`, `pref_gender`, `pref_age_min`, `pref_age_max`, `pref_marital_status`, `pref_nationality`, `pref_country`, `pref_city`, `pref_religion`, `pref_sect`, `pref_religious_practice_level`, `pref_height_min_inches`, `pref_height_max_inches`, `pref_body_type`, `pref_caste`, `pref_mother_tongue`, `pref_education`, `pref_employment_type`, `pref_monthly_salary`, `pref_has_children`, `pref_willing_to_relocate`, `created_at`, `updated_at`) VALUES
-(1, 2, 'Male', 19, 22, '[\"Never Married\"]', '[\"Pakistani\"]', '[\"Pakistan\"]', NULL, 'Islam', '[\"Sunni\"]', 'Very Religious', 68, 63, '[\"Slim\"]', '[\"Abbasi\",\"Kamboh\",\"Memon\",\"Niazi\"]', '[]', 'Intermediate', '[\"Business Owner\"]', 'PKR 200,000 – PKR 600,000', 'No Children', NULL, '2026-04-13 20:54:12', '2026-04-14 13:58:55');
+(1, 2, 'Male', 20, 23, '[\"Never Married\"]', '[\"Pakistani\"]', '[\"Pakistan\"]', NULL, 'Islam', '[\"Sunni\"]', 'Very Religious', 61, 68, '[\"Slim\"]', '[\"Bhatti\",\"Butt\",\"Chaudhry\",\"Kamboh\"]', '[]', 'Intermediate', '[]', 'Less than PKR 100,000', 'No Children', 1, '2026-04-13 20:54:12', '2026-04-18 10:23:01');
 
 -- --------------------------------------------------------
 
@@ -437,49 +461,49 @@ INSERT INTO `Prefs` (`id`, `individual_id`, `pref_gender`, `pref_age_min`, `pref
 --
 
 CREATE TABLE `Profiles` (
-  `id` bigint(20) NOT NULL,
-  `individual_id` bigint(20) NOT NULL,
-  `guardian_id` bigint(20) DEFAULT NULL,
-  `name` varchar(255) NOT NULL,
-  `gender` varchar(255) NOT NULL,
+  `id` bigint NOT NULL,
+  `individual_id` bigint NOT NULL,
+  `guardian_id` bigint DEFAULT NULL,
+  `name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `gender` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `date_of_birth` date DEFAULT NULL,
-  `age` int(11) DEFAULT NULL,
-  `marital_status` varchar(255) DEFAULT NULL,
-  `country` varchar(255) DEFAULT NULL,
-  `city` varchar(255) DEFAULT NULL,
-  `nationality` varchar(255) DEFAULT NULL,
-  `education` varchar(255) DEFAULT NULL,
-  `profession` varchar(255) DEFAULT NULL,
-  `religious_practice_level` varchar(255) DEFAULT 'Moderately Religious',
-  `family_background` text DEFAULT NULL,
-  `bio` text DEFAULT NULL,
-  `interests` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '[   "Reading",   "Traveling",   "Cooking",   "Fitness",   "Cricket", ]',
-  `relationship` varchar(255) DEFAULT NULL,
-  `contact_hidden` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `age` int DEFAULT NULL,
+  `marital_status` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `country` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `city` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nationality` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `education` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `profession` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `religious_practice_level` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `family_background` text COLLATE utf8mb4_general_ci,
+  `bio` text COLLATE utf8mb4_general_ci,
+  `interests` text COLLATE utf8mb4_general_ci,
+  `relationship` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `contact_hidden` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
   `last_seen` datetime DEFAULT NULL,
-  `images` text DEFAULT NULL,
-  `guardian_name` varchar(255) DEFAULT '---',
-  `guardian_phone` varchar(50) DEFAULT '---',
-  `guardian_email` varchar(255) DEFAULT '---',
-  `guardian_relationship` varchar(100) DEFAULT '---',
-  `is_guardian_required` tinyint(1) NOT NULL DEFAULT 1,
-  `phone` varchar(20) DEFAULT NULL,
-  `religion` enum('Islam','Christian','Hindu','Other') DEFAULT 'Other',
-  `sect` enum('Sunni','Shia','Deobandi','Barelvi','Ahmadi','Other') DEFAULT 'Other',
-  `height_inches` tinyint(3) UNSIGNED DEFAULT NULL COMMENT 'Total inches e.g. 68 = 5ft 8in',
-  `body_type` enum('Slim','Athletic','Average','Curvy','Heavy') DEFAULT 'Average',
-  `caste` varchar(60) DEFAULT NULL,
-  `mother_tongue` enum('Urdu','Pashto','Punjabi','Sindhi','Balochi','English','Arabic','Other') DEFAULT 'Other',
-  `employment_type` enum('Government','Private','Self-Employed','Business Owner','Student','Unemployed') DEFAULT 'Private',
-  `monthly_salary` enum('No preference','Less than PKR 100,000','PKR 100,000 – PKR 200,000','PKR 200,000 – PKR 600,000','PKR 600,000 – PKR 1,000,000','PKR 1,000,000+') DEFAULT NULL,
-  `has_children` tinyint(4) DEFAULT 0,
-  `willing_to_relocate` tinyint(1) DEFAULT 0,
-  `is_profile_completed` tinyint(1) NOT NULL DEFAULT 0,
-  `is_pro` tinyint(1) DEFAULT 0,
-  `front_id` varchar(255) DEFAULT NULL,
-  `back_id` varchar(255) DEFAULT NULL
+  `images` text COLLATE utf8mb4_general_ci,
+  `guardian_name` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `guardian_phone` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `guardian_email` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `guardian_relationship` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `is_guardian_required` tinyint(1) NOT NULL DEFAULT '1',
+  `phone` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `religion` enum('Islam','Christian','Hindu','Other') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `sect` enum('Sunni','Shia','Deobandi','Barelvi','Ahmadiyya','Other') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `height_inches` tinyint UNSIGNED DEFAULT NULL COMMENT 'Total inches e.g. 68 = 5ft 8in',
+  `body_type` enum('Slim','Athletic','Average','Curvy','Heavy') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `caste` varchar(60) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `mother_tongue` enum('Urdu','Pashto','Punjabi','Sindhi','Balochi','Other') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `employment_type` enum('Government','Private','Self-Employed','Business','Unemployed','Other') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `monthly_salary` enum('No preference','Less than PKR 100,000','PKR 100,000 - 200,000','Above PKR 200,000') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `has_children` tinyint(1) DEFAULT NULL,
+  `willing_to_relocate` tinyint(1) DEFAULT '0',
+  `is_profile_completed` tinyint(1) NOT NULL DEFAULT '0',
+  `is_pro` tinyint(1) DEFAULT '0',
+  `front_id` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `back_id` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -487,95 +511,47 @@ CREATE TABLE `Profiles` (
 --
 
 INSERT INTO `Profiles` (`id`, `individual_id`, `guardian_id`, `name`, `gender`, `date_of_birth`, `age`, `marital_status`, `country`, `city`, `nationality`, `education`, `profession`, `religious_practice_level`, `family_background`, `bio`, `interests`, `relationship`, `contact_hidden`, `created_at`, `updated_at`, `last_seen`, `images`, `guardian_name`, `guardian_phone`, `guardian_email`, `guardian_relationship`, `is_guardian_required`, `phone`, `religion`, `sect`, `height_inches`, `body_type`, `caste`, `mother_tongue`, `employment_type`, `monthly_salary`, `has_children`, `willing_to_relocate`, `is_profile_completed`, `is_pro`, `front_id`, `back_id`) VALUES
-(2, 60, NULL, 'asdsd', 'Male', '0002-02-22', 2024, 'Divorced', 'UAE', 'Bhimber', 'Emirati', 'Bachelor\'s', '', 'Moderately Religious', '', '', '[]', '', 0, '2026-02-26 20:14:28', '2026-04-14 21:13:48', '2026-04-14 21:13:48', '[\"/uploads/profiles/profile_60_1772854402023.png\",\"/uploads/profiles/profile_60_1772851323846.jpg\",\"/uploads/profiles/profile_60_1772854427691.jpg\",\"/uploads/profiles/profile_60_1772854438303.webp\"]', '', '', '', '', 0, '', 'Islam', 'Ahmadi', 61, 'Athletic', 'Awan', 'Balochi', 'Self-Employed', 'PKR 100,000 – PKR 200,000', 0, 1, 1, 0, NULL, NULL),
-(49, 1, 101, 'Aisha Khan', 'female', '1998-03-15', 26, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Doctor', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a medical professional who loves cooking and reading Quran. Looking for a kind and practicing partner to build a beautiful family.', '[\"Cooking\",\"Quran\",\"Reading\",\"Travelling\",\"Volunteering\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:04', '2026-03-08 01:43:18', '[\"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop\"]', 'Muhammad Khan', '+447700200001', 'mkhan@gmail.com', 'Father', 1, '+447700100001', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(50, 2, 102, 'Fatima Ali', 'female', '1999-07-22', 25, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Teacher', 'practicing', 'moderate', 'Alhamdulillah for everything. I am a primary school teacher passionate about education and community work. Seeking a sincere and responsible husband.', '[\"Teaching\",\"Baking\",\"Gardening\",\"Reading\",\"Charity\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-10 02:03:58', '2026-03-10 02:03:58', '[\"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=600&fit=crop\",\"/uploads/profiles/profile_2_1773020509186.jpg\"]', 'Ahmed Ali', '+447700200002', 'aali@gmail.com', 'Father', 1, '+447700100002', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(51, 3, 103, 'Zara Mahmood', 'female', '1997-11-08', 27, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Pharmacist', 'very_practicing', 'conservative', 'Bismillah. A pharmacist with a love for learning and nature walks. I value honesty, faith, and family above all else. Ready for the next chapter inshAllah.', '[\"Nature\",\"Hiking\",\"Cooking\",\"Islamic Studies\",\"Fitness\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 09:53:55', '2026-03-08 01:48:18', '[\"https://images.unsplash.com/photo-1515023115689-589c33041d3c?w=400&h=600&fit=crop\"]', 'Tariq Mahmood', '+447700200003', 'tmahmood@gmail.com', 'Father', 1, '+447700100003', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(52, 4, 104, 'Noor Hussain', 'female', '2000-05-30', 24, 'single', 'United Kingdom', 'Leeds', 'British', 'bachelors', 'Nurse', 'practicing', 'moderate', 'JazakAllah Khair for visiting my profile. I am a compassionate nurse who enjoys family time and cooking. Looking for someone who shares my values and faith.', '[\"Cooking\",\"Family\",\"Fitness\",\"Volunteering\",\"Travel\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:04', '2026-03-07 01:53:18', '[\"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1526510747491-58f928ec870f?w=400&h=600&fit=crop\"]', 'Hussain Raza', '+447700200004', 'hraza@gmail.com', 'Father', 1, '+447700100004', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(53, 5, 105, 'Sara Ahmed', 'female', '1996-09-14', 28, 'divorced', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Lawyer', 'practicing', 'moderate', 'MashAllah, life has given me wisdom and strength. I am a lawyer seeking a mature, understanding partner who values growth and a loving home.', '[\"Law\",\"Reading\",\"Cooking\",\"Yoga\",\"Arts\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-09 01:56:59', '2026-03-09 01:56:59', '[\"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop\"]', 'Usman Ahmed', '+447700200005', 'uahmed@gmail.com', 'Brother', 1, '+447700100005', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(54, 6, 106, 'Hana Malik', 'female', '1999-01-25', 25, 'single', 'United Kingdom', 'Sheffield', 'British', 'bachelors', 'Graphic Designer', 'moderately_practicing', 'moderate', 'Assalamu Alaikum! Creative soul, graphic designer by day and home baker by night. Looking for someone kind, funny, and God-conscious to share life with.', '[\"Design\",\"Baking\",\"Photography\",\"Travel\",\"Quran\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-09 22:35:28', '2026-03-09 22:35:28', '[\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop\"]', 'Malik Iqbal', '+447700200006', 'miqbal@gmail.com', 'Father', 1, '+447700100006', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(55, 7, 107, 'Maryam Shah', 'female', '1998-06-19', 26, 'single', 'United Kingdom', 'Liverpool', 'Pakistani', 'phd', 'Researcher', 'very_practicing', 'conservative', 'SubhanAllah, seeking knowledge is part of my deen. I am a PhD researcher in biochemistry. I want a husband who encourages my growth while building a pious home.', '[\"Research\",\"Islamic History\",\"Cooking\",\"Reading\",\"Cycling\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:38:18', '[\"https://images.unsplash.com/photo-1488508872907-592763824245?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&h=600&fit=crop\"]', 'Shah Nawaz', '+447700200007', 'snawaz@gmail.com', 'Father', 1, '+447700100007', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(56, 8, 108, 'Layla Qureshi', 'female', '2001-02-11', 23, 'single', 'United Kingdom', 'Bristol', 'British', 'bachelors', 'Accountant', 'practicing', 'moderate', 'Alhamdulillah for this platform. I am a young accountant who loves weekend hikes and trying new recipes. Looking for my best friend in life, inshAllah.', '[\"Hiking\",\"Cooking\",\"Finance\",\"Volunteering\",\"Reading\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-06 01:53:18', '[\"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1523264939339-c89f9dadde2e?w=400&h=600&fit=crop\"]', 'Qureshi Sahab', '+447700200008', 'qureshi@gmail.com', 'Father', 1, '+447700100008', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(57, 9, 109, 'Amira Siddiq', 'female', '1997-08-03', 27, 'single', 'United Kingdom', 'Edinburgh', 'Pakistani', 'masters', 'Dentist', 'very_practicing', 'conservative', 'Bismillah. I am a dentist who believes in balancing deen and dunya. I love to travel, cook, and spend quality time with family. Seeking a kind, religious partner.', '[\"Dentistry\",\"Travel\",\"Cooking\",\"Family\",\"Quran\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:33:18', '[\"https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Siddiq Hussain', '+447700200009', 'shussain@gmail.com', 'Father', 1, '+447700100009', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(58, 10, 110, 'Ruqayyah Omar', 'female', '1995-12-27', 29, 'divorced', 'United Kingdom', 'London', 'British', 'masters', 'Social Worker', 'practicing', 'moderate', 'MashAllah, I have grown so much through lifes journey. Social worker, mother figure, and community volunteer. Looking for a mature and understanding partner.', '[\"Community Work\",\"Reading\",\"Cooking\",\"Nature\",\"Charity\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 21:53:18', '[\"https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Omar Abdullah', '+447700200010', 'oabdullah@gmail.com', 'Brother', 1, '+447700100010', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(59, 11, 111, 'Khadija Naz', 'female', '1999-04-16', 25, 'single', 'United Kingdom', 'London', 'Pakistani', 'bachelors', 'Physiotherapist', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a physiotherapist who enjoys outdoor activities and Islamic lectures. Wanting to meet someone who is kind, ambitious, and God-fearing.', '[\"Fitness\",\"Islamic Lectures\",\"Hiking\",\"Cooking\",\"Reading\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:45:18', '[\"https://images.unsplash.com/photo-1541823709867-1b206113eafd?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507101105822-7472b28e22ac?w=400&h=600&fit=crop\"]', 'Naz Khan', '+447700200011', 'nkhan@gmail.com', 'Father', 1, '+447700100011', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(60, 12, 112, 'Sumaya Iqbal', 'female', '2000-10-09', 24, 'single', 'United Kingdom', 'Birmingham', 'British', 'bachelors', 'Marketing Manager', 'moderately_practicing', 'moderate', 'JazakAllah for stopping by! Marketing manager with a passion for creativity and travel. Seeking a partner who is supportive, kind, and has a great sense of humour.', '[\"Marketing\",\"Travel\",\"Photography\",\"Cooking\",\"Fitness\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 19:53:18', '[\"https://images.unsplash.com/photo-1548142813-c348350df52b?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1521252659862-eec69941b071?w=400&h=600&fit=crop\"]', 'Iqbal Hussain', '+447700200012', 'ihussain@gmail.com', 'Father', 1, '+447700100012', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(61, 13, 113, 'Hafsa Raza', 'female', '1998-07-21', 26, 'single', 'United Kingdom', 'Manchester', 'Pakistani', 'masters', 'Engineer', 'very_practicing', 'conservative', 'SubhanAllah, engineering is my passion and Islam is my guide. I am looking for a practicing Muslim man who values education, family, and the sunnah.', '[\"Engineering\",\"Quran\",\"Cooking\",\"Reading\",\"Travel\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:08:18', '[\"https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=600&fit=crop\"]', 'Raza Shah', '+447700200013', 'rshah@gmail.com', 'Father', 1, '+447700100013', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(62, 14, 114, 'Asma Baig', 'female', '1996-03-04', 28, 'single', 'United Kingdom', 'Leeds', 'British', 'phd', 'University Lecturer', 'practicing', 'moderate', 'Alhamdulillah I have been blessed with knowledge. I teach at university and love to cook, read, and explore new places. Seeking a calm and intellectual partner.', '[\"Academia\",\"Cooking\",\"Travel\",\"Reading\",\"Yoga\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 00:53:18', '[\"https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504199367641-aba8151af406?w=400&h=600&fit=crop\"]', 'Baig Sahib', '+447700200014', 'baig@gmail.com', 'Father', 1, '+447700100014', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(63, 15, 115, 'Sadia Chaudry', 'female', '2001-09-17', 23, 'single', 'United Kingdom', 'Sheffield', 'Pakistani', 'bachelors', 'IT Analyst', 'practicing', 'moderate', 'Bismillah. Tech-savvy and family-oriented. I work in IT but my real passion is cooking and volunteering at the local masjid. Looking for a warm-hearted partner.', '[\"Technology\",\"Cooking\",\"Volunteering\",\"Fitness\",\"Games\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:28:18', '[\"https://images.unsplash.com/photo-1496360166961-10a51d5f367a?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1485893086445-ed75865251e0?w=400&h=600&fit=crop\"]', 'Chaudry Sahib', '+447700200015', 'chaudry@gmail.com', 'Father', 1, '+447700100015', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(64, 16, 116, 'Naila Butt', 'female', '1999-12-01', 25, 'single', 'United Kingdom', 'Bristol', 'British', 'bachelors', 'Optometrist', 'moderately_practicing', 'moderate', 'MashAllah, eyes are my profession and kindness is my nature. I am an optometrist who loves reading, cooking, and weekend getaways. Looking for genuine connection.', '[\"Health\",\"Reading\",\"Cooking\",\"Travel\",\"Gardening\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-05 01:53:18', '[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\"]', 'Butt Sahib', '+447700200016', 'butt@gmail.com', 'Brother', 1, '+447700100016', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(65, 17, 117, 'Inaya Mirza', 'female', '1997-05-13', 27, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Psychologist', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a psychologist passionate about mental wellness and Islamic spirituality. Seeking an emotionally intelligent, practicing Muslim partner.', '[\"Psychology\",\"Islamic Art\",\"Reading\",\"Meditation\",\"Travel\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:41:18', '[\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Mirza Sahib', '+447700200017', 'mirza@gmail.com', 'Father', 1, '+447700100017', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(66, 18, 118, 'Tasneem Jan', 'female', '2000-08-26', 24, 'single', 'United Kingdom', 'Birmingham', 'British', 'bachelors', 'Journalist', 'practicing', 'moderate', 'JazakAllah for reading this. I am a journalist who believes in truth and purpose. I love to write, cook, and travel. Looking for someone sincere and ambitious.', '[\"Journalism\",\"Writing\",\"Travel\",\"Cooking\",\"Photography\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 20:53:18', '[\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Jan Sahib', '+447700200018', 'jan@gmail.com', 'Father', 1, '+447700100018', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(67, 19, 119, 'Bushra Nawaz', 'female', '1998-01-07', 26, 'single', 'United Kingdom', 'Liverpool', 'Pakistani', 'masters', 'Architect', 'very_practicing', 'conservative', 'SubhanAllah, I design buildings and dream of building a righteous family. I am an architect who values creativity, faith, and community. Looking for my partner.', '[\"Architecture\",\"Design\",\"Quran\",\"Hiking\",\"Cooking\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:35:18', '[\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Nawaz Sahib', '+447700200019', 'nawaz@gmail.com', 'Father', 1, '+447700100019', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(68, 20, 120, 'Rabia Anwar', 'female', '1995-06-30', 29, 'divorced', 'United Kingdom', 'Edinburgh', 'British', 'masters', 'Financial Analyst', 'practicing', 'moderate', 'Alhamdulillah for second chances. I am a financial analyst, strong in faith and in character. Looking for a mature, understanding man ready to build something real.', '[\"Finance\",\"Cooking\",\"Travel\",\"Reading\",\"Charity\"]', 'single', 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 18:53:18', '[\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\"]', 'Anwar Sahib', '+447700200020', 'anwar@gmail.com', 'Brother', 1, '+447700100020', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(69, 21, 121, 'Omar Khan', 'male', '1995-04-12', 29, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Software Engineer', 'very_practicing', 'conservative', 'Assalamu Alaikum! Software engineer by profession, Muslim by identity. I love technology, football, and spending time with family. Seeking a pious, caring wife.', '[\"Technology\",\"Football\",\"Quran\",\"Cooking\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:48:18', '[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\"]', 'Khan Senior', '+447700200021', 'ksenior@gmail.com', 'Father', 1, '+447700100021', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(70, 22, 122, 'Ali Hassan', 'male', '1997-09-18', 27, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Doctor', 'practicing', 'moderate', 'JazakAllah for visiting. I am a junior doctor who values family, faith, and fun. I enjoy hiking, reading Seerah, and cooking. Looking for a kind and practicing wife.', '[\"Medicine\",\"Hiking\",\"Seerah\",\"Cooking\",\"Fitness\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 23:53:18', '[\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Hassan Ali', '+447700200022', 'hali@gmail.com', 'Father', 1, '+447700100022', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(71, 23, 123, 'Yusuf Malik', 'male', '1994-02-25', 30, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Lawyer', 'very_practicing', 'conservative', 'Bismillah. A lawyer who believes justice starts at home. I am well-settled, family-oriented, and deeply committed to my deen. Looking for a practising Muslim wife.', '[\"Law\",\"Reading\",\"Islamic Studies\",\"Travel\",\"Football\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:43:18', '[\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\"]', 'Malik Sahib', '+447700200023', 'msahib@gmail.com', 'Father', 1, '+447700100023', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(72, 24, 124, 'Ibrahim Shah', 'male', '1999-07-07', 25, 'single', 'United Kingdom', 'Leeds', 'British', 'bachelors', 'Accountant', 'practicing', 'moderate', 'Alhamdulillah for this opportunity. I am a young accountant with big dreams. I love sports, cooking, and volunteering. Looking for a wife who shares my values.', '[\"Finance\",\"Sports\",\"Cooking\",\"Volunteering\",\"Reading\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 01:53:18', '[\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\"]', 'Shah Sahib', '+447700200024', 'ssahib@gmail.com', 'Father', 1, '+447700100024', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(73, 25, 125, 'Adam Ahmed', 'male', '1996-11-30', 28, 'single', 'United Kingdom', 'London', 'Pakistani', 'phd', 'University Lecturer', 'very_practicing', 'conservative', 'SubhanAllah, seeking knowledge never ends. I teach Islamic studies and love outdoor sports. Looking for an educated, practicing wife to build a blessed home with.', '[\"Islamic Studies\",\"Sports\",\"Research\",\"Travel\",\"Cooking\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:33:18', '[\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\"]', 'Ahmed Sahib', '+447700200025', 'asahib@gmail.com', 'Father', 1, '+447700100025', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(74, 26, 126, 'Bilal Qureshi', 'male', '1998-05-14', 26, 'single', 'United Kingdom', 'Sheffield', 'British', 'bachelors', 'Civil Engineer', 'practicing', 'moderate', 'MashAllah, I build bridges and want to build a family. Civil engineer who loves cricket, cooking, and community work. Looking for a kind and warm-hearted wife.', '[\"Engineering\",\"Cricket\",\"Cooking\",\"Community\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-19 07:48:03', '2026-03-19 07:48:03', '[\"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\"]', 'Qureshi Senior', '+447700200026', 'qsenior@gmail.com', 'Father', 1, '+447700100026', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(75, 27, 127, 'Zaid Hussain', 'male', '1993-08-22', 31, 'divorced', 'United Kingdom', 'Liverpool', 'Pakistani', 'masters', 'Pharmacist', 'very_practicing', 'conservative', 'Alhamdulillah, I have learned patience through lifes tests. I am a pharmacist who values honesty and piety above all. Looking for a mature, understanding wife.', '[\"Pharmacy\",\"Reading\",\"Quran\",\"Fitness\",\"Cooking\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:38:18', '[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\"]', 'Hussain Senior', '+447700200027', 'hsenior@gmail.com', 'Father', 1, '+447700100027', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(76, 28, 128, 'Hamza Ali', 'male', '2000-01-05', 24, 'single', 'United Kingdom', 'Bristol', 'British', 'bachelors', 'IT Consultant', 'moderately_practicing', 'moderate', 'Bismillah, technology shapes our world. I am an IT consultant who enjoys gaming, cooking, and volunteering at the masjid. Seeking a fun, family-oriented wife.', '[\"Technology\",\"Gaming\",\"Cooking\",\"Masjid\",\"Football\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-06 01:53:18', '[\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Ali Senior', '+447700200028', 'alisen@gmail.com', 'Father', 1, '+447700100028', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(77, 29, 129, 'Tariq Noor', 'male', '1995-10-19', 29, 'single', 'United Kingdom', 'Edinburgh', 'Pakistani', 'masters', 'Business Analyst', 'very_practicing', 'conservative', 'JazakAllah for reading. I am a business analyst who is ambitious, family-oriented, and deeply rooted in my faith. I enjoy travel, sports, and Islamic podcasts.', '[\"Business\",\"Travel\",\"Sports\",\"Islamic Podcasts\",\"Cooking\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:23:18', '[\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Noor Senior', '+447700200029', 'nsenior@gmail.com', 'Father', 1, '+447700100029', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(78, 30, 130, 'Saad Butt', 'male', '1997-03-28', 27, 'single', 'United Kingdom', 'London', 'British', 'bachelors', 'Graphic Designer', 'practicing', 'moderate', 'Assalamu Alaikum! Creative and calm, I design brands and dream of a loving family. I cook, play football, and volunteer. Looking for a caring and God-fearing wife.', '[\"Design\",\"Football\",\"Cooking\",\"Volunteering\",\"Photography\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 21:53:18', '[\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\"]', 'Butt Senior', '+447700200030', 'bsenior@gmail.com', 'Father', 1, '+447700100030', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(79, 31, 131, 'Usman Raza', 'male', '1994-06-11', 30, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Surgeon', 'very_practicing', 'conservative', 'SubhanAllah, I am blessed to save lives. I am a surgeon seeking a pious, educated wife who appreciates both deen and ambition. Family is everything to me.', '[\"Surgery\",\"Islamic History\",\"Travel\",\"Reading\",\"Fitness\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:45:18', '[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Raza Senior', '+447700200031', 'rsenior@gmail.com', 'Father', 1, '+447700100031', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(80, 32, 132, 'Faisal Baig', 'male', '1999-12-24', 25, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Nurse', 'practicing', 'moderate', 'Alhamdulillah I chose a caring profession. I am a male nurse who loves football, cooking, and spending time with family. Seeking a warm and practicing wife.', '[\"Healthcare\",\"Football\",\"Cooking\",\"Family\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 19:53:18', '[\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\"]', 'Baig Senior', '+447700200032', 'baigsn@gmail.com', 'Father', 1, '+447700100032', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(81, 33, 133, 'Hassan Iqbal', 'male', '1996-04-03', 28, 'single', 'United Kingdom', 'Leeds', 'Pakistani', 'masters', 'Data Scientist', 'very_practicing', 'conservative', 'Bismillah, data tells stories and I love mine. Data scientist who prays 5 times, loves cricket, and cooks well. Seeking a pious and educated Muslim wife.', '[\"Data Science\",\"Cricket\",\"Cooking\",\"Quran\",\"Fitness\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:08:18', '[\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Iqbal Senior', '+447700200033', 'iqbalsr@gmail.com', 'Father', 1, '+447700100033', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(82, 34, 134, 'Danish Mirza', 'male', '1993-10-16', 31, 'divorced', 'United Kingdom', 'Sheffield', 'British', 'phd', 'Researcher', 'practicing', 'moderate', 'MashAllah, my research shapes the future. I am a widowed researcher looking for a second chance at love. I value honesty, patience, and a strong connection to Allah.', '[\"Research\",\"Reading\",\"Travel\",\"Cooking\",\"Sports\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 00:53:18', '[\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\"]', 'Mirza Senior', '+447700200034', 'mirzasr@gmail.com', 'Father', 1, '+447700100034', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(83, 35, 135, 'Kamran Jan', 'male', '1998-07-29', 26, 'single', 'United Kingdom', 'Bristol', 'Pakistani', 'bachelors', 'Marketing Manager', 'moderately_practicing', 'moderate', 'Assalamu Alaikum! Marketing manager, cricket enthusiast, and decent cook. I am looking for a fun, caring, and God-conscious wife to build a happy home with.', '[\"Marketing\",\"Cricket\",\"Cooking\",\"Gaming\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:28:18', '[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\"]', 'Jan Senior', '+447700200035', 'jansr@gmail.com', 'Father', 1, '+447700100035', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(84, 36, 136, 'Imran Chaudry', 'male', '1995-02-08', 29, 'single', 'United Kingdom', 'Liverpool', 'British', 'masters', 'Architect', 'very_practicing', 'conservative', 'JazakAllah, architecture is my art and Islam is my foundation. I design beautiful spaces and hope to design a beautiful life. Seeking a practicing and ambitious wife.', '[\"Architecture\",\"Design\",\"Quran\",\"Travel\",\"Football\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-05 01:53:18', '[\"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\"]', 'Chaudry Senior', '+447700200036', 'chaudrys@gmail.com', 'Father', 1, '+447700100036', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(85, 37, 137, 'Raheel Nawaz', 'male', '1997-05-21', 27, 'single', 'United Kingdom', 'Edinburgh', 'Pakistani', 'bachelors', 'Teacher', 'practicing', 'moderate', 'SubhanAllah, teaching is a sadaqah jariyah. I am a secondary school teacher who loves outdoor adventures and cooking. Looking for a kind and faith-driven wife.', '[\"Teaching\",\"Hiking\",\"Cooking\",\"Reading\",\"Community\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:41:18', '[\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\"]', 'Nawaz Senior', '+447700200037', 'nawazsr@gmail.com', 'Father', 1, '+447700100037', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(86, 38, 138, 'Junaid Anwar', 'male', '2000-09-04', 24, 'single', 'United Kingdom', 'London', 'British', 'bachelors', 'Financial Analyst', 'moderately_practicing', 'moderate', 'Alhamdulillah, numbers are my thing. I am a young financial analyst who is ambitious and funny. I love food, travel, and sports. Looking for a supportive life partner.', '[\"Finance\",\"Travel\",\"Sports\",\"Cooking\",\"Photography\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 20:53:18', '[\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Anwar Senior', '+447700200038', 'anwarsr@gmail.com', 'Father', 1, '+447700100038', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(87, 39, 139, 'Waseem Siddiq', 'male', '1996-01-17', 28, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Physiotherapist', 'very_practicing', 'conservative', 'Bismillah, health is wealth. I am a physiotherapist passionate about wellbeing and Islam. I enjoy cooking, reading Seerah, and volunteering. Seeking a pious wife.', '[\"Physiotherapy\",\"Seerah\",\"Cooking\",\"Fitness\",\"Charity\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-08 01:35:18', '[\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\"]', 'Siddiq Senior', '+447700200039', 'siddiqsr@gmail.com', 'Father', 1, '+447700100039', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
-(88, 40, 140, 'Noman Omar', 'male', '1994-11-09', 30, 'single', 'United Kingdom', 'Manchester', 'British', 'phd', 'Psychologist', 'practicing', 'moderate', 'JazakAllah. I am a psychologist who believes in self-growth and community. I enjoy cooking, hiking, and Islamic philosophy. Seeking a warm, educated, and pious wife.', '[\"Psychology\",\"Hiking\",\"Cooking\",\"Philosophy\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-03-08 01:56:05', '2026-03-07 18:53:18', '[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Omar Senior', '+447700200040', 'omarsr@gmail.com', 'Father', 1, '+447700100040', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL);
-
---
--- Triggers `Profiles`
---
-DELIMITER $$
-CREATE TRIGGER `after_profile_insert` AFTER INSERT ON `Profiles` FOR EACH ROW BEGIN
-  INSERT INTO `Prefs` (`profile_id`) VALUES (NEW.id);
-END
-$$
-DELIMITER ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `SequelizeMeta`
---
-
-CREATE TABLE `SequelizeMeta` (
-  `name` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `SequelizeMeta`
---
-
-INSERT INTO `SequelizeMeta` (`name`) VALUES
-('20260210172011-create-user.js'),
-('20260210172223-create-profile.js'),
-('20260210172342-create-otp.js'),
-('20260210172420-create-message.js'),
-('20260210172529-create-match.js'),
-('20260210172647-create-interest.js'),
-('20260210172725-create-guardian.js'),
-('20260218002951-add_missing_user_flags.js'),
-('20260218003219-add_missing_interest_fields.js'),
-('20260218003524-create_dislikes_table.js'),
-('20260218004925-edit_existing_tables.js'),
-('20260218005257-edit_existing_tables.js'),
-('20260218010238-create_guardians_table.js'),
-('20260218011742-create_dislikes_table.js'),
-('20260218012022-create_matches_table.js'),
-('20260218012248-create_messages_table.js'),
-('20260218012309-create_messages_table.js'),
-('20260218013231-create_otps_table.js'),
-('20260218014155-create-profiles.js'),
-('20260218015716-update-users-table.js'),
-('20260226023822-create-guardians.js'),
-('20260226023907-create-profiles.js');
+(2, 60, NULL, 'Waqar Ahmed', 'Male', '2026-04-18', NULL, 'Divorced', 'Pakistan', 'Bhimber', 'Pakistani', 'Bachelor\'s', 'Software Engineer', 'Very Religious', '', '', '[\"Reading\",\"Traveling\",\"Cooking\",\"Coding\"]', '', 0, '2026-02-26 20:14:28', '2026-04-18 19:50:51', '2026-04-18 19:50:51', '[\"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop\",\"/uploads/profiles/profile_60_1776468736595.jpeg\",\"/uploads/profiles/profile_60_1776469175863.jpeg\"]', 'Waqar Ahmed', '+923198349306', 'waqartw1@gmail.com', 'Brother', 1, '+923028349225', 'Islam', 'Sunni', 68, 'Average', 'Mirza', 'Punjabi', 'Private', 'Less than PKR 100,000', 0, 1, 1, 0, NULL, NULL),
+(49, 1, NULL, 'Aisha Khan', 'female', '1998-03-15', 26, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Doctor', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a medical professional who loves cooking and reading Quran. Looking for a kind and practicing partner to build a beautiful family.', '[\"Cooking\",\"Quran\",\"Reading\",\"Travelling\",\"Volunteering\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:43:18', '[\"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop\"]', 'Muhammad Khan', '+447700200001', 'mkhan@gmail.com', 'Father', 1, '+447700100001', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(50, 2, NULL, 'Fatima Ali', 'female', '1999-07-22', 25, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Teacher', 'practicing', 'moderate', 'Alhamdulillah for everything. I am a primary school teacher passionate about education and community work. Seeking a sincere and responsible husband.', '[\"Teaching\",\"Baking\",\"Gardening\",\"Reading\",\"Charity\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-10 02:03:58', '[\"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=600&fit=crop\",\"/uploads/profiles/profile_2_1773020509186.jpg\"]', 'Ahmed Ali', '+447700200002', 'aali@gmail.com', 'Father', 1, '+447700100002', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(51, 3, NULL, 'Zara Mahmood', 'female', '1997-11-08', 27, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Pharmacist', 'very_practicing', 'conservative', 'Bismillah. A pharmacist with a love for learning and nature walks. I value honesty, faith, and family above all else. Ready for the next chapter inshAllah.', '[\"Nature\",\"Hiking\",\"Cooking\",\"Islamic Studies\",\"Fitness\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:48:18', '[\"https://images.unsplash.com/photo-1515023115689-589c33041d3c?w=400&h=600&fit=crop\"]', 'Tariq Mahmood', '+447700200003', 'tmahmood@gmail.com', 'Father', 1, '+447700100003', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(52, 4, NULL, 'Noor Hussain', 'female', '2000-05-30', 24, 'single', 'United Kingdom', 'Leeds', 'British', 'bachelors', 'Nurse', 'practicing', 'moderate', 'JazakAllah Khair for visiting my profile. I am a compassionate nurse who enjoys family time and cooking. Looking for someone who shares my values and faith.', '[\"Cooking\",\"Family\",\"Fitness\",\"Volunteering\",\"Travel\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 01:53:18', '[\"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1526510747491-58f928ec870f?w=400&h=600&fit=crop\"]', 'Hussain Raza', '+447700200004', 'hraza@gmail.com', 'Father', 1, '+447700100004', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(53, 5, NULL, 'Sara Ahmed', 'female', '1996-09-14', 28, 'divorced', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Lawyer', 'practicing', 'moderate', 'MashAllah, life has given me wisdom and strength. I am a lawyer seeking a mature, understanding partner who values growth and a loving home.', '[\"Law\",\"Reading\",\"Cooking\",\"Yoga\",\"Arts\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-09 01:56:59', '[\"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop\"]', 'Usman Ahmed', '+447700200005', 'uahmed@gmail.com', 'Brother', 1, '+447700100005', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(54, 6, NULL, 'Hana Malik', 'female', '1999-01-25', 25, 'single', 'United Kingdom', 'Sheffield', 'British', 'bachelors', 'Graphic Designer', 'moderately_practicing', 'moderate', 'Assalamu Alaikum! Creative soul, graphic designer by day and home baker by night. Looking for someone kind, funny, and God-conscious to share life with.', '[\"Design\",\"Baking\",\"Photography\",\"Travel\",\"Quran\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-09 22:35:28', '[\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop\"]', 'Malik Iqbal', '+447700200006', 'miqbal@gmail.com', 'Father', 1, '+447700100006', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(55, 7, NULL, 'Maryam Shah', 'female', '1998-06-19', 26, 'single', 'United Kingdom', 'Liverpool', 'Pakistani', 'phd', 'Researcher', 'very_practicing', 'conservative', 'SubhanAllah, seeking knowledge is part of my deen. I am a PhD researcher in biochemistry. I want a husband who encourages my growth while building a pious home.', '[\"Research\",\"Islamic History\",\"Cooking\",\"Reading\",\"Cycling\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:38:18', '[\"https://images.unsplash.com/photo-1488508872907-592763824245?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&h=600&fit=crop\"]', 'Shah Nawaz', '+447700200007', 'snawaz@gmail.com', 'Father', 1, '+447700100007', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(56, 8, NULL, 'Layla Qureshi', 'female', '2001-02-11', 23, 'single', 'United Kingdom', 'Bristol', 'British', 'bachelors', 'Accountant', 'practicing', 'moderate', 'Alhamdulillah for this platform. I am a young accountant who loves weekend hikes and trying new recipes. Looking for my best friend in life, inshAllah.', '[\"Hiking\",\"Cooking\",\"Finance\",\"Volunteering\",\"Reading\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-06 01:53:18', '[\"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1523264939339-c89f9dadde2e?w=400&h=600&fit=crop\"]', 'Qureshi Sahab', '+447700200008', 'qureshi@gmail.com', 'Father', 1, '+447700100008', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(57, 9, NULL, 'Amira Siddiq', 'female', '1997-08-03', 27, 'single', 'United Kingdom', 'Edinburgh', 'Pakistani', 'masters', 'Dentist', 'very_practicing', 'conservative', 'Bismillah. I am a dentist who believes in balancing deen and dunya. I love to travel, cook, and spend quality time with family. Seeking a kind, religious partner.', '[\"Dentistry\",\"Travel\",\"Cooking\",\"Family\",\"Quran\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:33:18', '[\"https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Siddiq Hussain', '+447700200009', 'shussain@gmail.com', 'Father', 1, '+447700100009', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(58, 10, NULL, 'Ruqayyah Omar', 'female', '1995-12-27', 29, 'divorced', 'United Kingdom', 'London', 'British', 'masters', 'Social Worker', 'practicing', 'moderate', 'MashAllah, I have grown so much through lifes journey. Social worker, mother figure, and community volunteer. Looking for a mature and understanding partner.', '[\"Community Work\",\"Reading\",\"Cooking\",\"Nature\",\"Charity\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 21:53:18', '[\"https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Omar Abdullah', '+447700200010', 'oabdullah@gmail.com', 'Brother', 1, '+447700100010', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(59, 11, NULL, 'Khadija Naz', 'female', '1999-04-16', 25, 'single', 'United Kingdom', 'London', 'Pakistani', 'bachelors', 'Physiotherapist', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a physiotherapist who enjoys outdoor activities and Islamic lectures. Wanting to meet someone who is kind, ambitious, and God-fearing.', '[\"Fitness\",\"Islamic Lectures\",\"Hiking\",\"Cooking\",\"Reading\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:45:18', '[\"https://images.unsplash.com/photo-1541823709867-1b206113eafd?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507101105822-7472b28e22ac?w=400&h=600&fit=crop\"]', 'Naz Khan', '+447700200011', 'nkhan@gmail.com', 'Father', 1, '+447700100011', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(60, 12, NULL, 'Sumaya Iqbal', 'female', '2000-10-09', 24, 'single', 'United Kingdom', 'Birmingham', 'British', 'bachelors', 'Marketing Manager', 'moderately_practicing', 'moderate', 'JazakAllah for stopping by! Marketing manager with a passion for creativity and travel. Seeking a partner who is supportive, kind, and has a great sense of humour.', '[\"Marketing\",\"Travel\",\"Photography\",\"Cooking\",\"Fitness\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 19:53:18', '[\"https://images.unsplash.com/photo-1548142813-c348350df52b?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1521252659862-eec69941b071?w=400&h=600&fit=crop\"]', 'Iqbal Hussain', '+447700200012', 'ihussain@gmail.com', 'Father', 1, '+447700100012', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(61, 13, NULL, 'Hafsa Raza', 'female', '1998-07-21', 26, 'single', 'United Kingdom', 'Manchester', 'Pakistani', 'masters', 'Engineer', 'very_practicing', 'conservative', 'SubhanAllah, engineering is my passion and Islam is my guide. I am looking for a practicing Muslim man who values education, family, and the sunnah.', '[\"Engineering\",\"Quran\",\"Cooking\",\"Reading\",\"Travel\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:08:18', '[\"https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=600&fit=crop\"]', 'Raza Shah', '+447700200013', 'rshah@gmail.com', 'Father', 1, '+447700100013', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(62, 14, NULL, 'Asma Baig', 'female', '1996-03-04', 28, 'single', 'United Kingdom', 'Leeds', 'British', 'phd', 'University Lecturer', 'practicing', 'moderate', 'Alhamdulillah I have been blessed with knowledge. I teach at university and love to cook, read, and explore new places. Seeking a calm and intellectual partner.', '[\"Academia\",\"Cooking\",\"Travel\",\"Reading\",\"Yoga\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 00:53:18', '[\"https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504199367641-aba8151af406?w=400&h=600&fit=crop\"]', 'Baig Sahib', '+447700200014', 'baig@gmail.com', 'Father', 1, '+447700100014', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(63, 15, NULL, 'Sadia Chaudry', 'female', '2001-09-17', 23, 'single', 'United Kingdom', 'Sheffield', 'Pakistani', 'bachelors', 'IT Analyst', 'practicing', 'moderate', 'Bismillah. Tech-savvy and family-oriented. I work in IT but my real passion is cooking and volunteering at the local masjid. Looking for a warm-hearted partner.', '[\"Technology\",\"Cooking\",\"Volunteering\",\"Fitness\",\"Games\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:28:18', '[\"https://images.unsplash.com/photo-1496360166961-10a51d5f367a?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1485893086445-ed75865251e0?w=400&h=600&fit=crop\"]', 'Chaudry Sahib', '+447700200015', 'chaudry@gmail.com', 'Father', 1, '+447700100015', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(64, 16, NULL, 'Naila Butt', 'female', '1999-12-01', 25, 'single', 'United Kingdom', 'Bristol', 'British', 'bachelors', 'Optometrist', 'moderately_practicing', 'moderate', 'MashAllah, eyes are my profession and kindness is my nature. I am an optometrist who loves reading, cooking, and weekend getaways. Looking for genuine connection.', '[\"Health\",\"Reading\",\"Cooking\",\"Travel\",\"Gardening\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-05 01:53:18', '[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\"]', 'Butt Sahib', '+447700200016', 'butt@gmail.com', 'Brother', 1, '+447700100016', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(65, 17, NULL, 'Inaya Mirza', 'female', '1997-05-13', 27, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Psychologist', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a psychologist passionate about mental wellness and Islamic spirituality. Seeking an emotionally intelligent, practicing Muslim partner.', '[\"Psychology\",\"Islamic Art\",\"Reading\",\"Meditation\",\"Travel\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:41:18', '[\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Mirza Sahib', '+447700200017', 'mirza@gmail.com', 'Father', 1, '+447700100017', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(66, 18, NULL, 'Tasneem Jan', 'female', '2000-08-26', 24, 'single', 'United Kingdom', 'Birmingham', 'British', 'bachelors', 'Journalist', 'practicing', 'moderate', 'JazakAllah for reading this. I am a journalist who believes in truth and purpose. I love to write, cook, and travel. Looking for someone sincere and ambitious.', '[\"Journalism\",\"Writing\",\"Travel\",\"Cooking\",\"Photography\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 20:53:18', '[\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Jan Sahib', '+447700200018', 'jan@gmail.com', 'Father', 1, '+447700100018', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(67, 19, NULL, 'Bushra Nawaz', 'female', '1998-01-07', 26, 'single', 'United Kingdom', 'Liverpool', 'Pakistani', 'masters', 'Architect', 'very_practicing', 'conservative', 'SubhanAllah, I design buildings and dream of building a righteous family. I am an architect who values creativity, faith, and community. Looking for my partner.', '[\"Architecture\",\"Design\",\"Quran\",\"Hiking\",\"Cooking\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:35:18', '[\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Nawaz Sahib', '+447700200019', 'nawaz@gmail.com', 'Father', 1, '+447700100019', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(68, 20, NULL, 'Rabia Anwar', 'female', '1995-06-30', 29, 'divorced', 'United Kingdom', 'Edinburgh', 'British', 'masters', 'Financial Analyst', 'practicing', 'moderate', 'Alhamdulillah for second chances. I am a financial analyst, strong in faith and in character. Looking for a mature, understanding man ready to build something real.', '[\"Finance\",\"Cooking\",\"Travel\",\"Reading\",\"Charity\"]', 'single', 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 18:53:18', '[\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\"]', 'Anwar Sahib', '+447700200020', 'anwar@gmail.com', 'Brother', 1, '+447700100020', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(69, 21, NULL, 'Omar Khan', 'male', '1995-04-12', 29, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Software Engineer', 'very_practicing', 'conservative', 'Assalamu Alaikum! Software engineer by profession, Muslim by identity. I love technology, football, and spending time with family. Seeking a pious, caring wife.', '[\"Technology\",\"Football\",\"Quran\",\"Cooking\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:48:18', '[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\"]', 'Khan Senior', '+447700200021', 'ksenior@gmail.com', 'Father', 1, '+447700100021', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(70, 22, NULL, 'Ali Hassan', 'male', '1997-09-18', 27, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Doctor', 'practicing', 'moderate', 'JazakAllah for visiting. I am a junior doctor who values family, faith, and fun. I enjoy hiking, reading Seerah, and cooking. Looking for a kind and practicing wife.', '[\"Medicine\",\"Hiking\",\"Seerah\",\"Cooking\",\"Fitness\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 23:53:18', '[\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Hassan Ali', '+447700200022', 'hali@gmail.com', 'Father', 1, '+447700100022', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(71, 23, NULL, 'Yusuf Malik', 'male', '1994-02-25', 30, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Lawyer', 'very_practicing', 'conservative', 'Bismillah. A lawyer who believes justice starts at home. I am well-settled, family-oriented, and deeply committed to my deen. Looking for a practising Muslim wife.', '[\"Law\",\"Reading\",\"Islamic Studies\",\"Travel\",\"Football\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:43:18', '[\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\"]', 'Malik Sahib', '+447700200023', 'msahib@gmail.com', 'Father', 1, '+447700100023', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(72, 24, NULL, 'Ibrahim Shah', 'male', '1999-07-07', 25, 'single', 'United Kingdom', 'Leeds', 'British', 'bachelors', 'Accountant', 'practicing', 'moderate', 'Alhamdulillah for this opportunity. I am a young accountant with big dreams. I love sports, cooking, and volunteering. Looking for a wife who shares my values.', '[\"Finance\",\"Sports\",\"Cooking\",\"Volunteering\",\"Reading\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 01:53:18', '[\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\"]', 'Shah Sahib', '+447700200024', 'ssahib@gmail.com', 'Father', 1, '+447700100024', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(73, 25, NULL, 'Adam Ahmed', 'male', '1996-11-30', 28, 'single', 'United Kingdom', 'London', 'Pakistani', 'phd', 'University Lecturer', 'very_practicing', 'conservative', 'SubhanAllah, seeking knowledge never ends. I teach Islamic studies and love outdoor sports. Looking for an educated, practicing wife to build a blessed home with.', '[\"Islamic Studies\",\"Sports\",\"Research\",\"Travel\",\"Cooking\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:33:18', '[\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\"]', 'Ahmed Sahib', '+447700200025', 'asahib@gmail.com', 'Father', 1, '+447700100025', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(74, 26, NULL, 'Bilal Qureshi', 'male', '1998-05-14', 26, 'single', 'United Kingdom', 'Sheffield', 'British', 'bachelors', 'Civil Engineer', 'practicing', 'moderate', 'MashAllah, I build bridges and want to build a family. Civil engineer who loves cricket, cooking, and community work. Looking for a kind and warm-hearted wife.', '[\"Engineering\",\"Cricket\",\"Cooking\",\"Community\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-19 07:48:03', '[\"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\"]', 'Qureshi Senior', '+447700200026', 'qsenior@gmail.com', 'Father', 1, '+447700100026', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(75, 27, NULL, 'Zaid Hussain', 'male', '1993-08-22', 31, 'divorced', 'United Kingdom', 'Liverpool', 'Pakistani', 'masters', 'Pharmacist', 'very_practicing', 'conservative', 'Alhamdulillah, I have learned patience through lifes tests. I am a pharmacist who values honesty and piety above all. Looking for a mature, understanding wife.', '[\"Pharmacy\",\"Reading\",\"Quran\",\"Fitness\",\"Cooking\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:38:18', '[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\"]', 'Hussain Senior', '+447700200027', 'hsenior@gmail.com', 'Father', 1, '+447700100027', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(76, 28, NULL, 'Hamza Ali', 'male', '2000-01-05', 24, 'single', 'United Kingdom', 'Bristol', 'British', 'bachelors', 'IT Consultant', 'moderately_practicing', 'moderate', 'Bismillah, technology shapes our world. I am an IT consultant who enjoys gaming, cooking, and volunteering at the masjid. Seeking a fun, family-oriented wife.', '[\"Technology\",\"Gaming\",\"Cooking\",\"Masjid\",\"Football\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-06 01:53:18', '[\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Ali Senior', '+447700200028', 'alisen@gmail.com', 'Father', 1, '+447700100028', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(77, 29, NULL, 'Tariq Noor', 'male', '1995-10-19', 29, 'single', 'United Kingdom', 'Edinburgh', 'Pakistani', 'masters', 'Business Analyst', 'very_practicing', 'conservative', 'JazakAllah for reading. I am a business analyst who is ambitious, family-oriented, and deeply rooted in my faith. I enjoy travel, sports, and Islamic podcasts.', '[\"Business\",\"Travel\",\"Sports\",\"Islamic Podcasts\",\"Cooking\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:23:18', '[\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Noor Senior', '+447700200029', 'nsenior@gmail.com', 'Father', 1, '+447700100029', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(78, 30, NULL, 'Saad Butt', 'male', '1997-03-28', 27, 'single', 'United Kingdom', 'London', 'British', 'bachelors', 'Graphic Designer', 'practicing', 'moderate', 'Assalamu Alaikum! Creative and calm, I design brands and dream of a loving family. I cook, play football, and volunteer. Looking for a caring and God-fearing wife.', '[\"Design\",\"Football\",\"Cooking\",\"Volunteering\",\"Photography\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 21:53:18', '[\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\"]', 'Butt Senior', '+447700200030', 'bsenior@gmail.com', 'Father', 1, '+447700100030', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(79, 31, NULL, 'Usman Raza', 'male', '1994-06-11', 30, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Surgeon', 'very_practicing', 'conservative', 'SubhanAllah, I am blessed to save lives. I am a surgeon seeking a pious, educated wife who appreciates both deen and ambition. Family is everything to me.', '[\"Surgery\",\"Islamic History\",\"Travel\",\"Reading\",\"Fitness\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:45:18', '[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Raza Senior', '+447700200031', 'rsenior@gmail.com', 'Father', 1, '+447700100031', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(80, 32, NULL, 'Faisal Baig', 'male', '1999-12-24', 25, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Nurse', 'practicing', 'moderate', 'Alhamdulillah I chose a caring profession. I am a male nurse who loves football, cooking, and spending time with family. Seeking a warm and practicing wife.', '[\"Healthcare\",\"Football\",\"Cooking\",\"Family\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 19:53:18', '[\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\"]', 'Baig Senior', '+447700200032', 'baigsn@gmail.com', 'Father', 1, '+447700100032', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(81, 33, NULL, 'Hassan Iqbal', 'male', '1996-04-03', 28, 'single', 'United Kingdom', 'Leeds', 'Pakistani', 'masters', 'Data Scientist', 'very_practicing', 'conservative', 'Bismillah, data tells stories and I love mine. Data scientist who prays 5 times, loves cricket, and cooks well. Seeking a pious and educated Muslim wife.', '[\"Data Science\",\"Cricket\",\"Cooking\",\"Quran\",\"Fitness\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:08:18', '[\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\"]', 'Iqbal Senior', '+447700200033', 'iqbalsr@gmail.com', 'Father', 1, '+447700100033', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(82, 34, NULL, 'Danish Mirza', 'male', '1993-10-16', 31, 'divorced', 'United Kingdom', 'Sheffield', 'British', 'phd', 'Researcher', 'practicing', 'moderate', 'MashAllah, my research shapes the future. I am a widowed researcher looking for a second chance at love. I value honesty, patience, and a strong connection to Allah.', '[\"Research\",\"Reading\",\"Travel\",\"Cooking\",\"Sports\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 00:53:18', '[\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\"]', 'Mirza Senior', '+447700200034', 'mirzasr@gmail.com', 'Father', 1, '+447700100034', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(83, 35, NULL, 'Kamran Jan', 'male', '1998-07-29', 26, 'single', 'United Kingdom', 'Bristol', 'Pakistani', 'bachelors', 'Marketing Manager', 'moderately_practicing', 'moderate', 'Assalamu Alaikum! Marketing manager, cricket enthusiast, and decent cook. I am looking for a fun, caring, and God-conscious wife to build a happy home with.', '[\"Marketing\",\"Cricket\",\"Cooking\",\"Gaming\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:28:18', '[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop\"]', 'Jan Senior', '+447700200035', 'jansr@gmail.com', 'Father', 1, '+447700100035', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(84, 36, NULL, 'Imran Chaudry', 'male', '1995-02-08', 29, 'single', 'United Kingdom', 'Liverpool', 'British', 'masters', 'Architect', 'very_practicing', 'conservative', 'JazakAllah, architecture is my art and Islam is my foundation. I design beautiful spaces and hope to design a beautiful life. Seeking a practicing and ambitious wife.', '[\"Architecture\",\"Design\",\"Quran\",\"Travel\",\"Football\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-05 01:53:18', '[\"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=600&fit=crop\"]', 'Chaudry Senior', '+447700200036', 'chaudrys@gmail.com', 'Father', 1, '+447700100036', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(85, 37, NULL, 'Raheel Nawaz', 'male', '1997-05-21', 27, 'single', 'United Kingdom', 'Edinburgh', 'Pakistani', 'bachelors', 'Teacher', 'practicing', 'moderate', 'SubhanAllah, teaching is a sadaqah jariyah. I am a secondary school teacher who loves outdoor adventures and cooking. Looking for a kind and faith-driven wife.', '[\"Teaching\",\"Hiking\",\"Cooking\",\"Reading\",\"Community\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:41:18', '[\"https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=600&fit=crop\"]', 'Nawaz Senior', '+447700200037', 'nawazsr@gmail.com', 'Father', 1, '+447700100037', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(86, 38, NULL, 'Junaid Anwar', 'male', '2000-09-04', 24, 'single', 'United Kingdom', 'London', 'British', 'bachelors', 'Financial Analyst', 'moderately_practicing', 'moderate', 'Alhamdulillah, numbers are my thing. I am a young financial analyst who is ambitious and funny. I love food, travel, and sports. Looking for a supportive life partner.', '[\"Finance\",\"Travel\",\"Sports\",\"Cooking\",\"Photography\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 20:53:18', '[\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop\"]', 'Anwar Senior', '+447700200038', 'anwarsr@gmail.com', 'Father', 1, '+447700100038', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(87, 39, NULL, 'Waseem Siddiq', 'male', '1996-01-17', 28, 'single', 'United Kingdom', 'Birmingham', 'Pakistani', 'masters', 'Physiotherapist', 'very_practicing', 'conservative', 'Bismillah, health is wealth. I am a physiotherapist passionate about wellbeing and Islam. I enjoy cooking, reading Seerah, and volunteering. Seeking a pious wife.', '[\"Physiotherapy\",\"Seerah\",\"Cooking\",\"Fitness\",\"Charity\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-08 01:35:18', '[\"https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=600&fit=crop\"]', 'Siddiq Senior', '+447700200039', 'siddiqsr@gmail.com', 'Father', 1, '+447700100039', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL),
+(88, 40, NULL, 'Noman Omar', 'male', '1994-11-09', 30, 'single', 'United Kingdom', 'Manchester', 'British', 'phd', 'Psychologist', 'practicing', 'moderate', 'JazakAllah. I am a psychologist who believes in self-growth and community. I enjoy cooking, hiking, and Islamic philosophy. Seeking a warm, educated, and pious wife.', '[\"Psychology\",\"Hiking\",\"Cooking\",\"Philosophy\",\"Travel\"]', NULL, 0, '2026-03-08 01:53:18', '2026-04-17 23:55:54', '2026-03-07 18:53:18', '[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=400&h=600&fit=crop\"]', 'Omar Senior', '+447700200040', 'omarsr@gmail.com', 'Father', 1, '+447700100040', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -584,66 +560,67 @@ INSERT INTO `SequelizeMeta` (`name`) VALUES
 --
 
 CREATE TABLE `Users` (
-  `id` bigint(20) NOT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `mobile` varchar(20) DEFAULT NULL,
-  `password_hash` varchar(255) DEFAULT NULL,
-  `role` enum('individual','guardian','admin') NOT NULL,
-  `is_online` tinyint(1) NOT NULL DEFAULT 0,
-  `is_suspended` tinyint(1) NOT NULL DEFAULT 0,
-  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
-  `is_verified` tinyint(1) NOT NULL DEFAULT 0,
-  `is_premium` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `id` bigint NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `mobile` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `role` enum('individual','guardian','admin','staff') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'individual',
+  `is_online` tinyint(1) DEFAULT '0',
+  `is_suspended` tinyint(1) DEFAULT '0',
+  `is_deleted` tinyint(1) DEFAULT '0',
+  `is_verified` tinyint(1) DEFAULT '0',
+  `is_premium` tinyint(1) DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  `avatar_url` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Users`
 --
 
-INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `is_online`, `is_suspended`, `is_deleted`, `is_verified`, `is_premium`, `created_at`, `updated_at`) VALUES
-(1, 'aisha.khan@gmail.com', '+447700100001', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(2, 'fatima.ali@gmail.com', '+447700100002', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(3, 'zara.mahmood@gmail.com', '+447700100003', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(4, 'noor.hussain@gmail.com', '+447700100004', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(5, 'sara.ahmed@gmail.com', '+447700100005', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(6, 'hana.malik@gmail.com', '+447700100006', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(7, 'maryam.shah@gmail.com', '+447700100007', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(8, 'layla.qureshi@gmail.com', '+447700100008', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(9, 'amira.siddiq@gmail.com', '+447700100009', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(10, 'ruqayyah.omar@gmail.com', '+447700100010', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(11, 'khadija.naz@gmail.com', '+447700100011', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(12, 'sumaya.iqbal@gmail.com', '+447700100012', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(13, 'hafsa.raza@gmail.com', '+447700100013', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(14, 'asma.baig@gmail.com', '+447700100014', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(15, 'sadia.chaudry@gmail.com', '+447700100015', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(16, 'naila.butt@gmail.com', '+447700100016', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(17, 'inaya.mirza@gmail.com', '+447700100017', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(18, 'tasneem.jan@gmail.com', '+447700100018', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(19, 'bushra.nawaz@gmail.com', '+447700100019', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(20, 'rabia.anwar@gmail.com', '+447700100020', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(21, 'omar.khan@gmail.com', '+447700100021', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(22, 'ali.hassan@gmail.com', '+447700100022', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(23, 'yusuf.malik@gmail.com', '+447700100023', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(24, 'ibrahim.shah@gmail.com', '+447700100024', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(25, 'adam.ahmed@gmail.com', '+447700100025', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(26, 'bilal.qureshi@gmail.com', '+447700100026', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(27, 'zaid.hussain@gmail.com', '+447700100027', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(28, 'hamza.ali@gmail.com', '+447700100028', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(29, 'tariq.noor@gmail.com', '+447700100029', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(30, 'saad.butt@gmail.com', '+447700100030', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(31, 'usman.raza@gmail.com', '+447700100031', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(32, 'faisal.baig@gmail.com', '+447700100032', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(33, 'hassan.iqbal@gmail.com', '+447700100033', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(34, 'danish.mirza@gmail.com', '+447700100034', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(35, 'kamran.jan@gmail.com', '+447700100035', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(36, 'imran.chaudry@gmail.com', '+447700100036', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(37, 'raheel.nawaz@gmail.com', '+447700100037', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(38, 'junaid.anwar@gmail.com', '+447700100038', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(39, 'waseem.siddiq@gmail.com', '+447700100039', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(40, 'noman.omar@gmail.com', '+447700100040', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
-(60, 'waqarcoding@gmail.com', '03001234567', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-02-26 20:14:28', '2026-04-15 01:30:34');
+INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `is_online`, `is_suspended`, `is_deleted`, `is_verified`, `is_premium`, `created_at`, `updated_at`, `avatar_url`) VALUES
+(1, 'aisha.khan@gmail.com', '+447700100001', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 0, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(2, 'fatima.ali@gmail.com', '+447700100002', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(3, 'zara.mahmood@gmail.com', '+447700100003', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(4, 'noor.hussain@gmail.com', '+447700100004', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(5, 'sara.ahmed@gmail.com', '+447700100005', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(6, 'hana.malik@gmail.com', '+447700100006', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(7, 'maryam.shah@gmail.com', '+447700100007', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(8, 'layla.qureshi@gmail.com', '+447700100008', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(9, 'amira.siddiq@gmail.com', '+447700100009', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(10, 'ruqayyah.omar@gmail.com', '+447700100010', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(11, 'khadija.naz@gmail.com', '+447700100011', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(12, 'sumaya.iqbal@gmail.com', '+447700100012', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(13, 'hafsa.raza@gmail.com', '+447700100013', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(14, 'asma.baig@gmail.com', '+447700100014', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(15, 'sadia.chaudry@gmail.com', '+447700100015', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(16, 'naila.butt@gmail.com', '+447700100016', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(17, 'inaya.mirza@gmail.com', '+447700100017', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(18, 'tasneem.jan@gmail.com', '+447700100018', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(19, 'bushra.nawaz@gmail.com', '+447700100019', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(20, 'rabia.anwar@gmail.com', '+447700100020', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(21, 'omar.khan@gmail.com', '+447700100021', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(22, 'ali.hassan@gmail.com', '+447700100022', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(23, 'yusuf.malik@gmail.com', '+447700100023', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(24, 'ibrahim.shah@gmail.com', '+447700100024', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(25, 'adam.ahmed@gmail.com', '+447700100025', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(26, 'bilal.qureshi@gmail.com', '+447700100026', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(27, 'zaid.hussain@gmail.com', '+447700100027', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(28, 'hamza.ali@gmail.com', '+447700100028', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(29, 'tariq.noor@gmail.com', '+447700100029', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(30, 'saad.butt@gmail.com', '+447700100030', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(31, 'usman.raza@gmail.com', '+447700100031', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(32, 'faisal.baig@gmail.com', '+447700100032', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(33, 'hassan.iqbal@gmail.com', '+447700100033', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(34, 'danish.mirza@gmail.com', '+447700100034', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(35, 'kamran.jan@gmail.com', '+447700100035', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(36, 'imran.chaudry@gmail.com', '+447700100036', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 0, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(37, 'raheel.nawaz@gmail.com', '+447700100037', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(38, 'junaid.anwar@gmail.com', '+447700100038', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(39, 'waseem.siddiq@gmail.com', '+447700100039', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(40, 'noman.omar@gmail.com', '+447700100040', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 0, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08', NULL),
+(60, 'waqarcoding@gmail.com', '03001234567', '$2b$10$Orx1gzoZ5rC0Q7zDbK.J8OIKQN.DWw3Ica0et3ROEap4WlqL/9.AW', 'individual', 0, 0, 0, 1, 0, '2026-02-26 20:14:28', '2026-04-18 19:46:31', NULL);
 
 --
 -- Indexes for dumped tables
@@ -654,33 +631,32 @@ INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `is_onlin
 --
 ALTER TABLE `Dislikes`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_user_target_dislike` (`user_id`,`target_user_id`),
-  ADD KEY `fk_dislikes_target_user` (`target_user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `target_user_id` (`target_user_id`);
 
 --
 -- Indexes for table `Guardians`
 --
 ALTER TABLE `Guardians`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_individual_guardian` (`individual_id`,`guardian_id`),
-  ADD KEY `fk_guardians_guardian` (`guardian_id`);
+  ADD UNIQUE KEY `guardians_individual_id_guardian_id` (`individual_id`,`guardian_id`),
+  ADD KEY `guardian_id` (`guardian_id`);
 
 --
 -- Indexes for table `Interests`
 --
 ALTER TABLE `Interests`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_from_user` (`from_user`),
-  ADD KEY `fk_to_user` (`to_user`);
+  ADD KEY `from_user` (`from_user`),
+  ADD KEY `to_user` (`to_user`);
 
 --
 -- Indexes for table `Matches`
 --
 ALTER TABLE `Matches`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_match_pair` (`user1`,`user2`),
-  ADD UNIQUE KEY `unique_match` (`user1`,`user2`),
-  ADD KEY `fk_matches_user2` (`user2`),
+  ADD KEY `user1` (`user1`),
+  ADD KEY `user2` (`user2`),
   ADD KEY `interest_id` (`interest_id`);
 
 --
@@ -688,38 +664,31 @@ ALTER TABLE `Matches`
 --
 ALTER TABLE `Messages`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_messages_sender` (`sender_id`),
-  ADD KEY `fk_messages_receiver` (`receiver_id`),
-  ADD KEY `fk_messages_interest` (`interest_id`);
+  ADD KEY `sender_id` (`sender_id`),
+  ADD KEY `receiver_id` (`receiver_id`),
+  ADD KEY `interest_id` (`interest_id`);
 
 --
 -- Indexes for table `Otps`
 --
 ALTER TABLE `Otps`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_otps_user` (`user_id`);
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `Prefs`
 --
 ALTER TABLE `Prefs`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `profile_id` (`individual_id`);
+  ADD KEY `individual_id` (`individual_id`);
 
 --
 -- Indexes for table `Profiles`
 --
 ALTER TABLE `Profiles`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_profiles_individual` (`individual_id`),
-  ADD KEY `fk_profiles_guardian` (`guardian_id`);
-
---
--- Indexes for table `SequelizeMeta`
---
-ALTER TABLE `SequelizeMeta`
-  ADD PRIMARY KEY (`name`),
-  ADD UNIQUE KEY `name` (`name`);
+  ADD KEY `individual_id` (`individual_id`),
+  ADD KEY `guardian_id` (`guardian_id`);
 
 --
 -- Indexes for table `Users`
@@ -727,7 +696,35 @@ ALTER TABLE `SequelizeMeta`
 ALTER TABLE `Users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `email` (`email`),
-  ADD UNIQUE KEY `mobile` (`mobile`);
+  ADD UNIQUE KEY `mobile` (`mobile`),
+  ADD UNIQUE KEY `email_2` (`email`),
+  ADD UNIQUE KEY `mobile_2` (`mobile`),
+  ADD UNIQUE KEY `email_3` (`email`),
+  ADD UNIQUE KEY `mobile_3` (`mobile`),
+  ADD UNIQUE KEY `email_4` (`email`),
+  ADD UNIQUE KEY `mobile_4` (`mobile`),
+  ADD UNIQUE KEY `email_5` (`email`),
+  ADD UNIQUE KEY `mobile_5` (`mobile`),
+  ADD UNIQUE KEY `email_6` (`email`),
+  ADD UNIQUE KEY `mobile_6` (`mobile`),
+  ADD UNIQUE KEY `email_7` (`email`),
+  ADD UNIQUE KEY `mobile_7` (`mobile`),
+  ADD UNIQUE KEY `email_8` (`email`),
+  ADD UNIQUE KEY `mobile_8` (`mobile`),
+  ADD UNIQUE KEY `email_9` (`email`),
+  ADD UNIQUE KEY `mobile_9` (`mobile`),
+  ADD UNIQUE KEY `email_10` (`email`),
+  ADD UNIQUE KEY `mobile_10` (`mobile`),
+  ADD UNIQUE KEY `email_11` (`email`),
+  ADD UNIQUE KEY `mobile_11` (`mobile`),
+  ADD UNIQUE KEY `email_12` (`email`),
+  ADD UNIQUE KEY `mobile_12` (`mobile`),
+  ADD UNIQUE KEY `email_13` (`email`),
+  ADD UNIQUE KEY `mobile_13` (`mobile`),
+  ADD UNIQUE KEY `email_14` (`email`),
+  ADD UNIQUE KEY `mobile_14` (`mobile`),
+  ADD UNIQUE KEY `email_15` (`email`),
+  ADD UNIQUE KEY `mobile_15` (`mobile`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -737,55 +734,55 @@ ALTER TABLE `Users`
 -- AUTO_INCREMENT for table `Dislikes`
 --
 ALTER TABLE `Dislikes`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Guardians`
 --
 ALTER TABLE `Guardians`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Interests`
 --
 ALTER TABLE `Interests`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=205;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=215;
 
 --
 -- AUTO_INCREMENT for table `Matches`
 --
 ALTER TABLE `Matches`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Messages`
 --
 ALTER TABLE `Messages`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=167;
 
 --
 -- AUTO_INCREMENT for table `Otps`
 --
 ALTER TABLE `Otps`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=153;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=184;
 
 --
 -- AUTO_INCREMENT for table `Prefs`
 --
 ALTER TABLE `Prefs`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Profiles`
 --
 ALTER TABLE `Profiles`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=89;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=91;
 
 --
 -- AUTO_INCREMENT for table `Users`
 --
 ALTER TABLE `Users`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- Constraints for dumped tables
@@ -795,57 +792,57 @@ ALTER TABLE `Users`
 -- Constraints for table `Dislikes`
 --
 ALTER TABLE `Dislikes`
-  ADD CONSTRAINT `fk_dislikes_target_user` FOREIGN KEY (`target_user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_dislikes_user` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Dislikes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Dislikes_ibfk_2` FOREIGN KEY (`target_user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Guardians`
 --
 ALTER TABLE `Guardians`
-  ADD CONSTRAINT `fk_guardians_guardian` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_guardians_individual` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Guardians_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Guardians_ibfk_2` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Interests`
 --
 ALTER TABLE `Interests`
-  ADD CONSTRAINT `fk_from_user` FOREIGN KEY (`from_user`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_to_user` FOREIGN KEY (`to_user`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `Interests_ibfk_1` FOREIGN KEY (`from_user`) REFERENCES `Profiles` (`individual_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Interests_ibfk_2` FOREIGN KEY (`to_user`) REFERENCES `Profiles` (`individual_id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD CONSTRAINT `fk_match_interest` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `fk_matches_user1` FOREIGN KEY (`user1`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_matches_user2` FOREIGN KEY (`user2`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Matches_ibfk_7` FOREIGN KEY (`user1`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Matches_ibfk_8` FOREIGN KEY (`user2`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Matches_ibfk_9` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Messages`
 --
 ALTER TABLE `Messages`
-  ADD CONSTRAINT `fk_messages_interest` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_messages_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Messages_ibfk_7` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Messages_ibfk_8` FOREIGN KEY (`receiver_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Messages_ibfk_9` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Otps`
 --
 ALTER TABLE `Otps`
-  ADD CONSTRAINT `fk_otps_user` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Otps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Prefs`
 --
 ALTER TABLE `Prefs`
-  ADD CONSTRAINT `fk_prefs_profile` FOREIGN KEY (`individual_id`) REFERENCES `Profiles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Prefs_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Profiles` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Profiles`
 --
 ALTER TABLE `Profiles`
-  ADD CONSTRAINT `fk_profiles_guardian` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_profiles_individual` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `Profiles_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `Profiles_ibfk_2` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

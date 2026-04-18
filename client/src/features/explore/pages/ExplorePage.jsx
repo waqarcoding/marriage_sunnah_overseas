@@ -11,12 +11,14 @@ import { Badge } from "../../../components/ui/badge";
 import FilterRow from "../components/filter";
 import ProfileService from "../../profile/api/ProfileService";
 import AuthApi from "../../auth/api/AuthService";
+import AuthService from "../../auth/api/AuthService";
 
 
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const parseImages = (profile) => {
+    // @ts-ignore
     const base = import.meta.env.VITE_BASE_URL || "";
     let imgs = [];
     if (profile.images) {
@@ -39,6 +41,7 @@ const parseInterests = (profile) => {
 
 const formatLastSeen = (dateStr) => {
     if (!dateStr) return "Offline";
+    // @ts-ignore
     const diff = (Date.now() - new Date(dateStr)) / 1000;
     if (diff < 60) return "Active now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -46,6 +49,7 @@ const formatLastSeen = (dateStr) => {
     return `${Math.floor(diff / 86400)}d ago`;
 };
 
+// @ts-ignore
 const isOnline = (dateStr) => dateStr && (Date.now() - new Date(dateStr)) / 1000 < 3600;
 
 
@@ -355,13 +359,8 @@ export default function ExplorePage({ onProfileClick }) {
     const navigate = useNavigate();
     const qc = useQueryClient();
     useEffect(() => {
-        if (!AuthApi.checkProfileCompleted()) {
-            navigate("/profilesetup", { replace: true });
-        } else if (!AuthApi.checkIsVerfied()) {
-            navigate("/verification", { replace: true });
-        }
+        AuthApi.checkProfile(navigate);
     }, []);
-
     useEffect(() => { fetchProfiles(); }, []);
 
     useEffect(() => {
