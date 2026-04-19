@@ -204,7 +204,7 @@ export const notifyGuardianApproved = (wardUserId, data) => {
         type: 'guardian_approved',
         interest_id: data.interest_id,
         guardian_id: data.guardian_id,
-        guardian_name: data.guardian_name,
+
         guardian_avatar: data.guardian_avatar,
         approved_for: data.approved_for, // 'send' | 'accept'
         approved_at: new Date().toISOString(),
@@ -221,7 +221,7 @@ export const notifyGuardianRejected = (wardUserId, data) => {
         type: 'guardian_rejected',
         interest_id: data.interest_id,
         guardian_id: data.guardian_id,
-        guardian_name: data.guardian_name,
+
         guardian_avatar: data.guardian_avatar,
         rejected_at: new Date().toISOString(),
     });

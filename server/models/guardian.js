@@ -11,13 +11,17 @@ module.exports = (sequelize, DataTypes) => {
 
   Guardian.init({
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
-
     individual_id: { type: DataTypes.BIGINT, allowNull: false },
+
     guardian_id: { type: DataTypes.BIGINT, allowNull: false },
 
-    name: { type: DataTypes.STRING, allowNull: true },
+    guardian_name: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
+    guardian_phone: { type: DataTypes.STRING(50), allowNull: true, defaultValue: null },
+    guardian_email: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
+    guardian_relationship: { type: DataTypes.STRING(100), allowNull: true, defaultValue: null },
+    guardian_image: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
     image: { type: DataTypes.STRING, allowNull: true },
-    relationship: { type: DataTypes.STRING, allowNull: true },
+
     contact_hidden: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 
   }, {

@@ -13,7 +13,9 @@ const {
     notifyInterestCount,
 } = require('../config/socket');
 
-// ── Guardian table: individual_id, guardian_id, name, image ──
+// ── Guardian table fields (latest): 
+// id, individual_id, guardian_id, image, contact_hidden, created_at, updated_at,
+// guardian_name, guardian_phone, guardian_email, guardian_relationship, guardian_image
 
 // ── Helper: guardian pending count ───────────────────────────
 const pushGuardianPendingCount = async (guardianUserId) => {
@@ -111,9 +113,24 @@ exports.assignGuardian = async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 exports.getMyGuardian = async (req, res) => {
     try {
-        // Guardian table has its own name, image fields
+        // Guardian table now has extended fields
         const row = await Guardian.findOne({
             where: { individual_id: req.user.id },
+            attributes: [
+                // Full guardian record including latest fields
+                'id',
+                'individual_id',
+                'guardian_id',
+                'image',
+                'contact_hidden',
+                'created_at',
+                'updated_at',
+                'guardian_name',
+                'guardian_phone',
+                'guardian_email',
+                'guardian_relationship',
+                'guardian_image',
+            ],
             include: [{
                 model: User,
                 as: 'guardian',
@@ -249,10 +266,18 @@ exports.approveInterest = async (req, res) => {
         if (!interest)
             return res.status(404).json({ success: false, message: 'Interest not found' });
 
-        // Guardian table has name and image fields directly
+        // The Guardian table contains the latest guardian info fields per ward.
         const guardianRow = await Guardian.findOne({
             where: { guardian_id: guardianId, individual_id: interest.to_user },
-            attributes: ['name', 'image'],
+            attributes: [
+                'guardian_name',
+                'guardian_phone',
+                'guardian_email',
+                'guardian_relationship',
+                'guardian_image',
+                'name', // legacy support
+                'image', // legacy support
+            ],
         });
 
         await interest.update({
@@ -264,10 +289,14 @@ exports.approveInterest = async (req, res) => {
         notifyGuardianApproved(interest.to_user, {
             interest_id: interest.id,
             guardian_id: guardianId,
-            guardian_name: guardianRow?.name || '',
-            guardian_avatar: guardianRow?.image || null,
+            guardian_name: guardianRow?.guardian_name || guardianRow?.name || '',
+            guardian_phone: guardianRow?.guardian_phone || '',
+            guardian_email: guardianRow?.guardian_email || '',
+            guardian_relationship: guardianRow?.guardian_relationship || '',
+            guardian_avatar: guardianRow?.guardian_image || guardianRow?.image || null,
             approved_for: 'accept',
         });
+
 
         // 🔔 Notify receiver the interest is now active
         notifyInterestReceived(interest.to_user, {
@@ -314,7 +343,15 @@ exports.rejectInterest = async (req, res) => {
 
         const guardianRow = await Guardian.findOne({
             where: { guardian_id: guardianId, individual_id: interest.to_user },
-            attributes: ['name', 'image'],
+            attributes: [
+                'guardian_name',
+                'guardian_phone',
+                'guardian_email',
+                'guardian_relationship',
+                'guardian_image',
+                'name', // legacy support
+                'image', // legacy support
+            ],
         });
 
         await interest.update({ guardian_approved: false, status: 'declined' });
@@ -323,8 +360,8 @@ exports.rejectInterest = async (req, res) => {
         notifyGuardianRejected(interest.to_user, {
             interest_id: interest.id,
             guardian_id: guardianId,
-            guardian_name: guardianRow?.name || '',
-            guardian_avatar: guardianRow?.image || null,
+            guardian_name: guardianRow?.guardian_name || guardianRow?.name || '',
+            guardian_avatar: guardianRow?.guardian_image || guardianRow?.image || null,
         });
 
         await pushGuardianPendingCount(guardianId);

@@ -1,3 +1,15 @@
+# Access via phpMyAdmin (open in browser)
+# http://137.184.195.52:8080
+# Username: waqarcoding
+# Password: Root123Root
+
+
+#After  change code run this developer mode
+docker restart marriage-backend && docker compose -f docker-compose.dev.yml up
+#After  change code run this live mode
+docker restart marriage-backend && docker compose -f docker-compose.yml up
+
+
 # This mounts your source code into the container so changes reflect instantly with hot reload on http://localhost:3000.
 
 docker compose -f docker-compose.dev.yml up
@@ -5,6 +17,9 @@ docker compose -f docker-compose.dev.yml up --build
 docker compose -f docker-compose.dev.yml down
 docker compose -f docker-compose.dev.yml logs -f
 docker logs -f marriage-backend
+
+#check container running 
+docker ps -a | grep frontend
 
 
 
@@ -23,6 +38,40 @@ sequelize.sync({ alter: true })
 docker ps
 #All containers are running. Now test if backend is reachable from frontend:
 docker exec marriage-frontend wget -qO- http://marriage-backend:5000
+
+
+
+# ------------------------------------------------------------
+# DATABASE - marriage_sunna_overseas
+# ------------------------------------------------------------
+
+# Login to MySQL inside container
+docker exec -it marriage-db mysql -u root -pRoot123Root
+
+# Login directly to your database
+docker exec -it marriage-db mysql -u waqarcoding -pRoot123Root marriage_sunna_overseas
+
+# Login as root to your database
+docker exec -it marriage-db mysql -u root -pRoot123Root marriage_sunna_overseas
+
+# Useful MySQL commands (run after logging in)
+# SHOW DATABASES;                    # list all databases
+# USE marriage_sunna_overseas;       # switch to your database
+# SHOW TABLES;                       # list all tables
+# DESCRIBE <table_name>;             # show table structure
+# SELECT * FROM <table_name>;        # view all rows in a table
+# EXIT;                              # exit MySQL shell
+
+# Backup your database
+docker exec marriage-db mysqldump -u root -pRoot123Root marriage_sunna_overseas > /root/backup.sql
+
+# Restore your database
+docker exec -i marriage-db mysql -u root -pRoot123Root marriage_sunna_overseas < /root/backup.sql
+
+
+
+
+
 
 #!/bin/bash
 # ============================================================
@@ -154,36 +203,3 @@ du -sh /var/lib/containerd            # containerd folder size
 
 # Clean before build (run when disk is full)
 docker system prune -a -f && docker builder prune -a -f
-
-
-# ------------------------------------------------------------
-# DATABASE - marriage_sunna_overseas
-# ------------------------------------------------------------
-
-# Login to MySQL inside container
-docker exec -it marriage-db mysql -u root -pRoot123Root
-
-# Login directly to your database
-docker exec -it marriage-db mysql -u waqarcoding -pRoot123Root marriage_sunna_overseas
-
-# Login as root to your database
-docker exec -it marriage-db mysql -u root -pRoot123Root marriage_sunna_overseas
-
-# Useful MySQL commands (run after logging in)
-# SHOW DATABASES;                    # list all databases
-# USE marriage_sunna_overseas;       # switch to your database
-# SHOW TABLES;                       # list all tables
-# DESCRIBE <table_name>;             # show table structure
-# SELECT * FROM <table_name>;        # view all rows in a table
-# EXIT;                              # exit MySQL shell
-
-# Backup your database
-docker exec marriage-db mysqldump -u root -pRoot123Root marriage_sunna_overseas > /root/backup.sql
-
-# Restore your database
-docker exec -i marriage-db mysql -u root -pRoot123Root marriage_sunna_overseas < /root/backup.sql
-
-# Access via phpMyAdmin (open in browser)
-# http://137.184.195.52:8080
-# Username: waqarcoding
-# Password: Root123Root

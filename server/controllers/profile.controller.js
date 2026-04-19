@@ -3,7 +3,6 @@
 const db = require('../models');
 const { User, Profile, Guardian, Match, Message, Interest, Dislike, Preference } = db;
 const { Op } = require('sequelize');
-const enumVal = (value) => (value === "" || value === undefined ? null : value);
 
 module.exports = {
   // 1️⃣ Create or update profile
@@ -218,31 +217,34 @@ module.exports = {
         return res.status(404).json({ success: false, message: "Profile not found" });
       }
 
-      // Assign all fields manually then save (more reliable than .update())
+      // Assign all fields manually then save (schema-based per columns list)
       profile.name = name;
       profile.gender = gender;
       profile.date_of_birth = date_of_birth;
-      profile.age = age;
-      profile.marital_status = marital_status;
-      profile.phone = phone;
-      profile.country = country;
-      profile.city = city;
-      profile.nationality = nationality;
-      profile.religion = enumVal(religion);                 // ✅ ENUM
-      profile.sect = enumVal(sect);                     // ✅ ENUM
-      profile.religious_practice_level = religious_practice_level;
-      profile.caste = caste;
-      profile.mother_tongue = enumVal(mother_tongue);            // ✅ ENUM
+      profile.age = age !== undefined ? age : null;
+      profile.marital_status = marital_status || null;
+      profile.country = country || null;
+      profile.city = city || null;
+      profile.nationality = nationality || null;
+      profile.education = education || null;
+      profile.profession = profession || null;
+      profile.religious_practice_level = religious_practice_level || null;
+      profile.family_background = family_background || null;
+      profile.bio = bio || null;
+      profile.interests = parsedInterests || "[]";
+      profile.relationship = relationship || null;
+      // tinyint(1) fields: contact_hidden/is_guardian_required/has_children handled below,
+      // see original code
+      profile.phone = phone || null;
+      profile.religion = religion || null;
+      profile.sect = sect || null;
       profile.height_inches = height_inches !== undefined ? height_inches : null;
-      profile.body_type = enumVal(body_type);                // ✅ ENUM
-      profile.education = education;
-      profile.profession = profession;
-      profile.employment_type = enumVal(employment_type);          // ✅ ENUM
-      profile.monthly_salary = enumVal(monthly_salary);           // ✅ ENUM
-      profile.bio = bio;
-      profile.family_background = family_background;
-      profile.interests = parsedInterests;
-      profile.has_children = enumVal(has_children);             // ✅ ENUM
+      profile.body_type = body_type || null;
+      profile.caste = caste || null;
+      profile.mother_tongue = mother_tongue || null;
+      profile.employment_type = employment_type || null;
+      profile.monthly_salary = monthly_salary || null;
+      profile.has_children = has_children !== undefined ? Number(has_children) : null;
       profile.willing_to_relocate =
         willing_to_relocate === "Yes" ? 1
           : willing_to_relocate === "No" ? 0
@@ -251,10 +253,7 @@ module.exports = {
       profile.relationship = relationship;
       profile.contact_hidden = contact_hidden !== undefined ? Number(contact_hidden) : profile.contact_hidden;
       profile.is_guardian_required = is_guardian_required !== undefined ? Number(is_guardian_required) : null;
-      profile.guardian_name = guardian_name;
-      profile.guardian_phone = guardian_phone;
-      profile.guardian_email = guardian_email;
-      profile.guardian_relationship = guardian_relationship;
+
       profile.is_profile_completed = is_profile_completed !== undefined ? Number(is_profile_completed) : null;
       await profile.save();
 

@@ -2,9 +2,14 @@
     "compilerOptions": {
         "forceConsistentCasingInFileNames": false,
         "checkJs": true,
+        "allowJs": true,
+        "noImplicitAny": false,
+        "strict": false,
+        "skipLibCheck": true,
         "jsx": "react-jsx"
     },
     "include": [
-        "src"
+        "src",
+        "../server/config/profileOptions.js"
     ]
 }

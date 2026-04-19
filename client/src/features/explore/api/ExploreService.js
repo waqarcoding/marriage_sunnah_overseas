@@ -4,7 +4,13 @@ class ExploreService {
     constructor() {
         this.base = "/explore";
     }
+    getOptions() {
+        return Api.get(`${this.base}/options`)
+    }
 
+    getCountryOptions(country) {
+        return Api.get(`${this.base}/country/${encodeURIComponent(country)}`)
+    }
     // ---------------- Get Explore ----------------
     async getExplore(filters = {}) {
         const params = new URLSearchParams();
