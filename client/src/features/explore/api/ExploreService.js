@@ -11,6 +11,7 @@ class ExploreService {
     getCountryOptions(country) {
         return Api.get(`${this.base}/country/${encodeURIComponent(country)}`)
     }
+
     // ---------------- Get Explore ----------------
     async getExplore(filters = {}) {
         const params = new URLSearchParams();
@@ -36,6 +37,20 @@ class ExploreService {
     // ---------------- Send Dislike (Pass) ----------------
     async sendDislike(targetUserId) {
         return Api.post(`/interest/dislike`, { interestId: Number(targetUserId) });
+    }
+
+
+
+    // ── Save partner preferences ───────────────────────────────────────────
+    async savePreferences(payload) {
+        const response = await Api.post('/explore/save-preferences', payload);
+        return response.data;
+    }
+
+    // ── Get saved preferences (to pre-fill FilterRow) ─────────────────────
+    async getPreferences() {
+        const response = await Api.get('/explore/get-preferences');
+        return response.data;
     }
 }
 

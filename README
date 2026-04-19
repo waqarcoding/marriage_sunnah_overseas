@@ -1,7 +1,7 @@
 Project: marriage_sunna_overseas
 Stack: Node.js, Express, Sequelize, MySQL, React ,Flutter app
-GitHub: https://github.com/waqarcoding/marriage_sunnah_overseas 
-DB tables path: https://github.com/waqarcoding/marriage_sunna_overseas/server/models
+GitHub: https://api.github.com/repos/waqarcoding/marriage_sunnah_overseas/contents
+DB tables path: https://api.github.com/repos/waqarcoding/marriage_sunnah_overseas/contents/server/models
  
 //Upcomming tables
 # VerificationRequests, ProfileViews, Reports, Blocks

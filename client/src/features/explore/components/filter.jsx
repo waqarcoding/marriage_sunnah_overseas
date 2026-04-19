@@ -16,20 +16,11 @@ function CircularProgress() {
         <div className="flex flex-col items-center justify-center py-16 gap-4">
             <div className="relative w-14 h-14">
                 <svg className="w-14 h-14 animate-spin" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="22" fill="none" stroke="#f3f4f6" strokeWidth="5" />
                     <circle
-                        cx="28" cy="28" r="22"
-                        fill="none"
-                        stroke="#f3f4f6"
-                        strokeWidth="5"
-                    />
-                    <circle
-                        cx="28" cy="28" r="22"
-                        fill="none"
-                        stroke="var(--color-primary)"
-                        strokeWidth="5"
-                        strokeLinecap="round"
-                        strokeDasharray="138"
-                        strokeDashoffset="100"
+                        cx="28" cy="28" r="22" fill="none"
+                        stroke="var(--color-primary)" strokeWidth="5"
+                        strokeLinecap="round" strokeDasharray="138" strokeDashoffset="100"
                     />
                 </svg>
             </div>
@@ -44,9 +35,7 @@ function CustomDropdown({ label, value, onChange, options = [], placeholder = "A
     const ref = useRef(null);
 
     useEffect(() => {
-        const handler = (e) => {
-            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-        };
+        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
@@ -134,10 +123,7 @@ function RangeField({ label, value, onChange, min, max, displayFn }) {
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</label>
                 <span
                     className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                    style={{
-                        background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
-                        color: "var(--color-primary)",
-                    }}
+                    style={{ background: "color-mix(in srgb, var(--color-primary) 12%, transparent)", color: "var(--color-primary)" }}
                 >
                     {fmt(value[0])} – {fmt(value[1])}
                 </span>
@@ -146,11 +132,7 @@ function RangeField({ label, value, onChange, min, max, displayFn }) {
                 <div className="absolute left-0 right-0 h-1.5 rounded-full bg-gray-200" />
                 <div
                     className="absolute h-1.5 rounded-full"
-                    style={{
-                        left: `${pct(value[0])}%`,
-                        right: `${100 - pct(value[1])}%`,
-                        background: "var(--color-primary)",
-                    }}
+                    style={{ left: `${pct(value[0])}%`, right: `${100 - pct(value[1])}%`, background: "var(--color-primary)" }}
                 />
                 <input
                     type="range" min={min} max={max} value={value[0]}
@@ -171,14 +153,14 @@ function RangeField({ label, value, onChange, min, max, displayFn }) {
             </div>
             <style>{`
                 input[type=range]::-webkit-slider-thumb {
-                    -webkit-appearance: none; width: 20px; height: 20px;
-                    border-radius: 50%; background: var(--color-primary, #a855f7);
-                    border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.2); cursor: pointer;
+                    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+                    background: var(--color-primary, #a855f7); border: 3px solid #fff;
+                    box-shadow: 0 1px 5px rgba(0,0,0,0.2); cursor: pointer;
                 }
                 input[type=range]::-moz-range-thumb {
                     width: 20px; height: 20px; border-radius: 50%;
-                    background: var(--color-primary, #a855f7);
-                    border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,0.2); cursor: pointer;
+                    background: var(--color-primary, #a855f7); border: 3px solid #fff;
+                    box-shadow: 0 1px 5px rgba(0,0,0,0.2); cursor: pointer;
                 }
             `}</style>
         </div>
@@ -229,7 +211,7 @@ function ToggleCard({ title, subtitle, value, onChange }) {
 // ─── Main FilterRow Component ──────────────────────────────────────────────────
 export default function FilterRow({ isOpen, onClose, onApply }) {
 
-    // ── filter state ──────────────────────────────────────────────────────────
+    // filter state
     const [ageRange, setAgeRange] = useState([18, 35]);
     const [heightRange, setHeightRange] = useState([56, 72]);
     const [gender, setGender] = useState("");
@@ -241,7 +223,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
     const [religion, setReligion] = useState("");
     const [sect, setSect] = useState("");
     const [practiceLevel, setPracticeLevel] = useState("");
-    const [caste, setCaste] = useState("");
+    const [ethnicity, setEthnicity] = useState(""); // maps to caste field in DB
     const [motherTongue, setMotherTongue] = useState("");
     const [education, setEducation] = useState("");
     const [employmentType, setEmploymentType] = useState("");
@@ -249,7 +231,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
     const [bodyType, setBodyType] = useState("");
     const [willingToRelocate, setWillingToRelocate] = useState(false);
 
-    // ── API data state ────────────────────────────────────────────────────────
+    // API data state
     const [globalOptions, setGlobalOptions] = useState(null);
     const [countryOptions, setCountryOptions] = useState(null);
     const [loadingGlobal, setLoadingGlobal] = useState(true);
@@ -258,7 +240,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
     const [saveError, setSaveError] = useState("");
     const [defaultCountry, setDefaultCountry] = useState("");
 
-    // ── 1. Load global options on mount ───────────────────────────────────────
+    // 1. Load global options on mount
     useEffect(() => {
         const init = async () => {
             try {
@@ -269,9 +251,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
                 const opts = await ExploreService.getOptions();
                 setGlobalOptions(opts);
 
-                if (profileCountry) {
-                    setCountry(profileCountry);
-                }
+                if (profileCountry) setCountry(profileCountry);
             } catch (err) {
                 console.error("Failed to load global options:", err);
             } finally {
@@ -281,7 +261,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
         init();
     }, []);
 
-    // ── 2. Load country options when country changes ───────────────────────────
+    // 2. Load country options when country changes
     useEffect(() => {
         if (!country) {
             setCountryOptions(null);
@@ -289,7 +269,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
             setMonthlySalary("");
             return;
         }
-        const fetch = async () => {
+        const fetchCountry = async () => {
             setLoadingCountry(true);
             try {
                 const co = await ExploreService.getCountryOptions(country);
@@ -302,22 +282,23 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
                 setMonthlySalary("");
             }
         };
-        fetch();
+        fetchCountry();
     }, [country]);
 
-    // ── reset sect when religion changes ──────────────────────────────────────
+    // reset sect when religion changes
     useEffect(() => { setSect(""); }, [religion]);
 
     if (!isOpen) return null;
 
-    // ── unpack global options ─────────────────────────────────────────────────
+    // unpack global options
     const COUNTRIES = globalOptions?.countries ?? [];
     const COUNTRY_FLAGS = globalOptions?.country_flags ?? {};
     const ALL_TONGUES = globalOptions?.all_mother_tongues ?? [];
     const ALL_NATS = globalOptions?.all_nationalities ?? [];
     const RELIGIONS = globalOptions?.religions ?? [];
-    const ALL_SECTS = globalOptions?.sects ?? {};
-    const CASTES = globalOptions?.castes ?? [];
+    const ALL_SECTS = globalOptions?.sects ?? {}; // object { Muslim: [...] }
+    const SECTS_FLAT = globalOptions?.sects_flat ?? []; // flat array — used for standalone sect dropdown
+    const CASTES = globalOptions?.castes ?? []; // ✅ ["Arain", "Butt", ...] — used for Ethnicity/Caste
     const EDUCATION = globalOptions?.education_levels ?? [];
     const EMPLOYMENT = globalOptions?.employment_types ?? [];
     const MARITAL = globalOptions?.marital_statuses ?? [];
@@ -325,22 +306,24 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
     const HAS_CHILDREN = globalOptions?.has_children ?? [];
     const PRACTICE_LVLS = globalOptions?.practice_levels ?? [];
 
-    // ── unpack country options ────────────────────────────────────────────────
+    // unpack country options
     const CITIES = countryOptions?.cities ?? [];
     const COUNTRY_TONGUES = countryOptions?.mother_tongues ?? ALL_TONGUES;
     const SALARY_OPTIONS = countryOptions?.monthly_salaries ?? [];
     const CURRENCY = countryOptions?.currency ?? "";
     const NATIONALITIES = countryOptions?.nationalities ?? ALL_NATS;
 
-    // ── sects for selected religion ───────────────────────────────────────────
-    const SECT_OPTIONS = religion ? (ALL_SECTS[religion] ?? []) : [];
+    // sects for selected religion — if religion selected show its sects, else show all flat
+    const SECT_OPTIONS = religion
+        ? (ALL_SECTS[religion] ?? SECTS_FLAT)
+        : SECTS_FLAT;
 
-    // ── country list with flag ────────────────────────────────────────────────
+    // country list with flag
     const COUNTRY_LIST = COUNTRIES.map(c => `${COUNTRY_FLAGS[c] ?? "🌍"} ${c}`);
     const handleCountryChange = (val) => setCountry(val.replace(/^\S+\s/, ""));
     const countryDisplay = country ? `${COUNTRY_FLAGS[country] ?? "🌍"} ${country}` : "";
 
-    // ── reset ─────────────────────────────────────────────────────────────────
+    // reset
     const handleReset = () => {
         setAgeRange([18, 35]);
         setHeightRange([56, 72]);
@@ -353,7 +336,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
         setReligion("");
         setSect("");
         setPracticeLevel("");
-        setCaste("");
+        setEthnicity("");
         setMotherTongue("");
         setEducation("");
         setEmploymentType("");
@@ -363,7 +346,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
         setSaveError("");
     };
 
-    // ── submit preferences to backend ─────────────────────────────────────────
+    // submit
     const handleSubmitFilters = async () => {
         setSaving(true);
         setSaveError("");
@@ -382,7 +365,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
                 pref_religion: religion || null,
                 pref_sect: sect || null,
                 pref_religious_practice_level: practiceLevel || null,
-                pref_caste: caste || null,
+                pref_caste: ethnicity || null, // ethnicity → caste field in DB
                 pref_mother_tongue: motherTongue || null,
                 pref_education: education || null,
                 pref_employment_type: employmentType || null,
@@ -392,8 +375,6 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
             };
 
             await ExploreService.savePreferences(payload);
-
-            // also call onApply so parent can re-fetch explore with new filters
             onApply(payload);
             onClose();
         } catch (err) {
@@ -404,7 +385,6 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
         }
     };
 
-    // ─────────────────────────────────────────────────────────────────────────
     return (
         <div
             className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
@@ -417,20 +397,14 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
                     maxHeight: "92vh",
                     overflow: "hidden",
                     boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
-                    // desktop: full rounded
                     ...(window.innerWidth >= 640 && { borderRadius: "24px", maxHeight: "88vh" }),
                 }}
             >
-                {/* ── Header ── */}
-                <div
-                    className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0"
-                    style={{ borderBottom: "1px solid #f3f4f6" }}
-                >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0" style={{ borderBottom: "1px solid #f3f4f6" }}>
                     <div className="flex items-center gap-3">
-                        <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center"
-                            style={{ background: "color-mix(in srgb, var(--color-primary) 12%, transparent)" }}
-                        >
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                            style={{ background: "color-mix(in srgb, var(--color-primary) 12%, transparent)" }}>
                             <FiSliders className="w-4 h-4" style={{ color: "var(--color-primary)" }} />
                         </div>
                         <div>
@@ -438,143 +412,63 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
                             <p className="text-xs text-gray-400 mt-0.5">Refine your match criteria</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                    >
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
                         <FiX className="w-4 h-4 text-gray-500" />
                     </button>
                 </div>
 
-                {/* ── Body ── */}
+                {/* Body */}
                 <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                     {loadingGlobal ? (
                         <CircularProgress />
                     ) : (
                         <>
-                            {/* ── Basic ── */}
+                            {/* Basic */}
                             <SectionLabel>Basic</SectionLabel>
+                            <CustomDropdown label="Interested In" value={gender} onChange={setGender} options={["Male", "Female"]} placeholder="Any gender" />
+                            <RangeField label="Age Range" value={ageRange} onChange={setAgeRange} min={18} max={70} displayFn={undefined} />
+                            <RangeField label="Height" value={heightRange} onChange={setHeightRange} min={FEET_RANGE.min} max={FEET_RANGE.max} displayFn={inchesToLabel} />
+                            <CustomDropdown label="Marital Status" value={maritalStatus} onChange={setMaritalStatus} options={MARITAL} />
+                            <CustomDropdown label="Has Children" value={hasChildren} onChange={setHasChildren} options={HAS_CHILDREN} placeholder="No preference" />
+                            <CustomDropdown label="Body Type" value={bodyType} onChange={setBodyType} options={BODY_TYPES} />
 
-                            <CustomDropdown
-                                label="Interested In"
-                                value={gender} onChange={setGender}
-                                options={["Male", "Female"]}
-                                placeholder="Any gender"
-                            />
-                            <RangeField
-                                label="Age Range"
-                                value={ageRange} onChange={setAgeRange}
-                                min={18} max={70}
-                            />
-                            <RangeField
-                                label="Height"
-                                value={heightRange} onChange={setHeightRange}
-                                min={FEET_RANGE.min} max={FEET_RANGE.max}
-                                displayFn={inchesToLabel}
-                            />
-                            <CustomDropdown
-                                label="Marital Status"
-                                value={maritalStatus} onChange={setMaritalStatus}
-                                options={MARITAL}
-                            />
-                            <CustomDropdown
-                                label="Has Children"
-                                value={hasChildren} onChange={setHasChildren}
-                                options={HAS_CHILDREN}
-                                placeholder="No preference"
-                            />
-                            <CustomDropdown
-                                label="Body Type"
-                                value={bodyType} onChange={setBodyType}
-                                options={BODY_TYPES}
-                            />
-
-                            {/* ── Location ── */}
+                            {/* Location */}
                             <SectionLabel>Location</SectionLabel>
-
-                            <CustomDropdown
-                                label="Country"
-                                value={countryDisplay}
-                                onChange={handleCountryChange}
-                                options={COUNTRY_LIST}
-                                placeholder="Any country"
-                            />
+                            <CustomDropdown label="Country" value={countryDisplay} onChange={handleCountryChange} options={COUNTRY_LIST} placeholder="Any country" />
                             {country && (
                                 <CustomDropdown
-                                    label="City"
-                                    value={city} onChange={setCity}
-                                    options={CITIES}
+                                    label="City" value={city} onChange={setCity} options={CITIES}
                                     placeholder={loadingCountry ? "Loading cities…" : "Any city"}
                                     disabled={loadingCountry}
                                 />
                             )}
-                            <CustomDropdown
-                                label="Nationality"
-                                value={nationality} onChange={setNationality}
-                                options={NATIONALITIES}
-                                placeholder="Any nationality"
-                            />
-                            <ToggleCard
-                                title="Willing to Relocate"
-                                subtitle="Include profiles open to relocating"
-                                value={willingToRelocate} onChange={setWillingToRelocate}
-                            />
+                            <CustomDropdown label="Nationality" value={nationality} onChange={setNationality} options={NATIONALITIES} placeholder="Any nationality" />
+                            <ToggleCard title="Willing to Relocate" subtitle="Include profiles open to relocating" value={willingToRelocate} onChange={setWillingToRelocate} />
 
-                            {/* ── Religion ── */}
+                            {/* Religion & Background */}
                             <SectionLabel>Religion & Background</SectionLabel>
+                            <CustomDropdown label="Religion" value={religion} onChange={setReligion} options={RELIGIONS} />
+                            {/* Sect — shows religion-specific sects when religion selected, else all sects */}
+                            <CustomDropdown label="Sect" value={sect} onChange={setSect} options={SECT_OPTIONS} placeholder="Any sect" />
+                            <CustomDropdown label="Religious Practice Level" value={practiceLevel} onChange={setPracticeLevel} options={PRACTICE_LVLS} />
+                            {/* Ethnicity/Caste — uses castes array from OPTIONS, maps to caste field in DB */}
+                            <CustomDropdown label="Ethnicity / Caste" value={ethnicity} onChange={setEthnicity} options={CASTES} placeholder="Any ethnicity" />
+                            <CustomDropdown label="Mother Tongue" value={motherTongue} onChange={setMotherTongue} options={COUNTRY_TONGUES} />
 
-                            <CustomDropdown
-                                label="Religion"
-                                value={religion} onChange={setReligion}
-                                options={RELIGIONS}
-                            />
-                            {SECT_OPTIONS.length > 0 && (
-                                <CustomDropdown
-                                    label="Sect"
-                                    value={sect} onChange={setSect}
-                                    options={SECT_OPTIONS}
-                                />
-                            )}
-                            <CustomDropdown
-                                label="Religious Practice Level"
-                                value={practiceLevel} onChange={setPracticeLevel}
-                                options={PRACTICE_LVLS}
-                            />
-                            <CustomDropdown
-                                label="Caste / Ethnicity"
-                                value={caste} onChange={setCaste}
-                                options={CASTES}
-                            />
-                            <CustomDropdown
-                                label="Mother Tongue"
-                                value={motherTongue} onChange={setMotherTongue}
-                                options={COUNTRY_TONGUES}
-                            />
-
-                            {/* ── Career ── */}
+                            {/* Career */}
                             <SectionLabel>Career & Education</SectionLabel>
-
-                            <CustomDropdown
-                                label="Education Level"
-                                value={education} onChange={setEducation}
-                                options={EDUCATION}
-                            />
-                            <CustomDropdown
-                                label="Employment Type"
-                                value={employmentType} onChange={setEmploymentType}
-                                options={EMPLOYMENT}
-                            />
+                            <CustomDropdown label="Education Level" value={education} onChange={setEducation} options={EDUCATION} />
+                            <CustomDropdown label="Employment Type" value={employmentType} onChange={setEmploymentType} options={EMPLOYMENT} />
                             {country && SALARY_OPTIONS.length > 0 && (
                                 <CustomDropdown
                                     label={`Monthly Salary${CURRENCY ? ` (${CURRENCY})` : ""}`}
-                                    value={monthlySalary} onChange={setMonthlySalary}
-                                    options={SALARY_OPTIONS}
+                                    value={monthlySalary} onChange={setMonthlySalary} options={SALARY_OPTIONS}
                                     placeholder={loadingCountry ? "Loading…" : "Any salary"}
                                     disabled={loadingCountry}
                                 />
                             )}
 
-                            {/* ── Error ── */}
+                            {/* Error */}
                             {saveError && (
                                 <div className="px-4 py-3 rounded-2xl text-sm text-red-600 font-medium"
                                     style={{ background: "#fef2f2", border: "1.5px solid #fecaca" }}>
@@ -585,34 +479,21 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
                     )}
                 </div>
 
-                {/* ── Footer ── */}
+                {/* Footer */}
                 {!loadingGlobal && (
-                    <div
-                        className="flex items-center justify-between gap-3 px-6 py-4 flex-shrink-0"
-                        style={{ borderTop: "1px solid #f3f4f6" }}
-                    >
-                        <button
-                            onClick={handleReset}
-                            className="text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors"
-                        >
+                    <div className="flex items-center justify-between gap-3 px-6 py-4 flex-shrink-0" style={{ borderTop: "1px solid #f3f4f6" }}>
+                        <button onClick={handleReset} className="text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">
                             Reset all
                         </button>
                         <div className="flex gap-2">
-                            <button
-                                onClick={onClose}
-                                className="px-5 py-2.5 rounded-2xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
-                            >
+                            <button onClick={onClose} className="px-5 py-2.5 rounded-2xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSubmitFilters}
                                 disabled={saving}
                                 className="px-6 py-2.5 rounded-2xl text-sm font-semibold text-white transition-all flex items-center gap-2"
-                                style={{
-                                    background: "var(--color-primary)",
-                                    opacity: saving ? 0.75 : 1,
-                                    cursor: saving ? "not-allowed" : "pointer",
-                                }}
+                                style={{ background: "var(--color-primary)", opacity: saving ? 0.75 : 1, cursor: saving ? "not-allowed" : "pointer" }}
                             >
                                 {saving ? (
                                     <>
