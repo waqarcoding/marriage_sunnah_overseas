@@ -201,17 +201,18 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 'pending',
       },
       from_user: { type: DataTypes.BIGINT, allowNull: false },
-      from_guardian: { type: DataTypes.BIGINT, allowNull: false },
+      from_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
       from_guardian_status: {
         type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: false,
+        allowNull: true,   // ✅
         defaultValue: 'pending',
       },
+
       to_user: { type: DataTypes.BIGINT, allowNull: false },
-      to_guardian: { type: DataTypes.BIGINT, allowNull: false },
+      to_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
       to_guardian_status: {
         type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: false,
+        allowNull: true,   // ✅
         defaultValue: 'pending',
       },
       both_guardians_approved: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

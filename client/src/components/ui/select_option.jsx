@@ -1,7 +1,7 @@
 // components/ui/Select.jsx
 import { useState, useRef, useEffect } from "react"
 
-export default function Select({
+export default function SelectOption({
     label,
     error = "",
     hint = "",

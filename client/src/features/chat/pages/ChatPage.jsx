@@ -13,7 +13,6 @@ import TypingIndicator from "../components/TypingIndicator";
 import MessageInput from "../components/MessageInput";
 import { useSocket } from "../../../sockets/SocketContext";
 import ExploreService from "../../explore/api/ExploreService";
-import ProfileService from "../../profile/api/ProfileService";
 
 function getSenderId() {
     try {
@@ -27,7 +26,6 @@ function useIsMobile() {
     const [isMobile, setIsMobile] = useState(
         typeof window !== "undefined" ? window.innerWidth < 768 : false
     );
-
     useEffect(() => {
         const handler = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener("resize", handler);
@@ -54,19 +52,16 @@ export default function ChatPage() {
             try {
                 const res = await ChatService.getConversationUsers();
                 if (res.success) setConversations(res.data);
-                // Example: fetch matches if you have an API
+
                 const matches = await ExploreService.getExplore();
-
                 const list = matches?.profiles || matches?.data?.profiles || [];
-                //console.log("sdsdsddsd" + matches?.data?.profiles)
                 if (matches.success) setMatches(list.length <= 5 ? list : list.slice(-5));
-
-
             } catch { }
             finally { setLoadingConvs(false); }
         };
         load();
     }, []);
+
     const openChat = async (conv) => {
         const info = {
             id: conv.id,
@@ -75,7 +70,6 @@ export default function ChatPage() {
             online: conv.is_online,
             location: conv.location,
         };
-
         setReceiverInfo(info);
         navigate(`/chats?receiver_id=${conv.other_user_id}`, { state: { receiver: info } });
     };
@@ -83,17 +77,35 @@ export default function ChatPage() {
     const openMatchChat = (match) => {
         const info = { id: match.id, name: match.name, avatar: match.photo };
         setReceiverInfo(info);
-
-        console.log(match);
         navigate("/profile", { state: { profile: match } });
+    };
 
+    // ── Delete conversation ───────────────────────────────────────────────────
+    const handleDeleteConversation = async (conversation) => {
+        // 1. Optimistically remove from list immediately
+        setConversations((prev) => prev.filter((c) => c.id !== conversation.id));
 
+        // 2. If we're currently viewing this conversation, go back to list
+        if (String(receiverId) === String(conversation.other_user_id)) {
+            navigate("/chats");
+        }
 
+        // 3. Call API
+        try {
+            await ChatService.deleteConversation(conversation.id);
+        } catch (err) {
+            console.error("Delete failed, rolling back:", err);
+            // Roll back — put the conversation back in the right spot
+            setConversations((prev) => {
+                const exists = prev.find((c) => c.id === conversation.id);
+                if (exists) return prev;
+                return [conversation, ...prev];
+            });
+        }
     };
 
     return (
         <div className="flex h-full font-sans">
-
             {(!isMobile || !receiverId) && (
                 <div className="flex flex-col border-r w-full md:w-80 lg:w-96 bg-white">
                     <NewMatches matches={matches} onClick={openMatchChat} />
@@ -106,6 +118,7 @@ export default function ChatPage() {
                             // @ts-ignore
                             activeId={receiverId}
                             onClick={openChat}
+                            onDelete={handleDeleteConversation}
                         />
                     )}
                 </div>
@@ -127,10 +140,6 @@ export default function ChatPage() {
                                     receiverInfo={receiverInfo}
                                     onBack={() => navigate("/chats")}
                                     onViewProfile={() => navigate("/profile", { state: { profile: receiverInfo } })}
-
-
-
-
                                     isMobile={isMobile}
                                 />
                             </motion.div>
@@ -157,25 +166,19 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
     const [sending, setSending] = useState(false);
     const [connected, setConnected] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-
     const [receiverInfo, setReceiverInfo] = useState(initialReceiverInfo);
 
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const typingTimer = useRef(null);
 
-    // ✅ FIXED formatTime
     const formatTime = (ts) =>
         new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    // ✅ FIXED timestamp logic
     const showTimestamp = (idx) =>
         idx === 0 ||
         // @ts-ignore
-        new Date(messages[idx].created_at) -
-        // @ts-ignore
-        new Date(messages[idx - 1].created_at) >
-        5 * 60 * 1000;
+        new Date(messages[idx].created_at) - new Date(messages[idx - 1].created_at) > 5 * 60 * 1000;
 
     const fetchMessages = useCallback(async () => {
         try {
@@ -186,10 +189,8 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
 
     useEffect(() => {
         if (!socket) return;
-
         socket.on("connect", () => setConnected(true));
         socket.on("disconnect", () => setConnected(false));
-
         return () => {
             socket.off("connect");
             socket.off("disconnect");
@@ -217,9 +218,7 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         const handleSeen = () => {
             setMessages(prev =>
                 prev.map(m =>
-                    String(m.sender_id) === String(senderId)
-                        ? { ...m, is_seen: true }
-                        : m
+                    String(m.sender_id) === String(senderId) ? { ...m, is_seen: true } : m
                 )
             );
         };
@@ -252,7 +251,6 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
     const handleTyping = (e) => {
         setInput(e.target.value);
         socket?.emit("typing", { to: receiverId, from: senderId });
-
         clearTimeout(typingTimer.current);
         typingTimer.current = setTimeout(() => {
             socket?.emit("stop_typing", { to: receiverId, from: senderId });
@@ -264,7 +262,6 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         if (!text || sending) return;
 
         const tempId = `tmp_${Date.now()}`;
-
         const optimistic = {
             id: tempId,
             sender_id: senderId,
@@ -277,12 +274,10 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         setMessages(p => [...p, optimistic]);
         setInput("");
         setSending(true);
-
         socket?.emit("stop_typing", { to: receiverId, from: senderId });
 
         try {
             const data = await ChatService.sendMessage({ receiverId, message: text });
-
             if (data.success) {
                 setMessages(p => p.map(m => m.id === tempId ? data.data : m));
             } else {
@@ -303,7 +298,11 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                 connected={connected}
                 isTyping={isTyping}
                 onBack={onBack}
-                onViewProfile={onViewProfile} onPhone={undefined} onVideo={undefined} onInfo={undefined} />
+                onViewProfile={onViewProfile}
+                onPhone={undefined}
+                onVideo={undefined}
+                onInfo={undefined}
+            />
 
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
                 {messages.map((msg, idx) => (
@@ -312,9 +311,10 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                         msg={msg}
                         isMine={String(msg.sender_id) === String(senderId)}
                         formatTime={formatTime}
-                        showTimestamp={showTimestamp(idx)} avatarLetter={undefined} />
+                        showTimestamp={showTimestamp(idx)}
+                        avatarLetter={undefined}
+                    />
                 ))}
-
                 {isTyping && <TypingIndicator avatarLetter={undefined} />}
                 <div ref={bottomRef} />
             </div>
@@ -324,7 +324,9 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                 onChange={handleTyping}
                 onSend={sendMessage}
                 sending={sending}
-                inputRef={inputRef} onKeyDown={undefined} />
+                inputRef={inputRef}
+                onKeyDown={undefined}
+            />
         </div>
     );
 }

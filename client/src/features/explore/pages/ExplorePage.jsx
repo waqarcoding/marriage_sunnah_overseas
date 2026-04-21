@@ -17,7 +17,9 @@ import AuthService from "../../auth/api/AuthService";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// ✅ Fixed — guard against undefined profile
 const parseImages = (profile) => {
+    if (!profile) return ["https://cdn-icons-png.flaticon.com/512/1077/1077114.png"];
     // @ts-ignore
     const base = import.meta.env.VITE_BASE_URL || "";
     let imgs = [];

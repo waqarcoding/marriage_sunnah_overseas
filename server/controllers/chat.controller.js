@@ -144,6 +144,29 @@ export const getConversationUsers = async (req, res, next) => {
         next(err);
     }
 };
+// ---------------- Delete Conversation ----------------
+// Only delete messages for the current user: 
+// delete all messages sent BY the current user in this conversation,
+// but do NOT delete messages sent by the other user.
+export const deleteConversation = async (req, res, next) => {
+    try {
+        const userId = req.user.id; // Authenticated user (from JWT)
+        const conversationId = req.params.id;
+
+        // Only delete messages SENT BY THE CURRENT USER to this conversation user
+        const deletedCount = await Message.destroy({
+            where: {
+                sender_id: userId,
+                receiver_id: conversationId
+            }
+        });
+
+        res.json({ success: true, deletedCount });
+    } catch (err) {
+        next(err);
+    }
+};
+
 // ---------------- Add Conversation User ----------------
 export const addConversationUser = async (req, res, next) => {
     try {

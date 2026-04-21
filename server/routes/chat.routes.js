@@ -14,5 +14,7 @@ router.get('/conversation-users', authenticate, chatController.getConversationUs
 
 // Add a new conversation (send first message)
 router.post('/add-conversation', authenticate, chatController.addConversationUser);
+// Delete a conversation by id
+router.delete('/conversation/:id', authenticate, chatController.deleteConversation);
 
 module.exports = router;

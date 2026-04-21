@@ -4,15 +4,20 @@ class ExploreService {
     constructor() {
         this.base = "/explore";
     }
-    getOptions() {
-        return Api.get(`${this.base}/options`)
+
+    // ── Single call: options + all country data + saved prefs ──────────────
+    async getOptions() {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const response = await Api.get(`${this.base}/options`);
+        return response;
+
+
+
     }
 
-    getCountryOptions(country) {
-        return Api.get(`${this.base}/country/${encodeURIComponent(country)}`)
-    }
 
-    // ---------------- Get Explore ----------------
+
+    // ── Get Explore feed ───────────────────────────────────────────────────
     async getExplore(filters = {}) {
         const params = new URLSearchParams();
         if (filters.gender) params.append("gender", filters.gender);
@@ -20,38 +25,30 @@ class ExploreService {
         if (filters.country) params.append("country", filters.country);
         if (filters.minAge) params.append("minAge", filters.minAge);
         if (filters.maxAge) params.append("maxAge", filters.maxAge);
-
         const query = params.toString();
         return Api.get(`${this.base}/get-explore${query ? `?${query}` : ""}`);
     }
 
-    // ---------------- Send Interest (Like) ----------------
+    // ── Send Interest (Like) ───────────────────────────────────────────────
     async sendInterest(toUserId, isSuperLike = false) {
-        console.log("sending like")
         return Api.post(`/interest/send-interest`, {
             interestId: Number(toUserId),
-            isSuperLike: isSuperLike,
+            isSuperLike,
         });
     }
 
-    // ---------------- Send Dislike (Pass) ----------------
+    // ── Send Dislike (Pass) ────────────────────────────────────────────────
     async sendDislike(targetUserId) {
         return Api.post(`/interest/dislike`, { interestId: Number(targetUserId) });
     }
 
-
-
-    // ── Save partner preferences ───────────────────────────────────────────
+    // ── Save preferences ───────────────────────────────────────────────────
     async savePreferences(payload) {
-        const response = await Api.post('/explore/save-preferences', payload);
+        const response = await Api.post(`${this.base}/save-preferences`, payload);
         return response.data;
     }
 
-    // ── Get saved preferences (to pre-fill FilterRow) ─────────────────────
-    async getPreferences() {
-        const response = await Api.get('/explore/get-preferences');
-        return response.data;
-    }
+
 }
 
 export default new ExploreService();

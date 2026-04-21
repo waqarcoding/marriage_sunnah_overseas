@@ -5,7 +5,7 @@ import ConversationItem from "./ConversationItem";
 //   onClick       — fn(conversation)
 //   onMore        — fn(conversation)
 
-export default function ConversationsList({ conversations, onClick, onMore }) {
+export default function ConversationsList({ conversations, onClick, onDelete }) {
     return (
         <div>
             {/* Header */}
@@ -23,7 +23,9 @@ export default function ConversationsList({ conversations, onClick, onMore }) {
                         conversation={conversation}
                         index={index}
                         onClick={onClick}
-                        onMore={onMore}
+                        onDelete={(conversation) => onDelete?.(conversation, index)}
+
+
                     />
                 ))}
             </div>

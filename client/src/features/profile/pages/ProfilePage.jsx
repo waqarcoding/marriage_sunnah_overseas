@@ -11,6 +11,7 @@ import ImageAvatar from "../../../components/ImageAvatar";
 
 function formatLastSeen(dateStr) {
     if (!dateStr) return "";
+    // @ts-ignore
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
     if (diff < 60) return "just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -21,6 +22,7 @@ function formatLastSeen(dateStr) {
 
 function isOnline(dateStr) {
     if (!dateStr) return false;
+    // @ts-ignore
     return Math.floor((Date.now() - new Date(dateStr)) / 1000) < 3600;
 }
 
@@ -323,7 +325,9 @@ export default function ProfileDetailPage({ onLike, onPass }) {
                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Interests</h3>
                         <div className="flex flex-wrap gap-2">
                             {safeProfile.interests.map((interest, i) => (
-                                <Badge key={i} variant="accent" >{interest}</Badge>
+                                <
+                                    // @ts-ignore
+                                    Badge key={i} variant="accent" >{interest}</Badge>
                             ))}
                         </div>
                     </div>

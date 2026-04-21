@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css"
 import { Heart, User, Pencil, Shield, ChevronLeft } from "lucide-react"
 import AuthApi from "../api/AuthService"
 import Input from "../../../components/ui/input"
-import Select from "../../../components/ui/select"
+import Select from "../../../components/ui/select_option"
 
 export default function Register({ onRegister }) {
     const [step, setStep] = useState("role")
@@ -86,7 +86,7 @@ export default function Register({ onRegister }) {
     return (
         <>
             <ToastContainer position="top-right" autoClose={3000} />
-            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-8">
+            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-10">
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 
                     {/* ── Left panel ── */}
@@ -121,6 +121,17 @@ export default function Register({ onRegister }) {
 
                     {/* ── Right panel ── */}
                     <div className="flex flex-col justify-center bg-white p-8 lg:p-10 overflow-y-auto max-h-screen">
+                        {step === "role" && (
+                            <div className="flex items-center justify-center mb-2">
+                                <img
+                                    src="/logo.png"
+                                    alt="Marriage Sunnah Overseas Logo"
+                                    className="h-40 w-auto"
+                                    style={{ maxHeight: 155 }}
+                                />
+                            </div>
+                        )}
+
 
                         {/* STEP 1 — Role */}
                         {step === "role" && (

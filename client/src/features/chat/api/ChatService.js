@@ -88,7 +88,13 @@ class ChatService {
         }
     }
 
+    deleteConversation(conversationId) {
+        return Api._fetch(
+            `${this.base}/conversation/${conversationId}`,
+            { method: 'DELETE', headers: Api._getHeaders() }
+        );
 
+    }
 }
 
 export default new ChatService();

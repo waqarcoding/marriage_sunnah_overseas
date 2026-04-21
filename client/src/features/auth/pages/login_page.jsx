@@ -37,7 +37,7 @@ export default function Login({ onLogin }) {
     return (
         <>
             <ToastContainer position="top-right" autoClose={3000} />
-            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4">
+            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-5">
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 
                     {/* ── Left panel ── */}
@@ -79,7 +79,14 @@ export default function Login({ onLogin }) {
 
                     {/* ── Right panel ── */}
                     <div className="flex flex-col justify-center gap-6 p-8 lg:p-10 bg-white">
-
+                        <div className="flex items-center justify-center mb-2">
+                            <img
+                                src="/logo.png"
+                                alt="Marriage Sunnah Overseas Logo"
+                                className="h-40 w-auto"
+                                style={{ maxHeight: 155 }}
+                            />
+                        </div>
                         <div>
                             <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>
                                 Welcome back

@@ -37,35 +37,22 @@ const loadGlobal = async () => {
     return _globalCache;
 };
 
-const loadCountry = async (name) => {
-    if (!_countryCache[name]) {
-        const row = await Option.findOne({ where: { country: name } });
-        if (row) {
-            _countryCache[name] = {
-                country: row.country,
-                flag: row.flag,
-                currency: row.currency,
-                nationalities: _parse(row.nationalities),
-                cities: _parse(row.cities),
-                mother_tongues: _parse(row.mother_tongues),
-                monthly_salary: _parse(row.monthly_salary),
-            };
-        }
-    }
-    return _countryCache[name] || null;
-};
-
 const loadAllCountries = async () => {
+    // Only load once — cache in global
+    if (_countryCache.__all) return _countryCache.__all;
     const rows = await Option.findAll({
-        attributes: ['country', 'flag', 'currency', 'nationalities', 'mother_tongues'],
+        attributes: ['country', 'flag', 'currency', 'nationalities', 'mother_tongues', 'cities', 'monthly_salary'],
     });
-    return rows.map(r => ({
+    _countryCache.__all = rows.map(r => ({
         country: r.country,
         flag: r.flag,
         currency: r.currency,
         nationalities: _parse(r.nationalities),
         mother_tongues: _parse(r.mother_tongues),
+        cities: _parse(r.cities),
+        monthly_salary: _parse(r.monthly_salary),
     }));
+    return _countryCache.__all;
 };
 
 const clearCache = () => { _globalCache = null; _countryCache = {}; };
@@ -98,38 +85,66 @@ const toJsonPref = (value) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/options
-// Returns ALL global options + country list for filter/profile forms
+// Returns ALL global options + all country data + saved prefs in ONE call
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getOptions = async (req, res) => {
     try {
-        const global = await loadGlobal();
+        const [global, allCountries, prefs] = await Promise.all([
+            loadGlobal(),
+            loadAllCountries(),
+            Preference.findOne({ where: { individual_id: req.user.id } }),
+        ]);
+
         if (!global) return res.status(500).json({ error: 'Options not configured' });
 
-        const allCountries = await loadAllCountries();
-
-        // Build country maps
+        // ── Build country maps ─────────────────────────────────────────────
         const COUNTRY_FLAGS = Object.fromEntries(allCountries.map(c => [c.country, c.flag]));
         const COUNTRY_TO_CURRENCY = Object.fromEntries(allCountries.map(c => [c.country, c.currency]));
-        const APP_COUNTRIES = allCountries.map(c => c.country); // 29 app countries
+        const APP_COUNTRIES = allCountries.map(c => c.country);
+
+        // ── Build country_data map { Pakistan: { cities, mother_tongues, nationalities, monthly_salaries } }
+        const COUNTRY_DATA = {};
+        for (const c of allCountries) {
+            const salaryMap = global.monthly_salary || {};
+            const monthly_salaries = salaryMap[c.currency] || salaryMap['USD'] || [];
+            COUNTRY_DATA[c.country] = {
+                flag: c.flag,
+                currency: c.currency,
+                cities: c.cities,
+                mother_tongues: c.mother_tongues,
+                nationalities: c.nationalities,
+                monthly_salaries,
+            };
+        }
+
+        // ── Parse saved prefs ──────────────────────────────────────────────
+        const parsedPrefs = prefs ? {
+            ...prefs.toJSON(),
+            pref_marital_status: parseJsonPref(prefs.pref_marital_status),
+            pref_nationality: parseJsonPref(prefs.pref_nationality),
+            pref_country: parseJsonPref(prefs.pref_country),
+            pref_sect: parseJsonPref(prefs.pref_sect),
+            pref_body_type: parseJsonPref(prefs.pref_body_type),
+            pref_caste: parseJsonPref(prefs.pref_caste),
+            pref_mother_tongue: parseJsonPref(prefs.pref_mother_tongue),
+            pref_employment_type: parseJsonPref(prefs.pref_employment_type),
+        } : null;
 
         return res.json({
             success: true,
 
-            // ── App countries (29) — for country filter dropdown ──────────
+            // ── countries ──────────────────────────────────────────────────
             countries: APP_COUNTRIES,
             country_flags: COUNTRY_FLAGS,
             country_to_currency: COUNTRY_TO_CURRENCY,
+            country_data: COUNTRY_DATA,   // ✅ all country details in one map
 
-            // ── All world countries (197) — for profile country field ──────
+            // ── world data ─────────────────────────────────────────────────
             all_countries: global.all_countries,
-
-            // ── All world nationalities (198) ─────────────────────────────
             all_nationalities: global.nationalities,
-
-            // ── All unique languages across 29 countries ──────────────────
             all_mother_tongues: global.mother_tongues,
 
-            // ── Global profile/filter options ─────────────────────────────
+            // ── global options ─────────────────────────────────────────────
             religions: global.religions,
             sects: global.sects,
             castes: global.castes,
@@ -142,6 +157,9 @@ exports.getOptions = async (req, res) => {
             willing_to_relocate: global.willing_to_relocate,
             interests: global.interests,
             professions: global.professions,
+
+            // ── saved prefs (null if none) ─────────────────────────────────
+            preferences: parsedPrefs,
         });
 
     } catch (err) {
@@ -151,20 +169,19 @@ exports.getOptions = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /explore/country/:country
-// Returns country-specific options (cities, tongues, salary)
+// GET /explore/country/:country  (kept for manual country change)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getCountryOptions = async (req, res) => {
     try {
+        const allCountries = await loadAllCountries();
+        const global = await loadGlobal();
         const countryName = req.params.country;
-        const data = await loadCountry(countryName);
+        const data = allCountries.find(c => c.country === countryName);
 
         if (!data) {
             return res.status(404).json({ success: false, message: `Country "${countryName}" not found.` });
         }
 
-        // get salary for this country's currency
-        const global = await loadGlobal();
         const salaryMap = global?.monthly_salary || {};
         const monthly_salaries = salaryMap[data.currency] || salaryMap['USD'] || [];
 
@@ -195,7 +212,6 @@ exports.getExplore = async (req, res) => {
 
         const prefs = await Preference.findOne({ where: { individual_id: currentUser.id } });
 
-        // scalar fields
         const gender = req.query.gender || prefs?.pref_gender || null;
         const minAge = req.query.minAge || prefs?.pref_age_min || null;
         const maxAge = req.query.maxAge || prefs?.pref_age_max || null;
@@ -209,7 +225,6 @@ exports.getExplore = async (req, res) => {
         const hasChildren = req.query.hasChildren || prefs?.pref_has_children || null;
         const willingToRelocate = req.query.willingToRelocate || null;
 
-        // JSON array fields
         const parseQuery = (key) => {
             const q = req.query[key];
             if (q) return Array.isArray(q) ? q : q.split(',').map(s => s.trim()).filter(Boolean);
@@ -225,7 +240,6 @@ exports.getExplore = async (req, res) => {
         const motherTongue = parseQuery('motherTongue') || parseJsonPref(prefs?.pref_mother_tongue);
         const employmentType = parseQuery('employmentType') || parseJsonPref(prefs?.pref_employment_type);
 
-        // excluded IDs
         const [sentInterests, dislikesSent] = await Promise.all([
             Interest.findAll({ where: { from_user: currentUser.id }, attributes: ['to_user'], raw: true }),
             Dislike.findAll({ where: { user_id: currentUser.id }, attributes: ['target_user_id'], raw: true }),
@@ -265,12 +279,7 @@ exports.getExplore = async (req, res) => {
 
         const profiles = await Profile.findAll({
             where: profileWhere,
-            include: [{
-                model: User.unscoped(),
-                as: 'individual',
-                attributes: ['id', 'is_online', 'is_premium'],
-                required: true,
-            }],
+            include: [{ model: User.unscoped(), as: 'individual', attributes: ['id', 'is_online', 'is_premium'], required: true }],
             order: [['created_at', 'DESC']],
             limit: 50,
         });
@@ -289,7 +298,6 @@ exports.getExplore = async (req, res) => {
 exports.savePreferences = async (req, res) => {
     try {
         const individualId = req.user.id;
-
         const {
             pref_gender, pref_age_min, pref_age_max,
             pref_height_min_inches, pref_height_max_inches,
@@ -314,8 +322,7 @@ exports.savePreferences = async (req, res) => {
             pref_monthly_salary: pref_monthly_salary ?? null,
             pref_has_children: pref_has_children ?? null,
             pref_willing_to_relocate: pref_willing_to_relocate != null
-                ? (pref_willing_to_relocate ? 1 : 0)
-                : null,
+                ? (pref_willing_to_relocate ? 1 : 0) : null,
             pref_marital_status: toJsonPref(pref_marital_status),
             pref_nationality: toJsonPref(pref_nationality),
             pref_country: toJsonPref(pref_country),
@@ -371,21 +378,16 @@ exports.getPreferences = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /explore/update-option  (admin only)
-// Body: { country: "Pakistan" | null, field: "religions", value: [...] }
 // ─────────────────────────────────────────────────────────────────────────────
 exports.updateOption = async (req, res) => {
     try {
         const { country, field, value } = req.body;
         if (!field || value === undefined) return res.status(400).json({ error: 'field and value required' });
-
         const where = country ? { country } : {};
         const update = { [field]: JSON.stringify(value) };
-
         await Option.update(update, { where });
         clearCache();
-
         return res.json({ success: true, message: `"${field}" updated successfully` });
-
     } catch (err) {
         console.error('updateOption error:', err);
         return res.status(500).json({ error: 'Server error' });

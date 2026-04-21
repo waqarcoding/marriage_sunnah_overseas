@@ -187,7 +187,14 @@ export default function ForgotPassword() {
 
                     {/* ── Right panel ── */}
                     <div className="flex flex-col justify-center bg-white p-8 gap-5">
-
+                        <div className="flex items-center justify-center mb-2">
+                            <img
+                                src="/logo.png"
+                                alt="Marriage Sunnah Overseas Logo"
+                                className="h-40 w-auto"
+                                style={{ maxHeight: 155 }}
+                            />
+                        </div>
                         {error && (
                             <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs border border-red-100">
                                 {error}

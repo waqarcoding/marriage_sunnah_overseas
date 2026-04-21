@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "forceConsistentCasingInFileNames": false,
+        "forceConsistentCasingInFileNames": true,
         "checkJs": true,
         "allowJs": true,
         "noImplicitAny": false,
@@ -10,6 +10,5 @@
     },
     "include": [
         "src",
-        "../server/config/profileOptions.js"
     ]
 }
