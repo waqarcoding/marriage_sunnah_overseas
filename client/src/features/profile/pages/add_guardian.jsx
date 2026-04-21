@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import GuardianService from "../api/GuardianService";
+import GuardianService from "../../guardian/api/GuardianService";
 
 const RELATIONSHIPS = [
     { value: "Father", label: "Father", icon: "👨" },
@@ -27,7 +27,7 @@ const Avatar = ({ src, name, size = "md" }) => {
     );
 };
 
-export default function IndividualGuardianPage() {
+export default function AddGuardian() {
     const [myGuardians, setMyGuardians] = useState([]);
     const [loadingList, setLoadingList] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -108,17 +108,18 @@ export default function IndividualGuardianPage() {
     };
 
     // ── Remove ─────────────────────────────────────────────────
-    const handleRemove = (guardianId, name) => {
+    const handleRemove = async (guardianId, name) => {
         if (!window.confirm(`Remove ${name} as your guardian?`)) return;
         setRemoving(guardianId);
-        GuardianService.removeGuardian({ guardianUserId: guardianId }, {
-            onSuccess: () => {
-                toast.success("Guardian removed");
-                setMyGuardians(p => p.filter(g => g.id !== guardianId));
-                setRemoving(null);
-            },
-            onFailed: () => { toast.error("Failed to remove"); setRemoving(null); },
-        });
+        try {
+            await GuardianService.removeGuardian({ guardianUserId: guardianId });
+            toast.success("Guardian removed");
+            setMyGuardians(p => p.filter(g => g.id !== guardianId));
+        } catch (err) {
+            toast.error("Failed to remove");
+        } finally {
+            setRemoving(null);
+        }
     };
 
     const relationshipObj = RELATIONSHIPS.find(r => r.value === relationship);

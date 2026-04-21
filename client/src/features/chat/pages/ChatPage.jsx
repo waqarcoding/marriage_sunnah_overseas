@@ -13,6 +13,7 @@ import TypingIndicator from "../components/TypingIndicator";
 import MessageInput from "../components/MessageInput";
 import { useSocket } from "../../../sockets/SocketContext";
 import ExploreService from "../../explore/api/ExploreService";
+import ProfileService from "../../profile/api/ProfileService";
 
 function getSenderId() {
     try {
@@ -57,14 +58,16 @@ export default function ChatPage() {
                 const matches = await ExploreService.getExplore();
 
                 const list = matches?.profiles || matches?.data?.profiles || [];
-                console.log("sdsdsddsd" + matches?.data?.profiles)
-                if (matches.success) setMatches(list);
+                //console.log("sdsdsddsd" + matches?.data?.profiles)
+                if (matches.success) setMatches(list.length <= 5 ? list : list.slice(-5));
+
+
             } catch { }
             finally { setLoadingConvs(false); }
         };
         load();
     }, []);
-    const openChat = (conv) => {
+    const openChat = async (conv) => {
         const info = {
             id: conv.id,
             name: conv.name,
@@ -72,6 +75,7 @@ export default function ChatPage() {
             online: conv.is_online,
             location: conv.location,
         };
+
         setReceiverInfo(info);
         navigate(`/chats?receiver_id=${conv.other_user_id}`, { state: { receiver: info } });
     };
@@ -79,7 +83,12 @@ export default function ChatPage() {
     const openMatchChat = (match) => {
         const info = { id: match.id, name: match.name, avatar: match.photo };
         setReceiverInfo(info);
-        navigate(`/chats?receiver_id=${match.id}`, { state: { receiver: info } });
+
+        console.log(match);
+        navigate("/profile", { state: { profile: match } });
+
+
+
     };
 
     return (
@@ -94,6 +103,7 @@ export default function ChatPage() {
                     ) : (
                         <ConversationsList
                             conversations={conversations}
+                            // @ts-ignore
                             activeId={receiverId}
                             onClick={openChat}
                         />
@@ -116,7 +126,11 @@ export default function ChatPage() {
                                     receiverId={receiverId}
                                     receiverInfo={receiverInfo}
                                     onBack={() => navigate("/chats")}
-                                    onViewProfile={() => navigate(`/profile?id=${receiverId}`)}
+                                    onViewProfile={() => navigate("/profile", { state: { profile: receiverInfo } })}
+
+
+
+
                                     isMobile={isMobile}
                                 />
                             </motion.div>
@@ -157,7 +171,9 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
     // ✅ FIXED timestamp logic
     const showTimestamp = (idx) =>
         idx === 0 ||
+        // @ts-ignore
         new Date(messages[idx].created_at) -
+        // @ts-ignore
         new Date(messages[idx - 1].created_at) >
         5 * 60 * 1000;
 
@@ -287,8 +303,7 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                 connected={connected}
                 isTyping={isTyping}
                 onBack={onBack}
-                onViewProfile={onViewProfile}
-            />
+                onViewProfile={onViewProfile} onPhone={undefined} onVideo={undefined} onInfo={undefined} />
 
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
                 {messages.map((msg, idx) => (
@@ -297,11 +312,10 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                         msg={msg}
                         isMine={String(msg.sender_id) === String(senderId)}
                         formatTime={formatTime}
-                        showTimestamp={showTimestamp(idx)}
-                    />
+                        showTimestamp={showTimestamp(idx)} avatarLetter={undefined} />
                 ))}
 
-                {isTyping && <TypingIndicator />}
+                {isTyping && <TypingIndicator avatarLetter={undefined} />}
                 <div ref={bottomRef} />
             </div>
 
@@ -310,8 +324,7 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                 onChange={handleTyping}
                 onSend={sendMessage}
                 sending={sending}
-                inputRef={inputRef}
-            />
+                inputRef={inputRef} onKeyDown={undefined} />
         </div>
     );
 }

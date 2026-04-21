@@ -88,7 +88,8 @@ export default function MyProfilePage() {
     const [uploadingIdx, setUploadingIdx] = useState(null);
     const [photos, setPhotos] = useState([]);
     const [interests, setInterests] = useState([]);
-
+    // @ts-ignore
+    const hasGuardian = false;
     const [counts, setCounts] = useState({
         likes_sent: 0, likes_received: 0, matches: 0,
         dislikes_sent: 0, dislikes_received: 0,
@@ -211,6 +212,7 @@ export default function MyProfilePage() {
     );
 
     const location = [profile?.city, profile?.country].filter(Boolean).join(", ");
+    // @ts-ignore
     const hasGuardian = guardianForm.guardian_name || guardianForm.guardian_phone || guardianForm.guardian_email;
 
     return (
@@ -460,6 +462,7 @@ export default function MyProfilePage() {
                     )}
                 </div>
 
+
                 {/* ── Guardian ── */}
                 <div style={{ backgroundColor: "#fff", padding: 24, marginBottom: 12, borderRadius: 16 }}>
 
@@ -475,7 +478,7 @@ export default function MyProfilePage() {
                             <h3 style={{ margin: 0, fontSize: 15 }}>Guardian (Wali)</h3>
                         </div>
 
-                        {!editGuardian ? (
+                        {hasGuardian && !editGuardian && (
                             <motion.button whileTap={{ scale: 0.95 }} onClick={() => setEditGuardian(true)}
                                 style={{
                                     display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 16,
@@ -484,7 +487,9 @@ export default function MyProfilePage() {
                                 <Edit3 style={{ width: 13, height: 13, color: "var(--color-primary-foreground)" }} />
                                 <span style={{ fontSize: 12, color: "var(--color-primary-foreground)" }}>Edit</span>
                             </motion.button>
-                        ) : (
+                        )}
+
+                        {editGuardian && (
                             <div style={{ display: "flex", gap: 6 }}>
                                 <motion.button whileTap={{ scale: 0.95 }} onClick={handleCancelGuardian}
                                     style={{
@@ -496,9 +501,13 @@ export default function MyProfilePage() {
                                 <motion.button whileTap={{ scale: 0.95 }} onClick={handleSaveGuardian} disabled={savingGuardian}
                                     style={{
                                         display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderRadius: 16,
-                                        background: "var(--color-primary)", color: "var(--color-primary-foreground)", border: "none", cursor: "pointer", fontSize: 12
+                                        background: "var(--color-primary)", color: "var(--color-primary-foreground)",
+                                        border: "none", cursor: "pointer", fontSize: 12
                                     }}>
-                                    {savingGuardian ? <Loader2 style={{ width: 13, height: 13, color: "var(--color-primary-foreground)" }} className="animate-spin" /> : <Check style={{ width: 13, height: 13 }} />} Save
+                                    {savingGuardian
+                                        ? <Loader2 style={{ width: 13, height: 13, color: "var(--color-primary-foreground)" }} className="animate-spin" />
+                                        : <Check style={{ width: 13, height: 13 }} />
+                                    } Save
                                 </motion.button>
                             </div>
                         )}
@@ -506,14 +515,15 @@ export default function MyProfilePage() {
 
                     {/* Privacy note */}
                     <div style={{
-                        backgroundColor: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: 12, padding: "10px 14px",
-                        marginBottom: 16, fontSize: 12, color: "#6d28d9", lineHeight: 1.5
+                        backgroundColor: "#f5f3ff", border: "1px solid #ede9fe", borderRadius: 12,
+                        padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#6d28d9", lineHeight: 1.5
                     }}>
                         🔒 Guardian details are private and only shared after mutual interest is established.
                     </div>
 
-                    {/* Edit form */}
+                    {/* ── Three states ── */}
                     {editGuardian ? (
+                        /* 1. Edit form */
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                             {[
                                 { key: "guardian_name", label: "Name", placeholder: "Guardian full name" },
@@ -522,31 +532,27 @@ export default function MyProfilePage() {
                                 { key: "guardian_email", label: "Email", placeholder: "guardian@email.com" },
                             ].map(({ key, label, placeholder }) => (
                                 <div key={key}>
-                                    <div style={{
-                                        fontSize: 11, color: "#aaa", marginBottom: 4,
-                                        textTransform: "uppercase", letterSpacing: 1
-                                    }}>{label}</div>
+                                    <div style={{ fontSize: 11, color: "#aaa", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                                        {label}
+                                    </div>
                                     <input
                                         value={guardianForm[key]}
                                         onChange={(e) => setGField(key, e.target.value)}
                                         placeholder={placeholder}
-                                        style={{
-                                            ...inputStyle,
-                                            boxSizing: inputStyle?.boxSizing === "border-box" ? "border-box" : inputStyle?.boxSizing === "content-box" ? "content-box" : undefined
-                                        }}
+                                        style={{ ...inputStyle, boxSizing: "border-box" }}
                                     />
-
                                 </div>
                             ))}
                         </div>
+
                     ) : hasGuardian ? (
-                        /* View mode */
+                        /* 2. View mode — guardian details exist */
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                             {[
                                 { icon: UserCheck, label: guardianForm.guardian_name, sub: guardianForm.guardian_relationship || "Guardian", color: "#7c3aed", bg: "#ede9fe" },
                                 { icon: Phone, label: guardianForm.guardian_phone, sub: "Phone", color: "#0891b2", bg: "#e0f2fe" },
                                 { icon: Mail, label: guardianForm.guardian_email, sub: "Email", color: "#059669", bg: "#d1fae5" },
-                            ].filter((row) => row.label).map(({ icon: Icon, label, sub, color, bg }) => (
+                            ].filter(row => row.label).map(({ icon: Icon, label, sub, color, bg }) => (
                                 <div key={sub} style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                     <div style={{
                                         width: 36, height: 36, borderRadius: "50%", backgroundColor: bg,
@@ -561,22 +567,37 @@ export default function MyProfilePage() {
                                 </div>
                             ))}
                         </div>
+
                     ) : (
-                        /* Empty state */
-                        <div style={{ textAlign: "center", padding: "16px 0" }}>
-                            <Shield style={{ width: 32, height: 32, color: "#d1d5db", margin: "0 auto 8px" }} />
-                            <p style={{ fontSize: 13, color: "#aaa", margin: "0 0 12px" }}>No guardian details added yet</p>
-                            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setEditGuardian(true)}
+                        /* 3. Empty state — no guardian added yet */
+                        <div style={{ textAlign: "center", padding: "20px 0" }}>
+                            <div style={{
+                                width: 56, height: 56, borderRadius: "50%", backgroundColor: "#f3f4f6",
+                                display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px"
+                            }}>
+                                <Shield style={{ width: 26, height: 26, color: "#d1d5db" }} />
+                            </div>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: "#374151", margin: "0 0 4px" }}>
+                                No guardian added yet
+                            </p>
+                            <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 16px", lineHeight: 1.5 }}>
+                                Add your Wali's details so they can be notified<br />when someone expresses interest.
+                            </p>
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setEditGuardian(true)}
                                 style={{
-                                    padding: "8px 20px", borderRadius: 16, background: "var(--color-primary)",
-                                    color: "var(--color-primary-foreground)", fontSize: 12, border: "none", cursor: "pointer"
-                                }}>
+                                    display: "inline-flex", alignItems: "center", gap: 6,
+                                    padding: "9px 22px", borderRadius: 16, background: "var(--color-primary)",
+                                    color: "var(--color-primary-foreground)", fontSize: 13, border: "none", cursor: "pointer"
+                                }}
+                            >
+                                <Shield style={{ width: 14, height: 14 }} />
                                 Add Guardian
                             </motion.button>
                         </div>
                     )}
                 </div>
-
                 {/* ── Settings Links ── */}
                 {!editMode && !editGuardian && (
                     <div style={{ backgroundColor: "#fff", marginBottom: 12, borderRadius: 16 }}>

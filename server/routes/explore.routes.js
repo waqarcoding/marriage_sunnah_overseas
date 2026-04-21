@@ -8,7 +8,7 @@ const { authorizeRoles } = require('../middlewares/role.middleware');
 // ── Explore feed ──────────────────────────────────────────────────────────────
 router.get('/get-explore', authenticate, exploreController.getExplore);
 
-// ── Options (from Settings.profile_options) ───────────────────────────────────
+// ── Options (from Options table) ──────────────────────────────────────────────
 router.get('/options', authenticate, exploreController.getOptions);
 router.get('/country/:country', authenticate, exploreController.getCountryOptions);
 
@@ -16,7 +16,8 @@ router.get('/country/:country', authenticate, exploreController.getCountryOption
 router.get('/get-preferences', authenticate, exploreController.getPreferences);
 router.post('/save-preferences', authenticate, exploreController.savePreferences);
 
-// ── Admin: update settings ────────────────────────────────────────────────────
-router.post('/update-settings', authenticate, authorizeRoles('admin'), exploreController.updateSettings);
+// ── Admin: update any option field ───────────────────────────────────────────
+// Body: { country: "Pakistan" | null, field: "religions", value: [...] }
+router.post('/update-option', authenticate, authorizeRoles('admin'), exploreController.updateOption);
 
 module.exports = router;

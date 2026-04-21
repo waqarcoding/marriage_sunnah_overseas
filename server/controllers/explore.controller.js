@@ -1,27 +1,84 @@
 'use strict';
 
 const db = require('../models');
-const { User, Profile, Interest, Dislike, Preference, Setting } = db;
+const { User, Profile, Interest, Dislike, Preference, Option } = db;
 const { Op } = require('sequelize');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // In-memory cache
 // ─────────────────────────────────────────────────────────────────────────────
-let _cachedOptions = null;
+let _globalCache = null;
+let _countryCache = {};
 
-const loadOptions = async () => {
-    if (!_cachedOptions) {
-        const data = await Setting.getOptions();
-        if (data) _cachedOptions = data;
+const loadGlobal = async () => {
+    if (!_globalCache) {
+        const row = await Option.findOne();
+        if (row) {
+            _globalCache = {
+                religions: _parse(row.religions),
+                sects: _parse(row.sects),
+                castes: _parse(row.castes),
+                marital_statuses: _parse(row.marital_statuses),
+                education_levels: _parse(row.education_levels),
+                body_types: _parse(row.body_types),
+                employment_types: _parse(row.employment_types),
+                has_children: _parse(row.has_children),
+                practice_levels: _parse(row.practice_levels),
+                willing_to_relocate: _parse(row.willing_to_relocate),
+                interests: _parse(row.interests),
+                professions: _parse(row.professions),
+                monthly_salary: _parse(row.monthly_salary),
+                nationalities: _parse(row.nationalities),
+                all_countries: _parse(row.all_countries),
+                mother_tongues: _parse(row.mother_tongues),
+            };
+        }
     }
-    return _cachedOptions;
+    return _globalCache;
 };
 
-const clearCache = () => { _cachedOptions = null; };
+const loadCountry = async (name) => {
+    if (!_countryCache[name]) {
+        const row = await Option.findOne({ where: { country: name } });
+        if (row) {
+            _countryCache[name] = {
+                country: row.country,
+                flag: row.flag,
+                currency: row.currency,
+                nationalities: _parse(row.nationalities),
+                cities: _parse(row.cities),
+                mother_tongues: _parse(row.mother_tongues),
+                monthly_salary: _parse(row.monthly_salary),
+            };
+        }
+    }
+    return _countryCache[name] || null;
+};
+
+const loadAllCountries = async () => {
+    const rows = await Option.findAll({
+        attributes: ['country', 'flag', 'currency', 'nationalities', 'mother_tongues'],
+    });
+    return rows.map(r => ({
+        country: r.country,
+        flag: r.flag,
+        currency: r.currency,
+        nationalities: _parse(r.nationalities),
+        mother_tongues: _parse(r.mother_tongues),
+    }));
+};
+
+const clearCache = () => { _globalCache = null; _countryCache = {}; };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+const _parse = (value) => {
+    if (!value) return [];
+    try { return typeof value === 'string' ? JSON.parse(value) : value; }
+    catch { return []; }
+};
+
 const parseJsonPref = (value) => {
     if (!value) return null;
     try {
@@ -41,49 +98,50 @@ const toJsonPref = (value) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/options
+// Returns ALL global options + country list for filter/profile forms
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getOptions = async (req, res) => {
     try {
-        const data = await loadOptions();
-        if (!data) return res.status(500).json({ error: 'Options not configured in Settings table' });
+        const global = await loadGlobal();
+        if (!global) return res.status(500).json({ error: 'Options not configured' });
 
-        const { OPTIONS, COUNTRY_OPTIONS } = data;
+        const allCountries = await loadAllCountries();
 
-        const ALL_COUNTRIES = Object.keys(COUNTRY_OPTIONS || {});
-        const COUNTRY_FLAGS = Object.fromEntries(ALL_COUNTRIES.map(c => [c, COUNTRY_OPTIONS[c].flag]));
-        const COUNTRY_TO_CURRENCY = Object.fromEntries(ALL_COUNTRIES.map(c => [c, COUNTRY_OPTIONS[c].currencies?.[0]]));
-        const ALL_MOTHER_TONGUES = [...new Set(ALL_COUNTRIES.flatMap(c => COUNTRY_OPTIONS[c].mother_tongues || []))].sort();
-        const ALL_NATIONALITIES = [...new Set(ALL_COUNTRIES.flatMap(c => COUNTRY_OPTIONS[c].nationalities || []))].sort();
-
-        // ── sects: flatten object → unique flat array for filter dropdown ──
-        // DB stores sect as plain string e.g. "Sunni", "Shia"
-        // We extract all unique values from the sects object
-        const SECTS_OBJ = OPTIONS?.sects ?? {};
-        const SECTS_FLAT = [...new Set(Object.values(SECTS_OBJ).flat())].sort();
+        // Build country maps
+        const COUNTRY_FLAGS = Object.fromEntries(allCountries.map(c => [c.country, c.flag]));
+        const COUNTRY_TO_CURRENCY = Object.fromEntries(allCountries.map(c => [c.country, c.currency]));
+        const APP_COUNTRIES = allCountries.map(c => c.country); // 29 app countries
 
         return res.json({
             success: true,
 
-            // countries
-            countries: ALL_COUNTRIES,
+            // ── App countries (29) — for country filter dropdown ──────────
+            countries: APP_COUNTRIES,
             country_flags: COUNTRY_FLAGS,
             country_to_currency: COUNTRY_TO_CURRENCY,
-            all_nationalities: ALL_NATIONALITIES,
-            all_mother_tongues: ALL_MOTHER_TONGUES,
 
-            // profile options
-            religions: OPTIONS?.religions ?? [],
-            sects: SECTS_OBJ,               // object { Muslim: [...] } for religion-based filtering
-            sects_flat: SECTS_FLAT,              // flat array for standalone sect dropdown
-            marital_statuses: OPTIONS?.marital_statuses ?? [],
-            education_levels: OPTIONS?.education_levels ?? [],
-            body_types: OPTIONS?.body_types ?? [],
-            employment_types: OPTIONS?.employment_types ?? [],
-            has_children: OPTIONS?.has_children ?? [],
-            practice_levels: OPTIONS?.practice_levels ?? [],
-            castes: OPTIONS?.castes ?? [],  // ✅ flat array ["Arain", "Butt", ...]
-            interests: OPTIONS?.interests ?? [],
-            willing_to_relocate: OPTIONS?.willing_to_relocate ?? [],
+            // ── All world countries (197) — for profile country field ──────
+            all_countries: global.all_countries,
+
+            // ── All world nationalities (198) ─────────────────────────────
+            all_nationalities: global.nationalities,
+
+            // ── All unique languages across 29 countries ──────────────────
+            all_mother_tongues: global.mother_tongues,
+
+            // ── Global profile/filter options ─────────────────────────────
+            religions: global.religions,
+            sects: global.sects,
+            castes: global.castes,
+            marital_statuses: global.marital_statuses,
+            education_levels: global.education_levels,
+            body_types: global.body_types,
+            employment_types: global.employment_types,
+            has_children: global.has_children,
+            practice_levels: global.practice_levels,
+            willing_to_relocate: global.willing_to_relocate,
+            interests: global.interests,
+            professions: global.professions,
         });
 
     } catch (err) {
@@ -94,32 +152,30 @@ exports.getOptions = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/country/:country
+// Returns country-specific options (cities, tongues, salary)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getCountryOptions = async (req, res) => {
     try {
-        const data = await loadOptions();
-        if (!data) return res.status(500).json({ error: 'Options not configured in Settings table' });
-
-        const { COUNTRY_OPTIONS, SALARY_BY_CURRENCY } = data;
         const countryName = req.params.country;
-        const countryData = COUNTRY_OPTIONS?.[countryName];
+        const data = await loadCountry(countryName);
 
-        if (!countryData) {
+        if (!data) {
             return res.status(404).json({ success: false, message: `Country "${countryName}" not found.` });
         }
 
-        const currency = countryData.currencies?.[0] || 'USD';
-        const monthly_salaries = SALARY_BY_CURRENCY?.[currency] || SALARY_BY_CURRENCY?.['USD'] || [];
+        // get salary for this country's currency
+        const global = await loadGlobal();
+        const salaryMap = global?.monthly_salary || {};
+        const monthly_salaries = salaryMap[data.currency] || salaryMap['USD'] || [];
 
         return res.json({
             success: true,
-            country: countryName,
-            flag: countryData.flag || '',
-            nationalities: countryData.nationalities || ['Other'],
-            currencies: countryData.currencies || ['USD'],
-            currency,
-            cities: countryData.cities || ['Other'],
-            mother_tongues: countryData.mother_tongues || [],
+            country: data.country,
+            flag: data.flag,
+            currency: data.currency,
+            nationalities: data.nationalities,
+            cities: data.cities,
+            mother_tongues: data.mother_tongues,
             monthly_salaries,
         });
 
@@ -314,17 +370,24 @@ exports.getPreferences = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /explore/update-settings  (admin only)
+// POST /explore/update-option  (admin only)
+// Body: { country: "Pakistan" | null, field: "religions", value: [...] }
 // ─────────────────────────────────────────────────────────────────────────────
-exports.updateSettings = async (req, res) => {
+exports.updateOption = async (req, res) => {
     try {
-        const { profile_options } = req.body;
-        if (!profile_options) return res.status(400).json({ error: 'profile_options required' });
-        await Setting.setOptions(profile_options);
+        const { country, field, value } = req.body;
+        if (!field || value === undefined) return res.status(400).json({ error: 'field and value required' });
+
+        const where = country ? { country } : {};
+        const update = { [field]: JSON.stringify(value) };
+
+        await Option.update(update, { where });
         clearCache();
-        return res.json({ success: true, message: 'Settings updated successfully' });
+
+        return res.json({ success: true, message: `"${field}" updated successfully` });
+
     } catch (err) {
-        console.error('updateSettings error:', err);
+        console.error('updateOption error:', err);
         return res.status(500).json({ error: 'Server error' });
     }
 };

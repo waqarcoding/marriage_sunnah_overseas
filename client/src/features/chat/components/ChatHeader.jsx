@@ -35,7 +35,8 @@ export default function ChatHeader({
 
                 {/* Avatar + Name — clickable */}
                 <button
-                    onClick={onViewProfile}
+                    // onClick={() => onViewProfile(receiverInfo)}
+
                     className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
                     <div className="relative flex-shrink-0">
@@ -46,6 +47,7 @@ export default function ChatHeader({
                                     images={receiverInfo?.avatar}
                                     gender={receiverInfo?.gender}
                                     alt={receiverInfo?.name}
+                                    // @ts-ignore
                                     interestStatus={true}
                                     className="w-full h-full object-cover"
                                 />

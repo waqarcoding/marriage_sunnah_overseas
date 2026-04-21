@@ -58,10 +58,10 @@ exports.signup = async (req, res) => {
 
     // 4️⃣ Create profile
     const images = photoPath ? [photoPath] : []
-
+    console.log(user);
     await Profile.create(
       {
-        name: user.name,
+        name: name,
         guardian_id: user.id,
         individual_id: user.id,
         gender,
@@ -164,7 +164,7 @@ exports.login = async (req, res) => {
     }
 
 
-    console.log("User object before signing JWT:", user);
+
 
     const payload = {
       id: user.id,
@@ -181,7 +181,7 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
-    console.log("Generated JWT Token:", token);
+    // console.log("Generated JWT Token:", token);
 
     // 6️⃣ Respond with success
     res.json({

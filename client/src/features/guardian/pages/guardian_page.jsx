@@ -1,6 +1,6 @@
 
 import GuardianDashboard from "./guardian_dashboard";
-import IndividualGuardianPage from "./individual_page";
+import IndividualGuardianPage from "../../profile/pages/add_guardian";
 
 
 function getTokenData() {
