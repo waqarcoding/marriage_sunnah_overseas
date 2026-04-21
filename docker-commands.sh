@@ -7,7 +7,8 @@
 #After  change code run this developer mode
 docker restart marriage-backend && docker compose -f docker-compose.dev.yml up
 #After  change code run this live mode
-docker restart marriage-backend && docker compose -f docker-compose.yml up
+docker compose up -d --build
+cd /var/www/marriage_sunnah_overseas && docker compose up -d --build
 
 
 # This mounts your source code into the container so changes reflect instantly with hot reload on http://localhost:3000.
@@ -39,6 +40,9 @@ docker ps
 #All containers are running. Now test if backend is reachable from frontend:
 docker exec marriage-frontend wget -qO- http://marriage-backend:5000
 
+
+#reload nginx
+docker exec marriage-frontend nginx -s reload
 
 
 # ------------------------------------------------------------
