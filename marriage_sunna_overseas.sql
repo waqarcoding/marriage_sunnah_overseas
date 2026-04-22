@@ -28,7 +28,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `Dislikes` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` bigint NOT NULL,
   `target_user_id` bigint NOT NULL,
   `created_at` datetime NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE `Dislikes` (
 --
 
 CREATE TABLE `Guardians` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `individual_id` bigint NOT NULL,
   `guardian_id` bigint NOT NULL,
   `contact_hidden` tinyint(1) NOT NULL DEFAULT '0',
@@ -62,7 +62,7 @@ CREATE TABLE `Guardians` (
 --
 
 CREATE TABLE `Interests` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `status` enum('pending','accepted','declined') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
   `from_user` bigint DEFAULT NULL,
   `to_user` bigint DEFAULT NULL,
@@ -112,7 +112,7 @@ INSERT INTO `Interests` (`id`, `status`, `from_user`, `to_user`, `created_at`, `
 --
 
 CREATE TABLE `Matches` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user1` bigint NOT NULL,
   `user2` bigint NOT NULL,
   `created_at` datetime NOT NULL,
@@ -134,7 +134,7 @@ INSERT INTO `Matches` (`id`, `user1`, `user2`, `created_at`, `updated_at`, `inte
 --
 
 CREATE TABLE `Messages` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `sender_id` bigint NOT NULL,
   `receiver_id` bigint NOT NULL,
   `message` text COLLATE utf8mb4_general_ci NOT NULL,
@@ -183,7 +183,7 @@ INSERT INTO `Messages` (`id`, `sender_id`, `receiver_id`, `message`, `interest_i
 --
 
 CREATE TABLE `Options` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `country` varchar(100) DEFAULT NULL COMMENT 'NULL for global options row, country name for country rows',
   `flag` varchar(10) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
@@ -281,7 +281,7 @@ INSERT INTO `Options` (`id`, `country`, `flag`, `currency`, `nationalities`, `ci
 --
 
 CREATE TABLE `Otps` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `otp` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
   `expires_at` datetime NOT NULL,
   `user_id` bigint NOT NULL,
@@ -327,7 +327,7 @@ INSERT INTO `Otps` (`id`, `otp`, `expires_at`, `user_id`, `created_at`, `updated
 --
 
 CREATE TABLE `Prefs` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `individual_id` bigint NOT NULL,
   `pref_gender` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `pref_age_min` int DEFAULT NULL,
@@ -367,7 +367,7 @@ INSERT INTO `Prefs` (`id`, `individual_id`, `pref_gender`, `pref_age_min`, `pref
 --
 
 CREATE TABLE `Profiles` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `individual_id` bigint NOT NULL,
   `guardian_id` bigint DEFAULT NULL,
   `name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
@@ -469,7 +469,7 @@ INSERT INTO `Profiles` (`id`, `individual_id`, `guardian_id`, `name`, `gender`, 
 --
 
 CREATE TABLE `Settings` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `profile_options` longtext NOT NULL COMMENT 'JSON stringified — contains OPTIONS, COUNTRY_OPTIONS, SALARY_BY_CURRENCY',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL
@@ -489,7 +489,7 @@ INSERT INTO `Settings` (`id`, `profile_options`, `created_at`, `updated_at`) VAL
 --
 
 CREATE TABLE `Users` (
-  `id` bigint NOT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `email` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `mobile` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `password_hash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
@@ -565,7 +565,7 @@ INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `is_onlin
 -- Indexes for table `Dislikes`
 --
 ALTER TABLE `Dislikes`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `user_id` (`user_id`),
   ADD KEY `target_user_id` (`target_user_id`);
 
@@ -573,7 +573,7 @@ ALTER TABLE `Dislikes`
 -- Indexes for table `Guardians`
 --
 ALTER TABLE `Guardians`
-  ADD PRIMARY KEY (`id`),
+
   ADD UNIQUE KEY `guardians_individual_id_guardian_id` (`individual_id`,`guardian_id`),
   ADD KEY `guardian_id` (`guardian_id`);
 
@@ -581,7 +581,7 @@ ALTER TABLE `Guardians`
 -- Indexes for table `Interests`
 --
 ALTER TABLE `Interests`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `from_user` (`from_user`),
   ADD KEY `to_user` (`to_user`),
   ADD KEY `from_guardian` (`from_guardian`),
@@ -591,7 +591,7 @@ ALTER TABLE `Interests`
 -- Indexes for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `user1` (`user1`),
   ADD KEY `user2` (`user2`),
   ADD KEY `interest_id` (`interest_id`);
@@ -600,7 +600,7 @@ ALTER TABLE `Matches`
 -- Indexes for table `Messages`
 --
 ALTER TABLE `Messages`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `sender_id` (`sender_id`),
   ADD KEY `receiver_id` (`receiver_id`),
   ADD KEY `interest_id` (`interest_id`);
@@ -609,7 +609,7 @@ ALTER TABLE `Messages`
 -- Indexes for table `Options`
 --
 ALTER TABLE `Options`
-  ADD PRIMARY KEY (`id`),
+
   ADD UNIQUE KEY `country` (`country`),
   ADD UNIQUE KEY `country_2` (`country`),
   ADD UNIQUE KEY `country_3` (`country`),
@@ -621,21 +621,21 @@ ALTER TABLE `Options`
 -- Indexes for table `Otps`
 --
 ALTER TABLE `Otps`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `Prefs`
 --
 ALTER TABLE `Prefs`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `individual_id` (`individual_id`);
 
 --
 -- Indexes for table `Profiles`
 --
 ALTER TABLE `Profiles`
-  ADD PRIMARY KEY (`id`),
+
   ADD KEY `individual_id` (`individual_id`),
   ADD KEY `guardian_id` (`guardian_id`);
 
@@ -643,13 +643,13 @@ ALTER TABLE `Profiles`
 -- Indexes for table `Settings`
 --
 ALTER TABLE `Settings`
-  ADD PRIMARY KEY (`id`);
+
 
 --
 -- Indexes for table `Users`
 --
 ALTER TABLE `Users`
-  ADD PRIMARY KEY (`id`),
+
   ADD UNIQUE KEY `email` (`email`),
   ADD UNIQUE KEY `mobile` (`mobile`),
   ADD UNIQUE KEY `email_2` (`email`),
