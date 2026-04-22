@@ -33,7 +33,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/explore', exploreRoutes);
 app.use('/api/interest', interestRoutes);
 app.use('/api/guardian', guardianRoutes);
-
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 app.use(errorMiddleware);
 
 const server = http.createServer(app);
