@@ -62,7 +62,13 @@ const startServer = async () => {
   try {
     console.log("🚀 Starting server...");
 
-    await db.syncDatabase(); // 👈 THIS triggers your logs
+    // ❌ Only run DB sync in development
+    if (process.env.NODE_ENV !== "production") {
+      await db.syncDatabase();
+      console.log("🛠️ DB sync completed (development only)");
+    } else {
+      console.log("🚫 Production mode: skipping DB sync");
+    }
 
     initSocket(server);
 
