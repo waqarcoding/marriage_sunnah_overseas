@@ -235,6 +235,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Interest.init(
     {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
       status: {
         type: DataTypes.ENUM('pending', 'accepted', 'declined'),
         allowNull: false,
@@ -244,15 +245,14 @@ module.exports = (sequelize, DataTypes) => {
       from_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
       from_guardian_status: {
         type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: true,   // ✅
+        allowNull: true,
         defaultValue: 'pending',
       },
-
       to_user: { type: DataTypes.BIGINT, allowNull: false },
       to_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
       to_guardian_status: {
         type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: true,   // ✅
+        allowNull: true,
         defaultValue: 'pending',
       },
       both_guardians_approved: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
@@ -266,8 +266,13 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'Interests',
       underscored: true,
       timestamps: true,
+      indexes: [
+        { fields: ['from_user'] },
+        { fields: ['to_user'] },
+        { fields: ['from_guardian'] }, // ← needed for FK to Guardians
+        { fields: ['to_guardian'] },   // ← needed for FK to Guardians
+      ],
     }
   );
-
   return Interest;
 };

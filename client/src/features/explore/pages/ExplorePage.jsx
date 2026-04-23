@@ -387,11 +387,12 @@ export default function ExplorePage({ onProfileClick }) {
             const list = res?.profiles || res?.data?.profiles || [];
             setProfiles(list);
             setCurrentIndex(0);
-        } catch {
-            toast.error("Failed to load profiles");
+        } catch (error) {
+            console.log("Failed to load profiles error:", error);
         } finally {
             setLoading(false);
         }
+
     };
 
     const handleFilterToggle = (filter) => {

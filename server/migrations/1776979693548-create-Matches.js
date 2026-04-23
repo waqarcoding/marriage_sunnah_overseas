@@ -19,6 +19,10 @@ module.exports = {
         type: Sequelize.BIGINT,
         allowNull: false
       },
+      interest_id: {
+        type: Sequelize.BIGINT,
+        allowNull: true
+      },
 
       created_at: {
         allowNull: false,

@@ -3,16 +3,16 @@
 module.exports = (sequelize, DataTypes) => {
   const Message = sequelize.define('Message', {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,        // ← BIGINT
       primaryKey: true,
       autoIncrement: true,
     },
     sender_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,        // ← BIGINT
       allowNull: false,
     },
     receiver_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,        // ← BIGINT
       allowNull: false,
     },
     message: {
@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     interest_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,        // ← BIGINT
       allowNull: true,
     },
     is_seen: {
@@ -37,6 +37,7 @@ module.exports = (sequelize, DataTypes) => {
   Message.associate = (db) => {
     Message.belongsTo(db.User, { as: 'sender', foreignKey: 'sender_id' });
     Message.belongsTo(db.User, { as: 'receiver', foreignKey: 'receiver_id' });
+    Message.belongsTo(db.Interest, { as: 'interest', foreignKey: 'interest_id' }); // ← was missing
   };
 
   return Message;

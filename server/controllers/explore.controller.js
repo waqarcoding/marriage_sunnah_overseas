@@ -251,7 +251,9 @@ exports.getExplore = async (req, res) => {
             ...dislikesSent.map(d => d.target_user_id),
         ].filter(id => id != null);
 
-        const profileWhere = {
+
+        /*
+               const profileWhere = {
             individual_id: { [Op.notIn]: excludeIds.length ? excludeIds : [0] },
             ...(gender && { gender }),
             ...(city && { city }),
@@ -276,13 +278,23 @@ exports.getExplore = async (req, res) => {
             ...(motherTongue?.length && { mother_tongue: { [Op.in]: motherTongue } }),
             ...(employmentType?.length && { employment_type: { [Op.in]: employmentType } }),
         };
+        */
+
+        // Debug console output
+        // console.log("getExplore debug -- Current User:", currentUser?.id);
+        // console.log("getExplore debug -- Preferences:", prefs);
+        // console.log("getExplore debug -- Query params:", req.query);
+        //  console.log("getExplore debug -- Built profileWhere:", profileWhere);
+        // console.log("getExplore debug -- Exclude User IDs:", excludeIds);
 
         const profiles = await Profile.findAll({
-            where: profileWhere,
+            // where: profileWhere,
             include: [{ model: User.unscoped(), as: 'individual', attributes: ['id', 'is_online', 'is_premium'], required: true }],
             order: [['created_at', 'DESC']],
             limit: 50,
         });
+
+        console.log("getExplore debug -- Profiles found:", profiles.length);
 
         return res.json({ success: true, profiles, applied_prefs: !!prefs });
 

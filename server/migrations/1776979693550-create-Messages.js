@@ -12,11 +12,11 @@ module.exports = {
       },
 
       sender_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
         allowNull: false
       },
       receiver_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
         allowNull: false
       },
       message: {
@@ -24,7 +24,7 @@ module.exports = {
         allowNull: false
       },
       interest_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
         allowNull: true
       },
       is_seen: {
