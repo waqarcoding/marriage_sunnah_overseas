@@ -6,6 +6,9 @@ import http from "http";
 
 dotenv.config();
 
+/* ---------------- IMPORT DB ---------------- */
+import db from "./models/index.js";
+
 import errorMiddleware from "./middlewares/error.middleware.js";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -44,22 +47,33 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-/* fallback health */
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-/* ---------------- ERROR HANDLER (LAST) ---------------- */
+/* ---------------- ERROR HANDLER ---------------- */
 app.use(errorMiddleware);
 
-/* ---------------- SERVER ---------------- */
+/* ---------------- HTTP SERVER ---------------- */
 const server = http.createServer(app);
 
-/* socket init */
-initSocket(server);
+/* ---------------- START FUNCTION (FIX) ---------------- */
+const startServer = async () => {
+  try {
+    console.log("🚀 Starting server...");
 
-/* IMPORTANT FIX FOR DIGITALOCEAN */
-// @ts-ignore
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    await db.syncDatabase(); // 👈 THIS triggers your logs
+
+    initSocket(server);
+
+    // @ts-ignore
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error("❌ Server failed to start:", err);
+  }
+};
+
+startServer();

@@ -38,11 +38,7 @@ module.exports = (sequelize, DataTypes) => {
             autoIncrement: true,
             primaryKey: true,
         },
-        profile_options: {
-            type: DataTypes.TEXT('long'),  // ✅ correct — not LONGTEXT
-            allowNull: false,
-            comment: 'JSON stringified — contains OPTIONS, COUNTRY_OPTIONS, SALARY_BY_CURRENCY',
-        },
+
     }, {
         sequelize,
         modelName: 'Setting',

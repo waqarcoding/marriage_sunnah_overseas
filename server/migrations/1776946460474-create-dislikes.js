@@ -1,0 +1,42 @@
+
+'use strict';
+
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.createTable('dislikes', {
+      id: {
+        type: Sequelize.BIGINT,
+        autoIncrement: true,
+        primaryKey: true,
+        allowNull: false
+      },
+
+      user_id: {
+        type: Sequelize.BIGINT,
+        allowNull: false
+      },
+      target_user_id: {
+        type: Sequelize.BIGINT,
+        allowNull: false
+      },
+      is_mutual: {
+        type: Sequelize.BOOLEAN,
+        allowNull: true
+      },
+
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      }
+    });
+  },
+
+  async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('dislikes');
+  }
+};
