@@ -138,8 +138,9 @@ module.exports = (sequelize, DataTypes) => {
 
     // Fetch interests sent by the user that are still pending
     static async getInterestsSent(userId) {
-      const { Profile } = sequelize.models;
-      return await Interest.findAll({
+      const { Profile } = (sequelize && sequelize.models) ? sequelize.models : {};
+      if (!Profile) return [];
+      const results = await Interest.findAll({
         where: {
           from_user: userId,
           status: 'pending'
@@ -148,12 +149,14 @@ module.exports = (sequelize, DataTypes) => {
           { model: Profile, as: 'toProfile' }
         ]
       });
+      return results || [];
     }
 
     // Fetch interests received by the user that are still pending
     static async getInterestsReceived(userId) {
-      const { Profile } = sequelize.models;
-      return await Interest.findAll({
+      const { Profile } = (sequelize && sequelize.models) ? sequelize.models : {};
+      if (!Profile) return [];
+      const results = await Interest.findAll({
         where: {
           to_user: userId,
           status: 'pending'
@@ -162,6 +165,7 @@ module.exports = (sequelize, DataTypes) => {
           { model: Profile, as: 'fromProfile' }
         ]
       });
+      return results || [];
     }
 
 
