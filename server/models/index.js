@@ -65,10 +65,19 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 // -------------------- SAFE SYNC FUNCTION --------------------
-db.syncDatabase = async () => {
+db.authenticateDatabase = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connected');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    throw error;
+  }
+};
+
+db.syncDatabase = async () => {
+  try {
+
 
     await sequelize.sync({ alter: true });
 

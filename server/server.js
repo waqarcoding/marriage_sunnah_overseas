@@ -61,6 +61,7 @@ const server = http.createServer(app);
 const startServer = async () => {
   try {
     console.log("🚀 Starting server...");
+    await db.authenticateDatabase();
 
     // ❌ Only run DB sync in development
     if (process.env.NODE_ENV !== "production") {
