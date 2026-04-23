@@ -36,11 +36,14 @@ app.use('/api/guardian', guardianRoutes);
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 app.use(errorMiddleware);
 
 const server = http.createServer(app);
 initSocket(server);                               // ✅ initialize once — no export needed
 app.use("/uploads", express.static("uploads"));
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at ${process.env.BASE_URL}:${PORT}`);
 });
