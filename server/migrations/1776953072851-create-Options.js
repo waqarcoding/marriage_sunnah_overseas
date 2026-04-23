@@ -3,7 +3,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Prefs', {
+    await queryInterface.createTable('Options', {
       id: {
         type: Sequelize.BIGINT,
         autoIncrement: true,
@@ -11,97 +11,105 @@ module.exports = {
         allowNull: false
       },
 
-      individual_id: {
-        type: Sequelize.BIGINT,
-        allowNull: false
-      },
-      pref_gender: {
+      country: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      pref_age_min: {
-        type: Sequelize.INTEGER,
-        allowNull: true
-      },
-      pref_age_max: {
-        type: Sequelize.INTEGER,
-        allowNull: true
-      },
-      pref_marital_status: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      pref_nationality: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      pref_country: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      pref_city: {
+      flag: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      pref_religion: {
+      currency: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      pref_sect: {
+      nationalities: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_religious_practice_level: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
-      pref_height_min_inches: {
-        type: Sequelize.TINYINT,
-        allowNull: true
-      },
-      pref_height_max_inches: {
-        type: Sequelize.TINYINT,
-        allowNull: true
-      },
-      pref_body_type: {
+      cities: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_caste: {
+      mother_tongues: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_mother_tongue: {
+      religions: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_education: {
-        type: Sequelize.STRING,
-        allowNull: true
-      },
-      pref_employment_type: {
+      sects: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_monthly_salary: {
-        type: Sequelize.STRING,
+      castes: {
+        type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_has_children: {
-        type: Sequelize.STRING,
+      professions: {
+        type: Sequelize.TEXT,
         allowNull: true
       },
-      pref_willing_to_relocate: {
-        type: Sequelize.TINYINT,
+      all_countries: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      marital_statuses: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      education_levels: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      body_types: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      employment_types: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      has_children: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      practice_levels: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      willing_to_relocate: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      interests: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      monthly_salary: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      family_backgrounds: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      about_me: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      relationship_options: {
+        type: Sequelize.TEXT,
         allowNull: true
       },
 
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
 
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE
       }
@@ -109,6 +117,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Prefs');
+    await queryInterface.dropTable('Options');
   }
 };

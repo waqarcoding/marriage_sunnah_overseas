@@ -3,7 +3,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Dislikes', {
+    await queryInterface.createTable('Otps', {
       id: {
         type: Sequelize.BIGINT,
         autoIncrement: true,
@@ -11,25 +11,25 @@ module.exports = {
         allowNull: false
       },
 
+      otp: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      expires_at: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
       user_id: {
         type: Sequelize.BIGINT,
         allowNull: false
       },
-      target_user_id: {
-        type: Sequelize.BIGINT,
-        allowNull: false
-      },
-      is_mutual: {
-        type: Sequelize.BOOLEAN,
-        allowNull: true
-      },
 
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
 
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE
       }
@@ -37,6 +37,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Dislikes');
+    await queryInterface.dropTable('Otps');
   }
 };

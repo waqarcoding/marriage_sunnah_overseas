@@ -3,7 +3,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Matches', {
+    await queryInterface.createTable('Settings', {
       id: {
         type: Sequelize.BIGINT,
         autoIncrement: true,
@@ -11,21 +11,14 @@ module.exports = {
         allowNull: false
       },
 
-      user1: {
-        type: Sequelize.BIGINT,
-        allowNull: false
-      },
-      user2: {
-        type: Sequelize.BIGINT,
-        allowNull: false
-      },
 
-      createdAt: {
+
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
 
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE
       }
@@ -33,6 +26,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Matches');
+    await queryInterface.dropTable('Settings');
   }
 };
