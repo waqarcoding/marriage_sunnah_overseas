@@ -135,6 +135,36 @@ module.exports = (sequelize, DataTypes) => {
       return this.status === 'declined';
     }
 
+
+    // Fetch interests sent by the user that are still pending
+    static async getInterestsSent(userId) {
+      const { Profile } = sequelize.models;
+      return await Interest.findAll({
+        where: {
+          from_user: userId,
+          status: 'pending'
+        },
+        include: [
+          { model: Profile, as: 'toProfile' }
+        ]
+      });
+    }
+
+    // Fetch interests received by the user that are still pending
+    static async getInterestsReceived(userId) {
+      const { Profile } = sequelize.models;
+      return await Interest.findAll({
+        where: {
+          to_user: userId,
+          status: 'pending'
+        },
+        include: [
+          { model: Profile, as: 'fromProfile' }
+        ]
+      });
+    }
+
+
     // ─────────────────────────────────────────────────────────────────────
     // Static Magic Methods
     // ─────────────────────────────────────────────────────────────────────
@@ -150,8 +180,9 @@ module.exports = (sequelize, DataTypes) => {
       return await Interest.findAll({
         where,
         include: [
-          { model: Guardian, as: 'fromGuardian', attributes: guardianAttrs },
-          { model: Guardian, as: 'toGuardian', attributes: guardianAttrs },
+          { model: Guardian, as: 'fromGuardian', attributes: guardianAttrs.filter(attr => attr !== 'guardian_image') },
+          { model: Guardian, as: 'toGuardian', attributes: guardianAttrs.filter(attr => attr !== 'guardian_image') },
+
         ],
       });
     }
