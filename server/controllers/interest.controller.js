@@ -274,52 +274,52 @@ exports.getInterests = async (req, res) => {
     try {
         const user = await User.findOne({
             where: { id: req.user.id },
-            include: [
-                {
-                    as: 'profile',
-                    model: Profile,
-                }
-            ]
+            include: [{ as: 'profile', model: Profile }]
         });
-        // Fetch interests sent, received, and matches as in previous code
-        const sentInterests = await user.getInterestsSent({
-            where: { status: "pending" },
-            include: [{ model: Profile, as: 'toProfile' }]
-        });
-        const receivedInterests = await user.getInterestsReceived({
-            where: { status: "pending" },
-            include: [{ model: Profile, as: 'fromProfile' }]
-        });
-        // For matches, get mutual accepted interests where status is 'accepted' and guardian_approved is true (1)
-        const matches = await Interest.findAll({
-            where: {
-                status: "accepted",
 
-                [Op.or]: [
-                    { from_user: req.user.id },
-                    { to_user: req.user.id }
+        // ── Null check ─────────────────────────────────────────────────────
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // ── Fetch interests ────────────────────────────────────────────────
+        const [sentInterests, receivedInterests, matches] = await Promise.all([
+            user.getInterestsSent({
+                where: { status: 'pending' },
+                include: [{ model: Profile, as: 'toProfile' }]
+            }),
+            user.getInterestsReceived({
+                where: { status: 'pending' },
+                include: [{ model: Profile, as: 'fromProfile' }]
+            }),
+            Interest.findAll({
+                where: {
+                    status: 'accepted',
+                    [Op.or]: [
+                        { from_user: req.user.id },
+                        { to_user: req.user.id }
+                    ]
+                },
+                include: [
+                    { model: Profile, as: 'toProfile' },
+                    { model: Profile, as: 'fromProfile' }
                 ]
-            },
-            include: [
+            })
+        ]);
 
-                { model: Profile, as: 'toProfile' },
-                { model: Profile, as: 'fromProfile' }
-            ]
-        });
-
-        // Counts summary
+        // ── Counts ─────────────────────────────────────────────────────────
         const [likesSentCount, likesReceivedCount, matchesCount] = await Promise.all([
             Interest.count({ where: { from_user: req.user.id } }),
             Interest.count({ where: { to_user: req.user.id } }),
             Interest.count({
                 where: {
-                    status: "accepted",
+                    status: 'accepted',
                     [Op.or]: [
                         { from_user: req.user.id },
                         { to_user: req.user.id }
                     ]
                 }
-            }),
+            })
         ]);
 
         res.status(200).json({
@@ -327,7 +327,7 @@ exports.getInterests = async (req, res) => {
             data: {
                 sent: sentInterests,
                 received: receivedInterests,
-                matches: matches
+                matches
             },
             counts: {
                 likes_sent: likesSentCount,
@@ -335,11 +335,12 @@ exports.getInterests = async (req, res) => {
                 matches: matchesCount
             }
         });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error' });
+        console.error('getInterests error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-}
+};
 
 // ─────────────────────────────────────────────────────────────
 // GET /interest/pending-count

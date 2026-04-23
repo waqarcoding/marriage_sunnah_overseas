@@ -37,8 +37,13 @@ module.exports = (sequelize, DataTypes) => {
     is_super_like; is_mutual; created_at; updated_at;
 
     static associate(models) {
+      // User Interactions: Interests associations for users (from_user/to_user)
+      Interest.belongsTo(models.User, { foreignKey: 'from_user', as: 'fromUser' });
+      Interest.belongsTo(models.User, { foreignKey: 'to_user', as: 'toUser' });
+
       Interest.belongsTo(models.Profile, { foreignKey: 'from_user', targetKey: 'individual_id', as: 'fromProfile' });
       Interest.belongsTo(models.Profile, { foreignKey: 'to_user', targetKey: 'individual_id', as: 'toProfile' });
+
       Interest.hasMany(models.Message, { foreignKey: 'interest_id', as: 'messages' });
       Interest.hasOne(models.Match, { foreignKey: 'interest_id', as: 'match' });
 
