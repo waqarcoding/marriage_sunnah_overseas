@@ -6,12 +6,12 @@ let io;
 const onlineUsers = new Set();
 
 export const initSocket = (server) => {
-    console.log('Connect Socket:');
+    console.log('Connecting Socket...');
     io = new Server(server, { cors: { origin: '*' } });
 
     io.on('connection', (socket) => {
         console.log('User connected:', socket.id);
-
+        console.log('Connected Socket:' + socket.id);
         socket.on('join', (userId) => {
             socket.join(`user_${userId}`);
             onlineUsers.add(String(userId));
