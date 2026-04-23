@@ -12,7 +12,7 @@ module.exports = {
       },
 
       status: {
-        type: Sequelize.ENUM,
+        type: Sequelize.ENUM('pending', 'accepted', 'declined'),
         allowNull: false
       },
       from_user: {
@@ -24,7 +24,7 @@ module.exports = {
         allowNull: true
       },
       from_guardian_status: {
-        type: Sequelize.ENUM,
+        type: Sequelize.ENUM('pending', 'accepted', 'declined'),
         allowNull: true
       },
       to_user: {
@@ -36,7 +36,7 @@ module.exports = {
         allowNull: true
       },
       to_guardian_status: {
-        type: Sequelize.ENUM,
+        type: Sequelize.ENUM('pending', 'accepted', 'declined'),
         allowNull: true
       },
       both_guardians_approved: {

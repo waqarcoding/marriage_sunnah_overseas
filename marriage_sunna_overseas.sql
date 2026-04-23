@@ -2,10 +2,10 @@
 -- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Host: db
--- Generation Time: Apr 21, 2026 at 10:30 PM
--- Server version: 8.0.45
--- PHP Version: 8.3.26
+-- Host: localhost
+-- Generation Time: Apr 23, 2026 at 01:12 PM
+-- Server version: 8.0.46
+-- PHP Version: 8.5.5
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,6 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Database: `marriage_sunna_overseas`
 --
+CREATE DATABASE IF NOT EXISTS `marriage_sunna_overseas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE `marriage_sunna_overseas`;
 
 -- --------------------------------------------------------
 
@@ -27,13 +29,18 @@ SET time_zone = "+00:00";
 -- Table structure for table `Dislikes`
 --
 
-CREATE TABLE `Dislikes` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Dislikes`;
+CREATE TABLE IF NOT EXISTS `Dislikes` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
   `target_user_id` bigint NOT NULL,
+  `is_mutual` tinyint(1) DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_target_user_id` (`target_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -41,8 +48,9 @@ CREATE TABLE `Dislikes` (
 -- Table structure for table `Guardians`
 --
 
-CREATE TABLE `Guardians` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Guardians`;
+CREATE TABLE IF NOT EXISTS `Guardians` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `individual_id` bigint NOT NULL,
   `guardian_id` bigint NOT NULL,
   `contact_hidden` tinyint(1) NOT NULL DEFAULT '0',
@@ -52,7 +60,10 @@ CREATE TABLE `Guardians` (
   `guardian_phone` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `guardian_email` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `guardian_relationship` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `guardian_image` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
+  `guardian_image` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `guardians_individual_id_guardian_id` (`individual_id`,`guardian_id`),
+  KEY `guardian_id` (`guardian_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -61,8 +72,9 @@ CREATE TABLE `Guardians` (
 -- Table structure for table `Interests`
 --
 
-CREATE TABLE `Interests` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Interests`;
+CREATE TABLE IF NOT EXISTS `Interests` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `status` enum('pending','accepted','declined') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
   `from_user` bigint DEFAULT NULL,
   `to_user` bigint DEFAULT NULL,
@@ -75,8 +87,13 @@ CREATE TABLE `Interests` (
   `to_guardian` bigint DEFAULT NULL,
   `to_guardian_status` enum('pending','accepted','declined') COLLATE utf8mb4_general_ci DEFAULT 'pending',
   `both_guardians_approved` tinyint(1) NOT NULL DEFAULT '0',
-  `both_users_approved` tinyint(1) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `both_users_approved` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `from_user` (`from_user`),
+  KEY `to_user` (`to_user`),
+  KEY `from_guardian` (`from_guardian`),
+  KEY `to_guardian` (`to_guardian`)
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Interests`
@@ -111,14 +128,19 @@ INSERT INTO `Interests` (`id`, `status`, `from_user`, `to_user`, `created_at`, `
 -- Table structure for table `Matches`
 --
 
-CREATE TABLE `Matches` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Matches`;
+CREATE TABLE IF NOT EXISTS `Matches` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `user1` bigint NOT NULL,
   `user2` bigint NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
-  `interest_id` bigint DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `interest_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user1` (`user1`),
+  KEY `user2` (`user2`),
+  KEY `interest_id` (`interest_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Matches`
@@ -133,16 +155,21 @@ INSERT INTO `Matches` (`id`, `user1`, `user2`, `created_at`, `updated_at`, `inte
 -- Table structure for table `Messages`
 --
 
-CREATE TABLE `Messages` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Messages`;
+CREATE TABLE IF NOT EXISTS `Messages` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `sender_id` bigint NOT NULL,
   `receiver_id` bigint NOT NULL,
   `message` text COLLATE utf8mb4_general_ci NOT NULL,
   `interest_id` bigint DEFAULT NULL,
   `is_seen` tinyint(1) DEFAULT '0',
   `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sender_id` (`sender_id`),
+  KEY `receiver_id` (`receiver_id`),
+  KEY `interest_id` (`interest_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=169 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Messages`
@@ -182,8 +209,9 @@ INSERT INTO `Messages` (`id`, `sender_id`, `receiver_id`, `message`, `interest_i
 -- Table structure for table `Options`
 --
 
-CREATE TABLE `Options` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Options`;
+CREATE TABLE IF NOT EXISTS `Options` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `country` varchar(100) DEFAULT NULL COMMENT 'NULL for global options row, country name for country rows',
   `flag` varchar(10) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
@@ -208,8 +236,39 @@ CREATE TABLE `Options` (
   `all_countries` text COMMENT 'JSON array of 197 world countries',
   `family_backgrounds` longtext COMMENT 'JSON object {muslim:[...], other:[...]}',
   `about_me` longtext COMMENT 'JSON object {muslim:{Doctor:[...], default:[]}, other:{...}}',
-  `relationship_options` text COMMENT 'JSON object {muslim:[...], other:[...]}'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `relationship_options` text COMMENT 'JSON object {muslim:[...], other:[...]}',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `country` (`country`),
+  UNIQUE KEY `country_2` (`country`),
+  UNIQUE KEY `country_3` (`country`),
+  UNIQUE KEY `country_4` (`country`),
+  UNIQUE KEY `country_5` (`country`),
+  UNIQUE KEY `country_6` (`country`),
+  UNIQUE KEY `country_7` (`country`),
+  UNIQUE KEY `country_8` (`country`),
+  UNIQUE KEY `country_9` (`country`),
+  UNIQUE KEY `country_10` (`country`),
+  UNIQUE KEY `country_11` (`country`),
+  UNIQUE KEY `country_12` (`country`),
+  UNIQUE KEY `country_13` (`country`),
+  UNIQUE KEY `country_14` (`country`),
+  UNIQUE KEY `country_15` (`country`),
+  UNIQUE KEY `country_16` (`country`),
+  UNIQUE KEY `country_17` (`country`),
+  UNIQUE KEY `country_18` (`country`),
+  UNIQUE KEY `country_19` (`country`),
+  UNIQUE KEY `country_20` (`country`),
+  UNIQUE KEY `country_21` (`country`),
+  UNIQUE KEY `country_22` (`country`),
+  UNIQUE KEY `country_23` (`country`),
+  UNIQUE KEY `country_24` (`country`),
+  UNIQUE KEY `country_25` (`country`),
+  UNIQUE KEY `country_26` (`country`),
+  UNIQUE KEY `country_27` (`country`),
+  UNIQUE KEY `country_28` (`country`),
+  UNIQUE KEY `country_29` (`country`),
+  UNIQUE KEY `country_30` (`country`)
+) ENGINE=InnoDB AUTO_INCREMENT=118 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `Options`
@@ -280,14 +339,17 @@ INSERT INTO `Options` (`id`, `country`, `flag`, `currency`, `nationalities`, `ci
 -- Table structure for table `Otps`
 --
 
-CREATE TABLE `Otps` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Otps`;
+CREATE TABLE IF NOT EXISTS `Otps` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `otp` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
   `expires_at` datetime NOT NULL,
   `user_id` bigint NOT NULL,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=212 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Otps`
@@ -326,32 +388,35 @@ INSERT INTO `Otps` (`id`, `otp`, `expires_at`, `user_id`, `created_at`, `updated
 -- Table structure for table `Prefs`
 --
 
-CREATE TABLE `Prefs` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Prefs`;
+CREATE TABLE IF NOT EXISTS `Prefs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `individual_id` bigint NOT NULL,
-  `pref_gender` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_gender` varchar(255) DEFAULT NULL,
   `pref_age_min` int DEFAULT NULL,
   `pref_age_max` int DEFAULT NULL,
-  `pref_marital_status` text COLLATE utf8mb4_general_ci,
-  `pref_nationality` text COLLATE utf8mb4_general_ci,
-  `pref_country` text COLLATE utf8mb4_general_ci,
-  `pref_city` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `pref_religion` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `pref_sect` text COLLATE utf8mb4_general_ci,
-  `pref_religious_practice_level` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_marital_status` text,
+  `pref_nationality` text,
+  `pref_country` text,
+  `pref_city` varchar(255) DEFAULT NULL,
+  `pref_religion` varchar(255) DEFAULT NULL,
+  `pref_sect` text,
+  `pref_religious_practice_level` varchar(255) DEFAULT NULL,
   `pref_height_min_inches` tinyint DEFAULT NULL,
   `pref_height_max_inches` tinyint DEFAULT NULL,
-  `pref_body_type` text COLLATE utf8mb4_general_ci,
-  `pref_caste` text COLLATE utf8mb4_general_ci,
-  `pref_mother_tongue` text COLLATE utf8mb4_general_ci,
-  `pref_education` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `pref_employment_type` text COLLATE utf8mb4_general_ci,
-  `pref_monthly_salary` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `pref_has_children` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `pref_body_type` text,
+  `pref_caste` text,
+  `pref_mother_tongue` text,
+  `pref_education` varchar(255) DEFAULT NULL,
+  `pref_employment_type` text,
+  `pref_monthly_salary` varchar(255) DEFAULT NULL,
+  `pref_has_children` varchar(255) DEFAULT NULL,
   `pref_willing_to_relocate` tinyint(1) DEFAULT NULL,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL
-) ;
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `individual_id` (`individual_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `Prefs`
@@ -366,8 +431,9 @@ INSERT INTO `Prefs` (`id`, `individual_id`, `pref_gender`, `pref_age_min`, `pref
 -- Table structure for table `Profiles`
 --
 
-CREATE TABLE `Profiles` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Profiles`;
+CREATE TABLE IF NOT EXISTS `Profiles` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `individual_id` bigint NOT NULL,
   `guardian_id` bigint DEFAULT NULL,
   `name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
@@ -406,8 +472,11 @@ CREATE TABLE `Profiles` (
   `is_pro` tinyint(1) DEFAULT '0',
   `front_id` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `back_id` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `isblurred_images` tinyint(1) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `isblurred_images` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `individual_id` (`individual_id`),
+  KEY `guardian_id` (`guardian_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=97 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Profiles`
@@ -468,19 +537,20 @@ INSERT INTO `Profiles` (`id`, `individual_id`, `guardian_id`, `name`, `gender`, 
 -- Table structure for table `Settings`
 --
 
-CREATE TABLE `Settings` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `profile_options` longtext NOT NULL COMMENT 'JSON stringified — contains OPTIONS, COUNTRY_OPTIONS, SALARY_BY_CURRENCY',
+DROP TABLE IF EXISTS `Settings`;
+CREATE TABLE IF NOT EXISTS `Settings` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `Settings`
 --
 
-INSERT INTO `Settings` (`id`, `profile_options`, `created_at`, `updated_at`) VALUES
-(3, '{\n  \"OPTIONS\": {\n    \"religions\": [\n      \"Muslim\", \"Christian\", \"Hindu\", \"Jewish\", \"Buddhist\",\n      \"Sikh\", \"Zoroastrian\", \"Jain\", \"Bahai\", \"Atheist\",\n      \"Agnostic\", \"Spiritual but not religious\", \"Other\"\n    ],\n    \"marital_statuses\": [\"Never Married\", \"Divorced\", \"Widowed\", \"Separated\"],\n    \"education_levels\": [\n      \"Primary\", \"Middle School\", \"High School\", \"Intermediate\", \"Diploma\",\n      \"Bachelor\'s\", \"Master\'s\", \"PhD\", \"Other\"\n    ],\n    \"body_types\": [\"Slim\", \"Athletic\", \"Average\", \"Curvy\", \"Heavy\"],\n    \"employment_types\": [\n      \"Government\", \"Private\", \"Self-Employed\", \"Business Owner\",\n      \"Student\", \"Unemployed\", \"Freelancer\", \"Retired\"\n    ],\n    \"has_children\": [\"No Children\", \"Has Children\", \"No Preference\"],\n    \"practice_levels\": [\n      \"Very Religious\", \"Moderately Religious\", \"Somewhat Religious\", \"Not Religious\"\n    ],\n    \"willing_to_relocate\": [\"Yes\", \"No\", \"Maybe\"],\n    \"interests\": [\n      \"Listening to Music\", \"Playing Guitar\", \"Playing Piano\", \"Singing\", \"DJing\",\n      \"Going to Concerts\", \"Making Music\", \"Classical Music\", \"Hip Hop\", \"Jazz\",\n      \"Nasheed\", \"Qawwali\", \"Folk Music\",\n      \"Watching Movies\", \"Binge Watching\", \"Documentaries\", \"Anime\", \"Comedy Shows\",\n      \"Drama Series\", \"Horror Movies\", \"Action Movies\", \"Islamic Lectures\", \"Podcasts\",\n      \"Reading Books\", \"Islamic Books\", \"Self Help\", \"Biography\", \"Poetry\",\n      \"Fiction\", \"Non-Fiction\", \"Quran Recitation\", \"Learning New Skills\",\n      \"Online Courses\", \"History\", \"Philosophy\", \"Science\",\n      \"Cooking\", \"Baking\", \"Trying New Restaurants\", \"BBQ\", \"Desi Food\",\n      \"Biryani Lover\", \"Street Food\", \"Vegetarian Food\", \"Healthy Eating\",\n      \"Meal Prepping\", \"Coffee Lover\", \"Tea Lover\",\n      \"Gym\", \"Running\", \"Cycling\", \"Swimming\", \"Yoga\", \"Hiking\",\n      \"Cricket\", \"Football\", \"Basketball\", \"Badminton\", \"Tennis\",\n      \"Squash\", \"Table Tennis\", \"Martial Arts\", \"Boxing\", \"Wrestling\",\n      \"Volleyball\", \"Fitness\", \"Weight Training\", \"Crossfit\", \"Pilates\",\n      \"Travelling\", \"Road Trips\", \"Backpacking\", \"Beach Holidays\",\n      \"Mountain Trekking\", \"Exploring New Cities\", \"Cultural Tourism\",\n      \"Religious Tourism\", \"Photography\", \"Adventure Travel\",\n      \"Drawing\", \"Painting\", \"Calligraphy\", \"Videography\",\n      \"Graphic Design\", \"Interior Design\", \"Fashion\", \"DIY Crafts\",\n      \"Writing\", \"Blogging\", \"Journaling\", \"Content Creation\",\n      \"Technology\", \"Programming\", \"Gaming\", \"Mobile Games\", \"PC Gaming\",\n      \"Console Gaming\", \"Esports\", \"Crypto\", \"AI & Machine Learning\",\n      \"Social Media\", \"App Development\", \"Web Design\",\n      \"Gardening\", \"Camping\", \"Bird Watching\", \"Fishing\", \"Horse Riding\",\n      \"Nature Walks\", \"Star Gazing\", \"Farming\", \"Sustainability\",\n      \"Islamic Studies\", \"Quran Learning\", \"Hadith Studies\", \"Fiqh\",\n      \"Attending Lectures\", \"Volunteering\", \"Charity Work\", \"Community Service\",\n      \"Dawah\", \"Attending Masjid\", \"Dhikr\", \"Spiritual Growth\",\n      \"Spending Time with Family\", \"Parenting\", \"Mentoring\", \"Socialising\",\n      \"Board Games\", \"Card Games\", \"Family Gatherings\", \"Community Events\",\n      \"Attending Weddings\", \"Hosting Dinners\",\n      \"Entrepreneurship\", \"Investing\", \"Real Estate\", \"Stock Market\",\n      \"Business Development\", \"Networking\", \"Public Speaking\", \"Leadership\",\n      \"Startups\", \"Finance\",\n      \"Meditation\", \"Mental Health Awareness\", \"Mindfulness\",\n      \"Self Care\", \"Therapy\", \"Breathing Exercises\", \"Cold Therapy\",\n      \"Pet Lover\", \"Cat Person\", \"Dog Person\", \"Bird Keeping\",\n      \"Animal Welfare\", \"Aquarium\", \"Horse Lover\",\n      \"Stand-up Comedy\", \"Magic Tricks\", \"Karaoke\", \"Trivia Nights\",\n      \"Escape Rooms\", \"Theme Parks\", \"Museums\", \"Art Galleries\"\n    ]\n  },\n\n  \"SALARY_BY_CURRENCY\": {\n    \"PKR\": [\"No preference\", \"Less than PKR 50,000\", \"PKR 50,000 – PKR 100,000\", \"PKR 100,000 – PKR 200,000\", \"PKR 200,000 – PKR 600,000\", \"PKR 600,000 – PKR 1,000,000\", \"PKR 1,000,000+\"],\n    \"AED\": [\"No preference\", \"Less than AED 2,000\", \"AED 2,000 – AED 5,000\", \"AED 5,000 – AED 10,000\", \"AED 10,000 – AED 20,000\", \"AED 20,000 – AED 50,000\", \"AED 50,000+\"],\n    \"SAR\": [\"No preference\", \"Less than SAR 3,000\", \"SAR 3,000 – SAR 6,000\", \"SAR 6,000 – SAR 12,000\", \"SAR 12,000 – SAR 25,000\", \"SAR 25,000 – SAR 50,000\", \"SAR 50,000+\"],\n    \"QAR\": [\"No preference\", \"Less than QAR 3,000\", \"QAR 3,000 – QAR 6,000\", \"QAR 6,000 – QAR 12,000\", \"QAR 12,000 – QAR 25,000\", \"QAR 25,000 – QAR 50,000\", \"QAR 50,000+\"],\n    \"BHD\": [\"No preference\", \"Less than BHD 300\", \"BHD 300 – BHD 700\", \"BHD 700 – BHD 1,500\", \"BHD 1,500 – BHD 3,000\", \"BHD 3,000 – BHD 6,000\", \"BHD 6,000+\"],\n    \"KWD\": [\"No preference\", \"Less than KWD 200\", \"KWD 200 – KWD 500\", \"KWD 500 – KWD 1,000\", \"KWD 1,000 – KWD 2,000\", \"KWD 2,000 – KWD 5,000\", \"KWD 5,000+\"],\n    \"OMR\": [\"No preference\", \"Less than OMR 300\", \"OMR 300 – OMR 700\", \"OMR 700 – OMR 1,500\", \"OMR 1,500 – OMR 3,000\", \"OMR 3,000 – OMR 6,000\", \"OMR 6,000+\"],\n    \"USD\": [\"No preference\", \"Less than $2,000\", \"$2,000 – $5,000\", \"$5,000 – $10,000\", \"$10,000 – $20,000\", \"$20,000 – $50,000\", \"$50,000+\"],\n    \"GBP\": [\"No preference\", \"Less than £2,000\", \"£2,000 – £4,000\", \"£4,000 – £8,000\", \"£8,000 – £15,000\", \"£15,000 – £30,000\", \"£30,000+\"],\n    \"CAD\": [\"No preference\", \"Less than CAD 2,000\", \"CAD 2,000 – CAD 4,000\", \"CAD 4,000 – CAD 7,000\", \"CAD 7,000 – CAD 12,000\", \"CAD 12,000 – CAD 25,000\", \"CAD 25,000+\"],\n    \"AUD\": [\"No preference\", \"Less than AUD 3,000\", \"AUD 3,000 – AUD 5,000\", \"AUD 5,000 – AUD 8,000\", \"AUD 8,000 – AUD 15,000\", \"AUD 15,000 – AUD 30,000\", \"AUD 30,000+\"],\n    \"EUR\": [\"No preference\", \"Less than €1,500\", \"€1,500 – €3,000\", \"€3,000 – €5,000\", \"€5,000 – €8,000\", \"€8,000 – €15,000\", \"€15,000+\"],\n    \"NOK\": [\"No preference\", \"Less than NOK 20,000\", \"NOK 20,000 – NOK 40,000\", \"NOK 40,000 – NOK 70,000\", \"NOK 70,000 – NOK 120,000\", \"NOK 120,000 – NOK 200,000\", \"NOK 200,000+\"],\n    \"SEK\": [\"No preference\", \"Less than SEK 20,000\", \"SEK 20,000 – SEK 35,000\", \"SEK 35,000 – SEK 60,000\", \"SEK 60,000 – SEK 100,000\", \"SEK 100,000 – SEK 200,000\", \"SEK 200,000+\"],\n    \"DKK\": [\"No preference\", \"Less than DKK 15,000\", \"DKK 15,000 – DKK 30,000\", \"DKK 30,000 – DKK 50,000\", \"DKK 50,000 – DKK 80,000\", \"DKK 80,000 – DKK 150,000\", \"DKK 150,000+\"],\n    \"CHF\": [\"No preference\", \"Less than CHF 3,000\", \"CHF 3,000 – CHF 5,000\", \"CHF 5,000 – CHF 8,000\", \"CHF 8,000 – CHF 12,000\", \"CHF 12,000 – CHF 20,000\", \"CHF 20,000+\"],\n    \"TRY\": [\"No preference\", \"Less than TRY 10,000\", \"TRY 10,000 – TRY 25,000\", \"TRY 25,000 – TRY 50,000\", \"TRY 50,000 – TRY 100,000\", \"TRY 100,000 – TRY 250,000\", \"TRY 250,000+\"],\n    \"MYR\": [\"No preference\", \"Less than MYR 2,000\", \"MYR 2,000 – MYR 4,000\", \"MYR 4,000 – MYR 8,000\", \"MYR 8,000 – MYR 15,000\", \"MYR 15,000 – MYR 30,000\", \"MYR 30,000+\"],\n    \"NZD\": [\"No preference\", \"Less than NZD 2,500\", \"NZD 2,500 – NZD 5,000\", \"NZD 5,000 – NZD 8,000\", \"NZD 8,000 – NZD 15,000\", \"NZD 15,000 – NZD 30,000\", \"NZD 30,000+\"]\n  },\n\n  \"COUNTRY_OPTIONS\": {\n\n    \"Pakistan\": {\n      \"flag\": \"🇵🇰\",\n      \"currencies\": [\"PKR\"],\n      \"nationalities\": [\"Pakistani\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Maliki\", \"Shafi\'i\", \"Hanbali\", \"Ismaili\",\n        \"Bohra\", \"Ahl-e-Hadith\", \"Ahmadi\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Abbasi\", \"Afridi\", \"Ansari\",\n        \"Baig\", \"Baloch\", \"Bangash\", \"Bhatti\", \"Brohi\",\n        \"Butt\", \"Chaudhry\", \"Chachar\", \"Chishti\",\n        \"Durrani\", \"Ghilzai\", \"Gillani\", \"Gujjar\",\n        \"Hashmi\", \"Jadoon\", \"Jat\", \"Jutt\",\n        \"Kamboh\", \"Kashmiri\", \"Kayani\", \"Khan\",\n        \"Khattak\", \"Khawaja\", \"Lodi\", \"Lodhi\",\n        \"Mahsud\", \"Malik\", \"Memon\", \"Mirza\",\n        \"Momand\", \"Mughal\", \"Naqvi\", \"Niazi\",\n        \"Noon\", \"Orakzai\", \"Paracha\", \"Piracha\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\",\n        \"Rizvi\", \"Sayed/Syed\", \"Sheikh\",\n        \"Shinwari\", \"Swati\", \"Tanoli\", \"Toor\",\n        \"Turk\", \"Watto\", \"Wazir\", \"Yousafzai\", \"Zardari\",\n        \"Sindhi\", \"Saraiki\", \"Hazara\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Urdu\", \"Punjabi\", \"Pashto\", \"Sindhi\", \"Balochi\", \"Saraiki\",\n        \"Hindko\", \"Kashmiri\", \"Brahui\", \"Shina\", \"Burushaski\", \"Khowar\",\n        \"Wakhi\", \"Balti\", \"Torwali\",\n        \"Arabic\", \"English\", \"Bengali\", \"Tamil\", \"Malayalam\",\n        \"Mandarin\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Māori\", \"Other\"\n      ],\n      \"cities\": [\n        \"Islamabad\", \"Lahore\", \"Faisalabad\", \"Rawalpindi\", \"Gujranwala\", \"Multan\",\n        \"Sialkot\", \"Bahawalpur\", \"Sargodha\", \"Sheikhupura\", \"Jhang\",\n        \"Rahim Yar Khan\", \"Gujrat\", \"Kasur\", \"Okara\", \"Chiniot\",\n        \"Kamoke\", \"Hafizabad\", \"Khanewal\", \"Sahiwal\", \"Vehari\",\n        \"Pakpattan\", \"Mandi Bahauddin\", \"Narowal\", \"Attock\", \"Chakwal\",\n        \"Jhelum\", \"Muzaffargarh\", \"Lodhran\", \"Layyah\", \"Bhakkar\",\n        \"Mianwali\", \"Khushab\", \"Toba Tek Singh\", \"Nankana Sahib\",\n        \"Shorkot\", \"Wazirabad\", \"Daska\", \"Sambrial\", \"Pasrur\",\n        \"Kot Addu\", \"Ahmadpur East\", \"Burewala\", \"Mailsi\",\n        \"Jaranwala\", \"Tandlianwala\", \"Chichawatni\", \"Arifwala\",\n        \"Renala Khurd\", \"Pattoki\", \"Chunian\", \"Phool Nagar\",\n        \"Kamalia\", \"Gojra\", \"Samundri\", \"Dijkot\", \"Chak Jhumra\", \"Lalian\",\n        \"Karachi\", \"Hyderabad\", \"Sukkur\", \"Larkana\", \"Nawabshah\",\n        \"Mirpurkhas\", \"Jacobabad\", \"Shikarpur\", \"Khairpur\", \"Dadu\",\n        \"Badin\", \"Thatta\", \"Sanghar\", \"Umerkot\", \"Tharparkar\",\n        \"Matiari\", \"Qambar Shahdadkot\", \"Kashmore\", \"Ghotki\",\n        \"Kandhkot\", \"Mehar\", \"Sehwan\", \"Hala\", \"Moro\",\n        \"Naushahro Feroze\", \"Sakrand\", \"Gambat\", \"Kotri\", \"Jamshoro\",\n        \"Ratodero\", \"Dokri\", \"Kambar\", \"Tando Adam\", \"Tando Allahyar\",\n        \"Tando Muhammad Khan\", \"Mirpur Mathelo\", \"Rohri\",\n        \"Peshawar\", \"Mardan\", \"Mingora\", \"Kohat\", \"Abbottabad\",\n        \"Mansehra\", \"Dera Ismail Khan\", \"Swabi\", \"Nowshera\",\n        \"Charsadda\", \"Bannu\", \"Haripur\", \"Karak\", \"Hangu\",\n        \"Chitral\", \"Dir Upper\", \"Dir Lower\", \"Swat\", \"Buner\",\n        \"Shangla\", \"Batagram\", \"Tank\", \"Lakki Marwat\", \"Malakand\",\n        \"Timergara\", \"Chakdara\", \"Saidu Sharif\",\n        \"Quetta\", \"Turbat\", \"Khuzdar\", \"Chaman\", \"Gwadar\",\n        \"Hub\", \"Dera Murad Jamali\", \"Nushki\", \"Dalbandin\",\n        \"Kharan\", \"Ziarat\", \"Loralai\", \"Sibi\", \"Mastung\",\n        \"Pishin\", \"Qila Saifullah\", \"Muslimbagh\", \"Qila Abdullah\",\n        \"Zhob\", \"Kuchlak\", \"Uthal\", \"Bela\", \"Usta Muhammad\",\n        \"Jaffarabad\", \"Nasirabad\",\n        \"Muzaffarabad\", \"Mirpur\", \"Rawalakot\", \"Kotli\",\n        \"Bhimber\", \"Bagh\", \"Haveli\", \"Sudhnuti\", \"Neelum\",\n        \"Gilgit\", \"Skardu\", \"Chilas\", \"Hunza\", \"Nagar\",\n        \"Ghanche\", \"Shigar\", \"Ghizer\", \"Diamer\", \"Astore\", \"Other\"\n      ]\n    },\n\n    \"UAE\": {\n      \"flag\": \"🇦🇪\",\n      \"currencies\": [\"AED\"],\n      \"nationalities\": [\"Emirati\", \"Pakistani\", \"Indian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Gujjar\", \"Jat\", \"Kashmiri\",\n        \"Khan\", \"Malik\", \"Memon\", \"Mughal\", \"Pathan/Pashtun\", \"Qureshi\",\n        \"Rajput\", \"Sayed/Syed\", \"Sheikh\", \"Ansari\",\n        \"Al Nahyan (Emirati)\", \"Al Maktoum (Emirati)\", \"Bani Yas (Emirati)\",\n        \"Qawasim (Emirati)\", \"Indian Tamil\", \"Indian Malayalam\", \"Filipino\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Arabic\", \"Urdu\", \"Hindi\", \"Malayalam\", \"Tagalog\", \"Bengali\",\n        \"Punjabi\", \"Tamil\", \"Pashto\", \"Persian (Farsi)\", \"Balochi\", \"Sindhi\",\n        \"English\", \"Mandarin\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Dubai\", \"Deira\", \"Bur Dubai\", \"Jumeirah\", \"Dubai Marina\",\n        \"Downtown Dubai\", \"Business Bay\", \"Dubai Silicon Oasis\",\n        \"Dubai Investment Park\", \"Jebel Ali\", \"Al Quoz\", \"Al Nahda (Dubai)\",\n        \"Mirdif\", \"Al Barsha\", \"Dubai Sports City\", \"International City\",\n        \"Discovery Gardens\", \"The Palm Jumeirah\", \"Dubai Creek\",\n        \"Oud Metha\", \"Muhaisnah\", \"Al Qusais\", \"Al Twar\", \"Rashidiya\",\n        \"Abu Dhabi\", \"Al Ain\", \"Mussafah\", \"Khalifa City\",\n        \"Mohammed Bin Zayed City\", \"Al Reem Island\", \"Yas Island\",\n        \"Saadiyat Island\", \"Al Shamkha\", \"Baniyas\", \"Al Bahia\",\n        \"Al Rahba\", \"Al Wathba\", \"Al Falah\", \"Zayed City\",\n        \"Sharjah\", \"Al Majaz\", \"Al Nahda (Sharjah)\", \"Al Qasimia\",\n        \"Al Taawun\", \"Muwailih\", \"Industrial Area (Sharjah)\", \"Al Khan\",\n        \"Ajman\", \"Al Jurf\", \"Al Rashidiya (Ajman)\", \"Emirates City\",\n        \"Ras Al Khaimah\", \"Al Nakheel\", \"Al Hamra Village\", \"Khuzam\",\n        \"Fujairah\", \"Dibba Al Fujairah\", \"Khor Fakkan\", \"Kalba\",\n        \"Umm Al Quwain\", \"Other\"\n      ]\n    },\n\n    \"Saudi Arabia\": {\n      \"flag\": \"🇸🇦\",\n      \"currencies\": [\"SAR\"],\n      \"nationalities\": [\"Saudi\", \"Pakistani\", \"Indian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Qahtani (Saudi)\", \"Ghamdi (Saudi)\", \"Zahrani (Saudi)\",\n        \"Harbi (Saudi)\", \"Otaibi (Saudi)\", \"Shamari (Saudi)\",\n        \"Anazi (Saudi)\", \"Dosari (Saudi)\", \"Mutairi (Saudi)\",\n        \"Yemeni\", \"Egyptian\", \"Syrian\", \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Arabic\", \"Urdu\", \"Hindi\", \"Tagalog\", \"Bengali\", \"Malayalam\",\n        \"Punjabi\", \"Tamil\", \"Pashto\", \"English\", \"Mandarin\", \"French\",\n        \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\", \"Turkish\",\n        \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Riyadh\", \"Al Kharj\", \"Dawadmi\", \"Diriyah\", \"Al Majmaah\",\n        \"Shaqra\", \"Al Quwayiyah\", \"Afif\", \"Zulfi\", \"Huraymila\",\n        \"Jeddah\", \"Mecca\", \"Taif\", \"Rabigh\", \"Al Qunfudhah\",\n        \"Al Lith\", \"Al Jumum\", \"Khulais\",\n        \"Medina\", \"Yanbu\", \"Al Ula\", \"Badr\", \"Mahd adh Dhahab\",\n        \"Dammam\", \"Khobar\", \"Al Jubail\", \"Al Qatif\", \"Hafr Al Batin\",\n        \"Ras Tanura\", \"Safwa\", \"Abqaiq\",\n        \"Abha\", \"Khamis Mushait\", \"Bisha\", \"Sarat Abidah\", \"Muhayil\",\n        \"Tabuk\", \"Al Wajh\", \"Umluj\", \"Haql\",\n        \"Hail\", \"Baqaa\", \"Arar\", \"Rafha\", \"Turaif\",\n        \"Najran\", \"Sharurah\", \"Al Bahah\", \"Baljurashi\",\n        \"Jizan\", \"Abu Arish\", \"Sabya\", \"Samtah\",\n        \"Sakaka\", \"Dumat Al Jandal\",\n        \"Buraidah\", \"Unaizah\", \"Al Rass\", \"Other\"\n      ]\n    },\n\n    \"Qatar\": {\n      \"flag\": \"🇶🇦\",\n      \"currencies\": [\"QAR\"],\n      \"nationalities\": [\"Qatari\", \"Pakistani\", \"Indian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Al Thani (Qatari)\", \"Bani Hajer (Qatari)\", \"Al Kuwari (Qatari)\",\n        \"Al Marri (Qatari)\", \"Al Nuaimi (Qatari)\",\n        \"Indian Tamil\", \"Indian Malayalam\", \"Filipino\", \"Nepali\", \"Egyptian\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Arabic\", \"Urdu\", \"Hindi\", \"Malayalam\", \"Tagalog\", \"Bengali\",\n        \"Nepali\", \"Tamil\", \"Punjabi\", \"Pashto\", \"English\",\n        \"Mandarin\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Doha\", \"Al Rayyan\", \"Umm Salal\", \"Al Wakrah\", \"Al Khor\",\n        \"Al Daayen\", \"Al Shamal\", \"Al Sheehaniya\", \"Mesaieed\",\n        \"Lusail\", \"West Bay\", \"The Pearl\", \"Education City\",\n        \"Msheireb\", \"Old Airport Area\", \"Industrial Area (Qatar)\",\n        \"Al Aziziya\", \"Gharrafa\", \"Al Sadd\", \"Ain Khaled\",\n        \"Abu Hamour\", \"Al Muntazah\", \"Madinat Khalifa\", \"Nuaija\", \"Wakair\", \"Other\"\n      ]\n    },\n\n    \"Bahrain\": {\n      \"flag\": \"🇧🇭\",\n      \"currencies\": [\"BHD\"],\n      \"nationalities\": [\"Bahraini\", \"Pakistani\", \"Indian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Al Khalifa (Bahraini)\", \"Dawasir (Bahraini)\", \"Bani Jamra (Bahraini)\",\n        \"Al Zayani (Bahraini)\", \"Bahraini Shia\", \"Bahraini Sunni\",\n        \"Indian Tamil\", \"Indian Malayalam\", \"Filipino\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Arabic\", \"Urdu\", \"Hindi\", \"Malayalam\", \"Tagalog\",\n        \"Persian (Farsi)\", \"Punjabi\", \"Tamil\", \"Pashto\", \"English\",\n        \"Mandarin\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Manama\", \"Riffa\", \"Muharraq\", \"Hamad Town\", \"Isa Town\",\n        \"Sitra\", \"Jidhafs\", \"Al Budaiya\", \"Zallaq\", \"Al Hidd\",\n        \"Sanabis\", \"Adliya\", \"Seef\", \"Salmanabad\", \"Tubli\",\n        \"Eker\", \"Askar\", \"Jaw\", \"Malkiya\", \"Karranah\",\n        \"Diraz\", \"Al Janabiyah\", \"Bani Jamra\", \"Karzakan\",\n        \"Durrat Al Bahrain\", \"Amwaj Islands\", \"Mahooz\",\n        \"Al Qudaibiya\", \"Ghudaibiya\", \"Um Al Hassam\", \"Other\"\n      ]\n    },\n\n    \"Kuwait\": {\n      \"flag\": \"🇰🇼\",\n      \"currencies\": [\"KWD\"],\n      \"nationalities\": [\"Kuwaiti\", \"Pakistani\", \"Indian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Al Sabah (Kuwaiti)\", \"Al Mutairi (Kuwaiti)\", \"Al Ajmi (Kuwaiti)\",\n        \"Al Rashidi (Kuwaiti)\", \"Al Anazi (Kuwaiti)\", \"Kuwaiti Bedoun\",\n        \"Egyptian\", \"Syrian\", \"Indian Tamil\", \"Indian Malayalam\", \"Filipino\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Arabic\", \"Urdu\", \"Hindi\", \"Malayalam\", \"Tagalog\", \"Bengali\",\n        \"Tamil\", \"Punjabi\", \"Pashto\", \"English\",\n        \"Mandarin\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Kuwait City\", \"Hawalli\", \"Salmiya\", \"Farwaniya\", \"Jahra\",\n        \"Ahmadi\", \"Mangaf\", \"Fahaheel\", \"Sabah Al Salem\", \"Fintas\",\n        \"Rumaithiya\", \"Bayan\", \"Mishref\", \"Salwa\", \"Riqqa\",\n        \"Abu Halifa\", \"Hadiya\", \"Mahboula\", \"Egaila\", \"Abu Fatira\",\n        \"Al Rai\", \"Ardiya\", \"Shuwaikh\", \"Sulaibiya\", \"Jabriya\",\n        \"Hittin\", \"Qortuba\", \"Nuzha\", \"Surra\", \"Abdullah Al Salem\",\n        \"Dasma\", \"Shamiya\", \"Kaifan\", \"Khaldiya\", \"Faiha\",\n        \"Shuwaikh Industrial\", \"Sabhan\", \"Qurain\",\n        \"Abu Hasaniya\", \"Mubarak Al Kabeer\", \"Other\"\n      ]\n    },\n\n    \"Oman\": {\n      \"flag\": \"🇴🇲\",\n      \"currencies\": [\"OMR\"],\n      \"nationalities\": [\"Omani\", \"Pakistani\", \"Indian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Ibadi\", \"Deobandi\", \"Barelvi\",\n        \"Hanafi\", \"Ismaili\", \"Salafi\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Al Said (Omani)\", \"Al Busaidi (Omani)\", \"Al Harthi (Omani)\",\n        \"Al Rawahi (Omani)\", \"Al Wahaibi (Omani)\",\n        \"Omani Baloch\", \"Omani Swahili\",\n        \"Indian Tamil\", \"Indian Malayalam\", \"Filipino\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Arabic\", \"Balochi\", \"Swahili\", \"Urdu\", \"Hindi\",\n        \"Malayalam\", \"Tagalog\", \"Punjabi\", \"Pashto\", \"Tamil\", \"English\",\n        \"Mandarin\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Muscat\", \"Muttrah\", \"Ruwi\", \"Qurum\", \"Madinat Al Sultan Qaboos\",\n        \"Al Khuwair\", \"Al Azaiba\", \"Ghubrah\", \"Bausher\", \"Seeb\",\n        \"Amerat\", \"Quriyat\", \"Salalah\", \"Thumrait\", \"Mirbat\", \"Taqa\", \"Sadah\",\n        \"Sohar\", \"Barka\", \"Al Khaburah\", \"Saham\", \"Liwa\",\n        \"Rustaq\", \"Al Awabi\", \"Nakhal\",\n        \"Nizwa\", \"Bahla\", \"Manah\", \"Adam\", \"Izki\", \"Bidbid\",\n        \"Sur\", \"Ibra\", \"Al Mudhaibi\", \"Ibri\", \"Yanqul\", \"Dhank\",\n        \"Al Buraimi\", \"Mahdah\", \"Haima\", \"Duqm\", \"Khasab\", \"Bukha\", \"Other\"\n      ]\n    },\n\n    \"USA\": {\n      \"flag\": \"🇺🇸\",\n      \"currencies\": [\"USD\"],\n      \"nationalities\": [\"American\", \"Pakistani-American\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Chaudhry\", \"Gujjar\",\n        \"Kashmiri\", \"Khan\", \"Malik\", \"Memon\", \"Mughal\", \"Pathan/Pashtun\",\n        \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"African American\", \"Caucasian/White\", \"Hispanic/Latino\",\n        \"East Asian\", \"South Asian\", \"Arab American\", \"Native American\",\n        \"Mixed/Multiracial\", \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"English\", \"Urdu\", \"Punjabi\", \"Hindi\", \"Pashto\", \"Arabic\",\n        \"Spanish\", \"French\", \"Mandarin\", \"Tagalog\", \"Vietnamese\",\n        \"Korean\", \"Persian (Farsi)\", \"Bengali\", \"Malayalam\", \"Tamil\",\n        \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"New York City\", \"Buffalo\", \"Rochester\", \"Yonkers\", \"Syracuse\", \"Albany\",\n        \"Los Angeles\", \"San Diego\", \"San Jose\", \"San Francisco\", \"Fresno\", \"Sacramento\",\n        \"Long Beach\", \"Oakland\", \"Bakersfield\", \"Anaheim\", \"Santa Ana\", \"Riverside\",\n        \"Stockton\", \"Irvine\", \"Fremont\", \"San Bernardino\", \"Modesto\", \"Fontana\",\n        \"Moreno Valley\", \"Glendale\", \"Santa Clarita\", \"Garden Grove\", \"Oceanside\",\n        \"Huntington Beach\", \"Rancho Cucamonga\",\n        \"Houston\", \"San Antonio\", \"Dallas\", \"Austin\", \"Fort Worth\", \"El Paso\",\n        \"Arlington\", \"Corpus Christi\", \"Plano\", \"Laredo\", \"Lubbock\", \"Garland\",\n        \"Irving\", \"Amarillo\", \"Grand Prairie\", \"McKinney\", \"Frisco\", \"Pasadena\",\n        \"Killeen\", \"Mesquite\",\n        \"Jacksonville\", \"Miami\", \"Tampa\", \"Orlando\", \"St. Petersburg\", \"Hialeah\",\n        \"Tallahassee\", \"Fort Lauderdale\", \"Port St. Lucie\", \"Pembroke Pines\",\n        \"Hollywood\", \"Gainesville\", \"Miramar\", \"Coral Springs\", \"Clearwater\",\n        \"Chicago\", \"Aurora\", \"Naperville\", \"Joliet\", \"Rockford\", \"Springfield\",\n        \"Philadelphia\", \"Pittsburgh\", \"Allentown\", \"Erie\",\n        \"Columbus\", \"Cleveland\", \"Cincinnati\", \"Toledo\", \"Akron\", \"Dayton\",\n        \"Atlanta\", \"Augusta\", \"Savannah\",\n        \"Charlotte\", \"Raleigh\", \"Greensboro\", \"Durham\", \"Winston-Salem\",\n        \"Detroit\", \"Grand Rapids\", \"Warren\", \"Sterling Heights\", \"Lansing\",\n        \"Phoenix\", \"Tucson\", \"Mesa\", \"Chandler\", \"Scottsdale\", \"Gilbert\", \"Tempe\", \"Peoria (AZ)\",\n        \"Seattle\", \"Spokane\", \"Tacoma\", \"Vancouver (WA)\", \"Bellevue\",\n        \"Nashville\", \"Memphis\", \"Knoxville\", \"Chattanooga\",\n        \"Indianapolis\", \"Fort Wayne\", \"Boston\", \"Worcester\",\n        \"Denver\", \"Colorado Springs\", \"Aurora (CO)\", \"Fort Collins\",\n        \"Las Vegas\", \"Henderson\", \"Reno\",\n        \"Portland\", \"Salem\", \"Eugene\",\n        \"Virginia Beach\", \"Norfolk\", \"Chesapeake\", \"Richmond\", \"Arlington (VA)\",\n        \"Baltimore\", \"Milwaukee\", \"Madison\", \"Minneapolis\", \"Saint Paul\",\n        \"Kansas City\", \"Saint Louis\", \"Oklahoma City\", \"Tulsa\",\n        \"New Orleans\", \"Baton Rouge\", \"Louisville\", \"Lexington\",\n        \"Birmingham\", \"Montgomery\", \"Albuquerque\", \"Santa Fe\", \"Honolulu\",\n        \"Washington DC\", \"Bridgeport\", \"New Haven\", \"Hartford\", \"Salt Lake City\",\n        \"Newark\", \"Jersey City\", \"Paterson\", \"Other\"\n      ]\n    },\n\n    \"UK\": {\n      \"flag\": \"🇬🇧\",\n      \"currencies\": [\"GBP\"],\n      \"nationalities\": [\"British\", \"British-Pakistani\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Chaudhry\", \"Gujjar\",\n        \"Kashmiri\", \"Mirpuri\", \"Khan\", \"Malik\", \"Memon\", \"Mughal\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"British White\", \"British Asian\", \"British Black\", \"British Arab\",\n        \"British Caribbean\", \"Bangladeshi\", \"Indian Punjabi\", \"Indian Gujarati\",\n        \"Irish\", \"Scottish\", \"Welsh\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"English\", \"Urdu\", \"Punjabi\", \"Mirpuri\", \"Pashto\", \"Bengali\",\n        \"Arabic\", \"Welsh\", \"Scottish Gaelic\",\n        \"Hindi\", \"Malayalam\", \"Tamil\", \"Gujarati\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Turkish\", \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"London\", \"Westminster\", \"Southwark\", \"Tower Hamlets\", \"Newham\",\n        \"Hackney\", \"Islington\", \"Camden\", \"Lambeth\", \"Lewisham\",\n        \"Haringey\", \"Ealing\", \"Hounslow\", \"Brent\", \"Waltham Forest\",\n        \"Redbridge\", \"Barking and Dagenham\", \"Enfield\", \"Croydon\",\n        \"Birmingham\", \"Manchester\", \"Leeds\", \"Sheffield\", \"Liverpool\",\n        \"Bristol\", \"Coventry\", \"Leicester\", \"Bradford\", \"Nottingham\",\n        \"Kingston upon Hull\", \"Stoke-on-Trent\", \"Wolverhampton\",\n        \"Derby\", \"Southampton\", \"Portsmouth\", \"Plymouth\", \"Reading\",\n        \"Milton Keynes\", \"Northampton\", \"Luton\", \"Sunderland\",\n        \"Middlesbrough\", \"Preston\", \"Blackburn\", \"Burnley\", \"Bolton\",\n        \"Rochdale\", \"Oldham\", \"Stockport\", \"Salford\", \"Wigan\",\n        \"Warrington\", \"Huddersfield\", \"Halifax\", \"Wakefield\",\n        \"Rotherham\", \"Doncaster\", \"Barnsley\", \"Grimsby\",\n        \"Ipswich\", \"Norwich\", \"Peterborough\", \"Cambridge\",\n        \"Oxford\", \"Slough\", \"Watford\", \"Chelmsford\", \"Colchester\",\n        \"Southend-on-Sea\", \"Brighton\", \"Crawley\", \"Worthing\", \"Eastbourne\",\n        \"Bournemouth\", \"Poole\", \"Exeter\", \"Gloucester\",\n        \"Swindon\", \"Bath\", \"Cheltenham\", \"Worcester\",\n        \"Hereford\", \"Shrewsbury\", \"Telford\",\n        \"Newcastle upon Tyne\", \"Gateshead\", \"Durham\", \"Darlington\",\n        \"Carlisle\", \"Lancaster\", \"Blackpool\",\n        \"Glasgow\", \"Edinburgh\", \"Aberdeen\", \"Dundee\", \"Inverness\",\n        \"Stirling\", \"Perth\", \"Livingston\", \"Kilmarnock\",\n        \"Cardiff\", \"Swansea\", \"Newport\", \"Wrexham\",\n        \"Belfast\", \"Derry\", \"Lisburn\", \"Newry\", \"Other\"\n      ]\n    },\n\n    \"Canada\": {\n      \"flag\": \"🇨🇦\",\n      \"currencies\": [\"CAD\"],\n      \"nationalities\": [\"Canadian\", \"Pakistani-Canadian\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Chaudhry\", \"Gujjar\",\n        \"Kashmiri\", \"Khan\", \"Malik\", \"Memon\", \"Mughal\", \"Pathan/Pashtun\",\n        \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Caucasian/White\", \"French Canadian\", \"Indigenous/First Nations\",\n        \"Métis\", \"Inuit\", \"South Asian\", \"East Asian\", \"Black Canadian\",\n        \"Arab Canadian\", \"Filipino\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"English\", \"French\", \"Punjabi\", \"Urdu\", \"Pashto\", \"Hindi\",\n        \"Arabic\", \"Mandarin\", \"Cantonese\", \"Tagalog\", \"Bengali\",\n        \"Malayalam\", \"Tamil\",\n        \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Turkish\", \"Malay\", \"Māori\", \"Other\"\n      ],\n      \"cities\": [\n        \"Toronto\", \"Mississauga\", \"Brampton\", \"Scarborough\", \"North York\",\n        \"Etobicoke\", \"Vaughan\", \"Markham\", \"Richmond Hill\", \"Oakville\",\n        \"Burlington\", \"Hamilton\", \"Kitchener\", \"Waterloo\", \"Cambridge\",\n        \"Guelph\", \"London\", \"Windsor\", \"Oshawa\", \"Barrie\",\n        \"Kingston\", \"Sudbury\", \"Thunder Bay\", \"Peterborough\", \"St. Catharines\",\n        \"Niagara Falls\", \"Brantford\", \"Sarnia\", \"Sault Ste. Marie\", \"Ottawa\",\n        \"Montreal\", \"Laval\", \"Longueuil\", \"Québec City\", \"Gatineau\",\n        \"Sherbrooke\", \"Saguenay\", \"Lévis\", \"Trois-Rivières\", \"Terrebonne\",\n        \"Vancouver\", \"Surrey\", \"Burnaby\", \"Richmond\", \"Abbotsford\",\n        \"Kelowna\", \"Victoria\", \"Langley\", \"Coquitlam\", \"Delta\",\n        \"North Vancouver\", \"Kamloops\", \"Prince George\", \"Chilliwack\",\n        \"Calgary\", \"Edmonton\", \"Red Deer\", \"Lethbridge\", \"St. Albert\",\n        \"Medicine Hat\", \"Grande Prairie\", \"Airdrie\", \"Spruce Grove\",\n        \"Saskatoon\", \"Regina\", \"Moose Jaw\", \"Prince Albert\",\n        \"Winnipeg\", \"Brandon\",\n        \"Halifax\", \"Dartmouth\", \"Sydney (NS)\",\n        \"Fredericton\", \"Moncton\", \"Saint John\",\n        \"St. John\'s\", \"Charlottetown\", \"Other\"\n      ]\n    },\n\n    \"Australia\": {\n      \"flag\": \"🇦🇺\",\n      \"currencies\": [\"AUD\"],\n      \"nationalities\": [\"Australian\", \"Pakistani-Australian\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Chaudhry\", \"Gujjar\",\n        \"Kashmiri\", \"Khan\", \"Malik\", \"Memon\", \"Mughal\", \"Pathan/Pashtun\",\n        \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Anglo-Australian\", \"Aboriginal/Torres Strait Islander\",\n        \"South Asian\", \"East Asian\", \"Lebanese\", \"Filipino\",\n        \"Greek Australian\", \"Italian Australian\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"English\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Hindi\", \"Arabic\",\n        \"Mandarin\", \"Tamil\", \"Malayalam\", \"Tagalog\", \"Vietnamese\",\n        \"Bengali\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Malay\", \"Māori\", \"Other\"\n      ],\n      \"cities\": [\n        \"Sydney\", \"Parramatta\", \"Liverpool\", \"Blacktown\", \"Penrith\",\n        \"Campbelltown\", \"Bankstown\", \"Auburn\", \"Fairfield\", \"Cabramatta\",\n        \"Hurstville\", \"Hornsby\", \"Chatswood\", \"Manly\", \"Bondi\",\n        \"Newcastle\", \"Wollongong\", \"Maitland\", \"Bathurst\", \"Orange\",\n        \"Albury\", \"Wagga Wagga\", \"Tamworth\", \"Dubbo\", \"Coffs Harbour\",\n        \"Melbourne\", \"Dandenong\", \"Frankston\", \"Footscray\", \"Sunshine\",\n        \"Werribee\", \"Geelong\", \"Ballarat\", \"Bendigo\", \"Craigieburn\",\n        \"Tarneit\", \"Point Cook\", \"Hoppers Crossing\", \"Ringwood\", \"Knox\",\n        \"Shepparton\", \"Wodonga\", \"Warrnambool\",\n        \"Brisbane\", \"Gold Coast\", \"Sunshine Coast\", \"Toowoomba\", \"Ipswich\",\n        \"Rockhampton\", \"Townsville\", \"Cairns\", \"Logan\", \"Redland\",\n        \"Moreton Bay\", \"Mackay\", \"Hervey Bay\", \"Bundaberg\", \"Mount Isa\",\n        \"Adelaide\", \"Salisbury\", \"Playford\", \"Marion\", \"Onkaparinga\",\n        \"Mount Gambier\", \"Whyalla\", \"Murray Bridge\",\n        \"Perth\", \"Fremantle\", \"Rockingham\", \"Mandurah\", \"Joondalup\",\n        \"Stirling\", \"Wanneroo\", \"Swan\", \"Armadale\", \"Gosnells\",\n        \"Bunbury\", \"Geraldton\", \"Kalgoorlie\", \"Albany\",\n        \"Canberra\", \"Queanbeyan\",\n        \"Darwin\", \"Palmerston\", \"Alice Springs\",\n        \"Hobart\", \"Launceston\", \"Devonport\", \"Burnie\", \"Other\"\n      ]\n    },\n\n    \"Germany\": {\n      \"flag\": \"🇩🇪\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"German\", \"Pakistani-German\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"German\", \"Turkish\", \"Kurdish\", \"Afghan\", \"Iranian\",\n        \"Mixed/Multiracial\", \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"German\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"Turkish\",\n        \"Kurdish\", \"Persian (Farsi)\", \"English\", \"Hindi\",\n        \"French\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Berlin\", \"Hamburg\", \"Munich\", \"Cologne\", \"Frankfurt\", \"Stuttgart\",\n        \"Düsseldorf\", \"Dortmund\", \"Essen\", \"Leipzig\", \"Bremen\", \"Dresden\",\n        \"Hanover\", \"Nuremberg\", \"Duisburg\", \"Bochum\", \"Wuppertal\", \"Bielefeld\",\n        \"Bonn\", \"Münster\", \"Karlsruhe\", \"Mannheim\", \"Augsburg\", \"Wiesbaden\",\n        \"Gelsenkirchen\", \"Mönchengladbach\", \"Braunschweig\", \"Chemnitz\", \"Kiel\",\n        \"Aachen\", \"Halle\", \"Magdeburg\", \"Freiburg\", \"Krefeld\", \"Lübeck\",\n        \"Oberhausen\", \"Erfurt\", \"Mainz\", \"Rostock\", \"Kassel\", \"Hagen\", \"Hamm\",\n        \"Saarbrücken\", \"Mülheim\", \"Potsdam\", \"Ludwigshafen\", \"Oldenburg\",\n        \"Leverkusen\", \"Osnabrück\", \"Solingen\", \"Heidelberg\", \"Darmstadt\",\n        \"Paderborn\", \"Regensburg\", \"Ingolstadt\", \"Würzburg\", \"Ulm\", \"Wolfsburg\",\n        \"Göttingen\", \"Recklinghausen\", \"Bottrop\", \"Heilbronn\", \"Pforzheim\",\n        \"Offenbach\", \"Bremerhaven\", \"Fürth\", \"Remscheid\", \"Reutlingen\",\n        \"Koblenz\", \"Erlangen\", \"Moers\", \"Siegen\", \"Hildesheim\", \"Trier\", \"Jena\",\n        \"Cottbus\", \"Gera\", \"Zwickau\", \"Schwerin\", \"Kempten\", \"Other\"\n      ]\n    },\n\n    \"France\": {\n      \"flag\": \"🇫🇷\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"French\", \"Pakistani-French\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"French\", \"Algerian\", \"Moroccan\", \"Tunisian\", \"Kabyle/Berber\",\n        \"Sub-Saharan African\", \"Caribbean French\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"French\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\",\n        \"Berber (Tamazight)\", \"Turkish\", \"English\", \"Hindi\",\n        \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Paris\", \"Marseille\", \"Lyon\", \"Toulouse\", \"Nice\", \"Nantes\", \"Strasbourg\",\n        \"Montpellier\", \"Bordeaux\", \"Lille\", \"Rennes\", \"Reims\", \"Le Havre\",\n        \"Saint-Étienne\", \"Toulon\", \"Grenoble\", \"Dijon\", \"Angers\", \"Nîmes\",\n        \"Villeurbanne\", \"Clermont-Ferrand\", \"Saint-Denis\", \"Le Mans\",\n        \"Aix-en-Provence\", \"Brest\", \"Amiens\", \"Tours\", \"Limoges\", \"Metz\",\n        \"Besançon\", \"Perpignan\", \"Orléans\", \"Mulhouse\", \"Rouen\", \"Caen\",\n        \"Argenteuil\", \"Montreuil\", \"Roubaix\", \"Nancy\", \"Avignon\",\n        \"Dunkirk\", \"Versailles\", \"Nanterre\", \"Créteil\", \"Poitiers\",\n        \"Asnieres-sur-Seine\", \"Courbevoie\", \"Vitry-sur-Seine\",\n        \"Colombes\", \"Aulnay-sous-Bois\", \"Pau\", \"Bayonne\",\n        \"Boulogne-Billancourt\", \"Champigny-sur-Marne\", \"Calais\",\n        \"Mérignac\", \"Pessac\", \"Cannes\", \"Antibes\", \"Ajaccio\",\n        \"Lorient\", \"Quimper\", \"Other\"\n      ]\n    },\n\n    \"Netherlands\": {\n      \"flag\": \"🇳🇱\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Dutch\", \"Pakistani-Dutch\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Dutch\", \"Surinamese\", \"Moroccan\", \"Turkish\", \"Antillean\",\n        \"Indonesian\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Dutch\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\",\n        \"Turkish\", \"Berber (Tamazight)\", \"English\", \"Hindi\",\n        \"French\", \"German\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Amsterdam\", \"Rotterdam\", \"The Hague\", \"Utrecht\", \"Eindhoven\",\n        \"Tilburg\", \"Groningen\", \"Almere\", \"Breda\", \"Nijmegen\",\n        \"Enschede\", \"Haarlem\", \"Arnhem\", \"Zaanstad\", \"Amersfoort\",\n        \"Apeldoorn\", \"Maastricht\", \"Dordrecht\", \"Leiden\", \"Zoetermeer\",\n        \"Zwolle\", \"Deventer\", \"Delft\", \"Alkmaar\", \"Leeuwarden\",\n        \"Westland\", \"Emmen\", \"Venlo\", \"Nieuwegein\", \"Sittard\",\n        \"Helmond\", \"Hilversum\", \"Oss\", \"Roosendaal\", \"Spijkenisse\",\n        \"Schiedam\", \"Purmerend\", \"Lelystad\", \"Heerlen\", \"Ede\",\n        \"Gouda\", \"Hoorn\", \"Vlaardingen\", \"Alphen aan den Rijn\",\n        \"Zaandam\", \"Capelle aan den IJssel\", \"Other\"\n      ]\n    },\n\n    \"Norway\": {\n      \"flag\": \"🇳🇴\",\n      \"currencies\": [\"NOK\"],\n      \"nationalities\": [\"Norwegian\", \"Pakistani-Norwegian\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Norwegian\", \"Sami\", \"Somali Norwegian\", \"Iraqi Norwegian\", \"Afghan\",\n        \"Mixed/Multiracial\", \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Norwegian\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"Somali\",\n        \"Polish\", \"Sami\", \"English\", \"Hindi\",\n        \"French\", \"German\", \"Dutch\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Oslo\", \"Bergen\", \"Trondheim\", \"Stavanger\", \"Drammen\",\n        \"Fredrikstad\", \"Kristiansand\", \"Sandnes\", \"Tromsø\", \"Sarpsborg\",\n        \"Skien\", \"Ålesund\", \"Sandefjord\", \"Haugesund\", \"Tønsberg\",\n        \"Moss\", \"Porsgrunn\", \"Bodø\", \"Arendal\", \"Hamar\",\n        \"Larvik\", \"Halden\", \"Lillehammer\", \"Molde\", \"Horten\",\n        \"Gjøvik\", \"Harstad\", \"Askøy\", \"Jessheim\", \"Kongsberg\",\n        \"Ski\", \"Ås\", \"Bærum\", \"Lørenskog\", \"Nittedal\", \"Other\"\n      ]\n    },\n\n    \"Sweden\": {\n      \"flag\": \"🇸🇪\",\n      \"currencies\": [\"SEK\"],\n      \"nationalities\": [\"Swedish\", \"Pakistani-Swedish\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Swedish\", \"Sami\", \"Somali Swedish\", \"Iraqi Swedish\",\n        \"Kurdish Swedish\", \"Afghan\", \"Finnish Swedish\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Swedish\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"Somali\",\n        \"Kurdish\", \"Persian (Farsi)\", \"Finnish\", \"English\", \"Hindi\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Stockholm\", \"Gothenburg\", \"Malmö\", \"Uppsala\", \"Västerås\",\n        \"Örebro\", \"Linköping\", \"Helsingborg\", \"Jönköping\", \"Norrköping\",\n        \"Lund\", \"Umeå\", \"Gävle\", \"Borås\", \"Södertälje\",\n        \"Eskilstuna\", \"Halmstad\", \"Växjö\", \"Karlstad\", \"Sundsvall\",\n        \"Östersund\", \"Trollhättan\", \"Luleå\", \"Borlänge\", \"Kristianstad\",\n        \"Kalmar\", \"Falun\", \"Skövde\", \"Karlskrona\", \"Uddevalla\",\n        \"Huddinge\", \"Täby\", \"Nacka\", \"Sollentuna\", \"Upplands Väsby\",\n        \"Haninge\", \"Järfälla\", \"Botkyrka\", \"Tyresö\", \"Lidingö\",\n        \"Sigtuna\", \"Norrtälje\", \"Nyköping\", \"Motala\", \"Varberg\",\n        \"Landskrona\", \"Trelleborg\", \"Ystad\", \"Ängelholm\", \"Piteå\", \"Other\"\n      ]\n    },\n\n    \"Denmark\": {\n      \"flag\": \"🇩🇰\",\n      \"currencies\": [\"DKK\"],\n      \"nationalities\": [\"Danish\", \"Pakistani-Danish\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Danish\", \"Faroese\", \"Greenlandic\", \"Turkish Danish\",\n        \"Somali Danish\", \"Iraqi Danish\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Danish\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"Turkish\",\n        \"Somali\", \"Polish\", \"English\", \"Hindi\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Copenhagen\", \"Aarhus\", \"Odense\", \"Aalborg\", \"Esbjerg\",\n        \"Randers\", \"Kolding\", \"Horsens\", \"Vejle\", \"Roskilde\",\n        \"Herning\", \"Silkeborg\", \"Næstved\", \"Fredericia\", \"Viborg\",\n        \"Køge\", \"Holstebro\", \"Taastrup\", \"Slagelse\", \"Hillerød\",\n        \"Helsingør\", \"Ballerup\", \"Gladsaxe\", \"Hvidovre\", \"Albertslund\",\n        \"Frederiksberg\", \"Lyngby\", \"Greve\", \"Farum\", \"Birkerød\",\n        \"Sønderborg\", \"Holbæk\", \"Svendborg\", \"Hjørring\", \"Frederikshavn\",\n        \"Ringsted\", \"Nykøbing Falster\", \"Kalundborg\", \"Ikast\",\n        \"Skive\", \"Thisted\", \"Struer\", \"Other\"\n      ]\n    },\n\n    \"Belgium\": {\n      \"flag\": \"🇧🇪\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Belgian\", \"Pakistani-Belgian\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Flemish\", \"Walloon\", \"Moroccan Belgian\", \"Turkish Belgian\",\n        \"Congolese Belgian\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Dutch (Flemish)\", \"French\", \"Urdu\", \"Punjabi\", \"Pashto\",\n        \"Arabic\", \"Turkish\", \"German\", \"English\", \"Hindi\",\n        \"Norwegian\", \"Swedish\", \"Danish\", \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Brussels\", \"Antwerp\", \"Ghent\", \"Charleroi\", \"Liège\",\n        \"Bruges\", \"Namur\", \"Leuven\", \"Mons\", \"Aalst\",\n        \"Mechelen\", \"La Louvière\", \"Kortrijk\", \"Hasselt\", \"Ostend\",\n        \"Sint-Niklaas\", \"Tournai\", \"Genk\", \"Seraing\", \"Roeselare\",\n        \"Mouscron\", \"Verviers\", \"Beveren\", \"Dendermonde\", \"Beringen\",\n        \"Turnhout\", \"Dilbeek\", \"Sint-Truiden\", \"Lommel\",\n        \"Geel\", \"Lokeren\", \"Brasschaat\", \"Maasmechelen\", \"Herstal\",\n        \"Anderlecht\", \"Schaerbeek\", \"Molenbeek\", \"Ixelles\", \"Etterbeek\",\n        \"Uccle\", \"Jette\", \"Forest\", \"Saint-Gilles\",\n        \"Arlon\", \"Marche-en-Famenne\", \"Eupen\", \"Other\"\n      ]\n    },\n\n    \"Switzerland\": {\n      \"flag\": \"🇨🇭\",\n      \"currencies\": [\"CHF\"],\n      \"nationalities\": [\"Swiss\", \"Pakistani-Swiss\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Swiss German\", \"Swiss French\", \"Swiss Italian\", \"Romansh\",\n        \"Turkish\", \"Kosovar Albanian\", \"Serbian\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"German (Swiss German)\", \"French\", \"Italian\", \"Romansh\",\n        \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"English\", \"Hindi\",\n        \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\", \"Turkish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Zurich\", \"Geneva\", \"Basel\", \"Bern\", \"Lausanne\",\n        \"Winterthur\", \"Lucerne\", \"St. Gallen\", \"Lugano\", \"Biel/Bienne\",\n        \"Thun\", \"Köniz\", \"La Chaux-de-Fonds\", \"Fribourg\", \"Schaffhausen\",\n        \"Chur\", \"Vernier\", \"Neuchâtel\", \"Uster\", \"Sion\",\n        \"Emmen\", \"Lancy\", \"Renens\", \"Yverdon-les-Bains\", \"Zug\",\n        \"Baar\", \"Küsnacht\", \"Reinach\", \"Allschwil\", \"Binningen\",\n        \"Muri bei Bern\", \"Onex\", \"Carouge\", \"Meyrin\", \"Plan-les-Ouates\",\n        \"Dietikon\", \"Kloten\", \"Wettingen\", \"Baden\", \"Olten\",\n        \"Solothurn\", \"Aarau\", \"Bellinzona\", \"Locarno\", \"Mendrisio\",\n        \"Delémont\", \"Riehen\", \"Other\"\n      ]\n    },\n\n    \"Spain\": {\n      \"flag\": \"🇪🇸\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Spanish\", \"Pakistani-Spanish\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Castilian\", \"Catalan\", \"Basque\", \"Galician\", \"Andalusian\",\n        \"Moroccan\", \"Latin American\", \"Roma/Gitano\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Spanish (Castilian)\", \"Catalan\", \"Galician\", \"Basque\",\n        \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"English\", \"Hindi\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Madrid\", \"Barcelona\", \"Valencia\", \"Seville\", \"Zaragoza\",\n        \"Málaga\", \"Murcia\", \"Palma\", \"Las Palmas\", \"Bilbao\",\n        \"Alicante\", \"Córdoba\", \"Valladolid\", \"Vigo\", \"Gijón\",\n        \"L\'Hospitalet de Llobregat\", \"A Coruña\", \"Vitoria-Gasteiz\",\n        \"Granada\", \"Elche\", \"Oviedo\", \"Santa Cruz de Tenerife\",\n        \"Badalona\", \"Cartagena\", \"Terrassa\", \"Jerez de la Frontera\",\n        \"Sabadell\", \"Móstoles\", \"Alcalá de Henares\", \"Pamplona\",\n        \"Fuenlabrada\", \"Almería\", \"Leganés\", \"San Sebastián\",\n        \"Santander\", \"Burgos\", \"Castellón de la Plana\", \"Albacete\",\n        \"Getafe\", \"Alcorcón\", \"Huelva\", \"Badajoz\", \"Logroño\",\n        \"Salamanca\", \"Tarragona\", \"Lleida\", \"Mataró\", \"Dos Hermanas\",\n        \"Marbella\", \"León\", \"Torrejón de Ardoz\", \"Parla\",\n        \"Alcobendas\", \"Reus\", \"Barakaldo\", \"Jaén\", \"Girona\",\n        \"Lugo\", \"Ourense\", \"Cádiz\", \"Other\"\n      ]\n    },\n\n    \"Italy\": {\n      \"flag\": \"🇮🇹\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Italian\", \"Pakistani-Italian\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Northern Italian\", \"Southern Italian\", \"Sicilian\", \"Sardinian\",\n        \"Moroccan\", \"Romanian\", \"Albanian\", \"Egyptian\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Italian\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"English\",\n        \"Hindi\", \"Romanian\", \"Albanian\", \"French\", \"German\", \"Dutch\",\n        \"Norwegian\", \"Swedish\", \"Danish\", \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Rome\", \"Milan\", \"Naples\", \"Turin\", \"Palermo\",\n        \"Genoa\", \"Bologna\", \"Florence\", \"Bari\", \"Catania\",\n        \"Venice\", \"Verona\", \"Messina\", \"Padua\", \"Trieste\",\n        \"Brescia\", \"Parma\", \"Taranto\", \"Prato\", \"Reggio Calabria\",\n        \"Modena\", \"Reggio Emilia\", \"Perugia\", \"Livorno\", \"Ravenna\",\n        \"Cagliari\", \"Foggia\", \"Rimini\", \"Salerno\", \"Ferrara\",\n        \"Sassari\", \"Latina\", \"Giugliano in Campania\", \"Monza\", \"Bergamo\",\n        \"Syracuse\", \"Pescara\", \"Trento\", \"Forlì\", \"Vicenza\",\n        \"Terni\", \"Bolzano\", \"Novara\", \"Piacenza\", \"Ancona\",\n        \"Andria\", \"Udine\", \"Arezzo\", \"Cesena\", \"Lecce\",\n        \"Pesaro\", \"Barletta\", \"Alessandria\", \"La Spezia\", \"Pisa\",\n        \"Catanzaro\", \"Brindisi\", \"Como\", \"Varese\",\n        \"Marsala\", \"Agrigento\", \"Trapani\", \"Ragusa\", \"Other\"\n      ]\n    },\n\n    \"Greece\": {\n      \"flag\": \"🇬🇷\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Greek\", \"Pakistani-Greek\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Sayed/Syed\", \"Sheikh\",\n        \"Greek\", \"Albanian Greek\", \"Macedonian\", \"Pontian Greek\",\n        \"Greek Roma\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Greek\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"Albanian\",\n        \"Bulgarian\", \"English\", \"Hindi\", \"French\", \"German\", \"Dutch\",\n        \"Norwegian\", \"Swedish\", \"Danish\", \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Athens\", \"Thessaloniki\", \"Patras\", \"Piraeus\", \"Larissa\",\n        \"Heraklion\", \"Peristeri\", \"Kallithea\", \"Acharnes\", \"Kalamaria\",\n        \"Nikaia\", \"Glyfada\", \"Volos\", \"Ilio\", \"Ilioupoli\",\n        \"Keratsini\", \"Evosmos\", \"Chalandri\", \"Nea Smyrni\", \"Marousi\",\n        \"Agios Dimitrios\", \"Zografou\", \"Egaleo\",\n        \"Rhodes\", \"Corfu\", \"Kos\", \"Mytilene\", \"Chania\",\n        \"Ioannina\", \"Kavala\", \"Agrinio\", \"Haidari\", \"Serres\",\n        \"Alexandroupoli\", \"Katerini\", \"Kalamata\", \"Trikala\", \"Lamia\",\n        \"Xanthi\", \"Komotini\", \"Drama\", \"Kozani\", \"Florina\",\n        \"Preveza\", \"Lefkada\", \"Zakynthos\", \"Sparti\", \"Other\"\n      ]\n    },\n\n    \"Austria\": {\n      \"flag\": \"🇦🇹\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Austrian\", \"Pakistani-Austrian\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Austrian\", \"Turkish Austrian\", \"Serbian Austrian\",\n        \"Bosnian Austrian\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"German\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"Turkish\",\n        \"Serbian\", \"Croatian\", \"Bosnian\", \"English\", \"Hindi\",\n        \"French\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Vienna\", \"Graz\", \"Linz\", \"Salzburg\", \"Innsbruck\",\n        \"Klagenfurt\", \"Villach\", \"Wels\", \"Sankt Pölten\", \"Dornbirn\",\n        \"Wiener Neustadt\", \"Steyr\", \"Feldkirch\", \"Bregenz\", \"Leonding\",\n        \"Klosterneuburg\", \"Baden\", \"Wolfsberg\", \"Leoben\", \"Krems\",\n        \"Traun\", \"Amstetten\", \"Lustenau\", \"Kapfenberg\", \"Mödling\",\n        \"Hallein\", \"Kufstein\", \"Traiskirchen\", \"Schwechat\", \"Braunau\",\n        \"Stockerau\", \"Perchtoldsdorf\", \"Ternitz\", \"Eisenstadt\",\n        \"Bruck an der Mur\", \"Wörgl\", \"Hohenems\", \"Hard\", \"Rankweil\", \"Götzis\", \"Other\"\n      ]\n    },\n\n    \"Finland\": {\n      \"flag\": \"🇫🇮\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Finnish\", \"Pakistani-Finnish\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Finnish\", \"Swedish Finnish\", \"Sami\", \"Somali Finnish\",\n        \"Estonian\", \"Russian Finnish\", \"Afghan\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Finnish\", \"Swedish\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\",\n        \"Somali\", \"Russian\", \"English\", \"Hindi\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Helsinki\", \"Espoo\", \"Tampere\", \"Vantaa\", \"Oulu\",\n        \"Turku\", \"Jyväskylä\", \"Lahti\", \"Kuopio\", \"Kouvola\",\n        \"Pori\", \"Joensuu\", \"Lappeenranta\", \"Hämeenlinna\", \"Vaasa\",\n        \"Seinäjoki\", \"Rovaniemi\", \"Mikkeli\", \"Kotka\", \"Salo\",\n        \"Porvoo\", \"Kokkola\", \"Hyvinkää\", \"Lohja\", \"Järvenpää\",\n        \"Nurmijärvi\", \"Rauma\", \"Tuusula\", \"Kirkkonummi\", \"Kajaani\",\n        \"Kerava\", \"Nokia\", \"Ylöjärvi\", \"Iisalmi\", \"Tornio\",\n        \"Kemi\", \"Raahe\", \"Pietarsaari\", \"Other\"\n      ]\n    },\n\n    \"Portugal\": {\n      \"flag\": \"🇵🇹\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Portuguese\", \"Pakistani-Portuguese\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Portuguese\", \"Cape Verdean\", \"Angolan\", \"Mozambican\",\n        \"Brazilian Portuguese\", \"Bangladeshi\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Portuguese\", \"Urdu\", \"Punjabi\", \"Pashto\", \"Arabic\", \"English\",\n        \"French\", \"Hindi\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\",\n        \"Danish\", \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Lisbon\", \"Porto\", \"Braga\", \"Amadora\", \"Setúbal\",\n        \"Coimbra\", \"Queluz\", \"Funchal\", \"Almada\", \"Aveiro\",\n        \"Agualva-Cacém\", \"Viseu\", \"Guimarães\", \"Odivelas\", \"Vila Nova de Gaia\",\n        \"Évora\", \"Faro\", \"Leiria\", \"Loures\", \"Matosinhos\",\n        \"Barreiro\", \"Maia\", \"Seixal\", \"Vila Nova de Famalicão\",\n        \"Gondomar\", \"Póvoa de Varzim\", \"Barcelos\", \"Viana do Castelo\",\n        \"Cascais\", \"Sintra\", \"Palmela\", \"Montijo\", \"Sesimbra\",\n        \"Santarém\", \"Portimão\", \"Albufeira\", \"Tavira\", \"Lagos\",\n        \"Caldas da Rainha\", \"Penafiel\", \"Paredes\", \"Valongo\",\n        \"Chaves\", \"Bragança\", \"Vila Real\", \"Lamego\", \"Other\"\n      ]\n    },\n\n    \"Ireland\": {\n      \"flag\": \"🇮🇪\",\n      \"currencies\": [\"EUR\"],\n      \"nationalities\": [\"Irish\", \"Pakistani-Irish\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Irish\", \"Ulster Irish\", \"Traveller/Pavee\", \"Nigerian Irish\",\n        \"Polish Irish\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"English\", \"Irish (Gaeilge)\", \"Urdu\", \"Punjabi\", \"Pashto\",\n        \"Arabic\", \"Polish\", \"Romanian\", \"Hindi\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Dublin\", \"Cork\", \"Limerick\", \"Galway\", \"Waterford\",\n        \"Drogheda\", \"Dundalk\", \"Swords\", \"Bray\", \"Navan\",\n        \"Kilkenny\", \"Ennis\", \"Carlow\", \"Tralee\", \"Newbridge\",\n        \"Portlaoise\", \"Mullingar\", \"Clonmel\", \"Wexford\", \"Balbriggan\",\n        \"Letterkenny\", \"Athlone\", \"Tullamore\", \"Sligo\", \"Celbridge\",\n        \"Naas\", \"Tallaght\", \"Lucan\", \"Blanchardstown\",\n        \"Finglas\", \"Dún Laoghaire\", \"Sandyford\", \"Maynooth\",\n        \"Arklow\", \"Wicklow\", \"Greystones\", \"Athy\",\n        \"Longford\", \"Roscommon\", \"Castlebar\", \"Ballina\", \"Tuam\",\n        \"Dungarvan\", \"Thurles\", \"Nenagh\", \"Tipperary\",\n        \"Cobh\", \"Mallow\", \"Youghal\", \"Bandon\", \"Skibbereen\", \"Other\"\n      ]\n    },\n\n    \"Turkey\": {\n      \"flag\": \"🇹🇷\",\n      \"currencies\": [\"TRY\"],\n      \"nationalities\": [\"Turkish\", \"Pakistani-Turkish\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Alevi\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Turkish\", \"Kurdish\", \"Zaza\", \"Laz\", \"Circassian\",\n        \"Arab Turkish\", \"Albanian Turkish\", \"Georgian Turkish\",\n        \"Romani Turkish\", \"Mixed/Multiracial\",\n        \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Turkish\", \"Kurdish\", \"Arabic\", \"Urdu\", \"Punjabi\",\n        \"Pashto\", \"Persian (Farsi)\", \"Zaza\", \"Laz\", \"English\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Mandarin\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Istanbul\", \"Ankara\", \"Izmir\", \"Bursa\", \"Adana\",\n        \"Gaziantep\", \"Konya\", \"Antalya\", \"Kayseri\", \"Mersin\",\n        \"Eskişehir\", \"Diyarbakır\", \"Samsun\", \"Denizli\", \"Şanlıurfa\",\n        \"Adapazarı\", \"Malatya\", \"Gebze\", \"Trabzon\", \"Erzurum\",\n        \"Van\", \"İzmit\", \"Sivas\", \"Balıkesir\", \"Manisa\",\n        \"Tarsus\", \"Elazığ\", \"Kahramanmaraş\", \"Kocaeli\", \"Tekirdağ\",\n        \"Hatay\", \"Antakya\", \"Isparta\", \"Çorum\", \"Kırıkkale\",\n        \"Zonguldak\", \"Osmaniye\", \"Edirne\", \"Afyonkarahisar\", \"Batman\",\n        \"Ordu\", \"Giresun\", \"Rize\", \"Artvin\", \"Amasya\",\n        \"Nevşehir\", \"Aksaray\", \"Niğde\", \"Mardin\", \"Şırnak\",\n        \"Bingöl\", \"Muş\", \"Bitlis\", \"Siirt\", \"Hakkari\",\n        \"Ağrı\", \"Iğdır\", \"Kars\", \"Ardahan\", \"Erzincan\",\n        \"Tokat\", \"Yozgat\", \"Kırşehir\", \"Çankırı\", \"Kastamonu\",\n        \"Sinop\", \"Karabük\", \"Bartın\", \"Bolu\", \"Düzce\", \"Other\"\n      ]\n    },\n\n    \"Malaysia\": {\n      \"flag\": \"🇲🇾\",\n      \"currencies\": [\"MYR\"],\n      \"nationalities\": [\"Malaysian\", \"Pakistani-Malaysian\", \"Other\"],\n      \"sects\": [\n        \"Sunni\", \"Shia\", \"Deobandi\", \"Barelvi\", \"Salafi\",\n        \"Hanafi\", \"Shafi\'i\", \"Ismaili\", \"Ahl-e-Hadith\", \"Sufi\", \"Other\"\n      ],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"Malay\", \"Chinese Malaysian\", \"Indian Tamil\", \"Indian Punjabi\",\n        \"Iban\", \"Kadazan-Dusun\", \"Bajau\", \"Bidayuh\", \"Orang Asli\",\n        \"Mixed/Multiracial\", \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"Malay (Bahasa Malaysia)\", \"Mandarin\", \"Tamil\", \"English\",\n        \"Urdu\", \"Punjabi\", \"Pashto\", \"Hindi\", \"Cantonese\",\n        \"Hokkien\", \"Hakka\", \"Iban\", \"Kadazan-Dusun\",\n        \"Arabic\", \"French\", \"German\", \"Dutch\", \"Norwegian\",\n        \"Swedish\", \"Danish\", \"Turkish\", \"Other\"\n      ],\n      \"cities\": [\n        \"Kuala Lumpur\", \"George Town\", \"Ipoh\", \"Shah Alam\", \"Petaling Jaya\",\n        \"Johor Bahru\", \"Subang Jaya\", \"Klang\", \"Ampang Jaya\", \"Malacca City\",\n        \"Kota Kinabalu\", \"Kuching\", \"Alor Setar\", \"Miri\", \"Seremban\",\n        \"Kota Bahru\", \"Kuantan\", \"Sandakan\", \"Kuala Terengganu\", \"Sungai Petani\",\n        \"Tawau\", \"Sibu\", \"Batu Pahat\", \"Taiping\", \"Kluang\",\n        \"Kangar\", \"Port Dickson\", \"Temerloh\", \"Bentong\", \"Kulim\",\n        \"Seri Manjung\", \"Teluk Intan\", \"Lumut\", \"Bintulu\", \"Sarikei\",\n        \"Lahad Datu\", \"Semporna\", \"Keningau\", \"Beaufort\", \"Ranau\",\n        \"Putrajaya\", \"Cyberjaya\", \"Nilai\", \"Rawang\", \"Sepang\",\n        \"Bangi\", \"Kajang\", \"Cheras\", \"Ampang\", \"Puchong\", \"Other\"\n      ]\n    },\n\n    \"New Zealand\": {\n      \"flag\": \"🇳🇿\",\n      \"currencies\": [\"NZD\"],\n      \"nationalities\": [\"New Zealander\", \"Pakistani-Kiwi\", \"Other\"],\n      \"sects\": [],\n      \"castes\": [\n        \"Arain\", \"Awan\", \"Baloch\", \"Butt\", \"Khan\", \"Memon\",\n        \"Pathan/Pashtun\", \"Qureshi\", \"Rajput\", \"Sayed/Syed\", \"Sheikh\",\n        \"NZ European/Pākehā\", \"Māori\", \"Samoan\", \"Tongan\",\n        \"Cook Island Māori\", \"Fijian\", \"Chinese NZ\", \"Indian NZ\",\n        \"Mixed/Multiracial\", \"Other\", \"Prefer not to say\"\n      ],\n      \"mother_tongues\": [\n        \"English\", \"Māori\", \"Samoan\", \"Urdu\", \"Punjabi\", \"Pashto\",\n        \"Hindi\", \"Mandarin\", \"Tongan\", \"Arabic\", \"Bengali\",\n        \"French\", \"German\", \"Dutch\", \"Norwegian\", \"Swedish\", \"Danish\",\n        \"Turkish\", \"Malay\", \"Other\"\n      ],\n      \"cities\": [\n        \"Auckland\", \"Hamilton\", \"Tauranga\", \"Wellington\", \"Palmerston North\",\n        \"Napier\", \"Hastings\", \"Rotorua\", \"New Plymouth\", \"Whangarei\",\n        \"Whanganui\", \"Gisborne\", \"Upper Hutt\", \"Lower Hutt\", \"Porirua\",\n        \"Masterton\", \"Levin\", \"Tokoroa\", \"Taupo\", \"Whakatane\",\n        \"Pukekohe\", \"Papakura\", \"Manukau\", \"Henderson\", \"Waitakere\",\n        \"North Shore\", \"Hibiscus Coast\", \"Orewa\",\n        \"Christchurch\", \"Dunedin\", \"Nelson\", \"Invercargill\", \"Timaru\",\n        \"Blenheim\", \"Oamaru\", \"Ashburton\", \"Greymouth\", \"Hokitika\",\n        \"Kaikōura\", \"Picton\", \"Westport\", \"Queenstown\", \"Wānaka\",\n        \"Alexandra\", \"Gore\", \"Balclutha\", \"Mosgiel\", \"Cromwell\", \"Other\"\n      ]\n    }\n  }\n}', '2026-04-19 20:11:48', '2026-04-19 20:11:48');
+INSERT INTO `Settings` (`id`, `created_at`, `updated_at`) VALUES
+(3, '2026-04-19 20:11:48', '2026-04-19 20:11:48');
 
 -- --------------------------------------------------------
 
@@ -488,8 +558,9 @@ INSERT INTO `Settings` (`id`, `profile_options`, `created_at`, `updated_at`) VAL
 -- Table structure for table `Users`
 --
 
-CREATE TABLE `Users` (
-  `id` bigint NOT NULL AUTO_INCREMENT PRIMARY KEY,
+DROP TABLE IF EXISTS `Users`;
+CREATE TABLE IF NOT EXISTS `Users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `email` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `mobile` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `password_hash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
@@ -501,8 +572,67 @@ CREATE TABLE `Users` (
   `is_premium` tinyint(1) DEFAULT '0',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
-  `avatar_url` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `avatar_url` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `mobile` (`mobile`),
+  UNIQUE KEY `email_2` (`email`),
+  UNIQUE KEY `mobile_2` (`mobile`),
+  UNIQUE KEY `email_3` (`email`),
+  UNIQUE KEY `mobile_3` (`mobile`),
+  UNIQUE KEY `email_4` (`email`),
+  UNIQUE KEY `mobile_4` (`mobile`),
+  UNIQUE KEY `email_5` (`email`),
+  UNIQUE KEY `mobile_5` (`mobile`),
+  UNIQUE KEY `email_6` (`email`),
+  UNIQUE KEY `mobile_6` (`mobile`),
+  UNIQUE KEY `email_7` (`email`),
+  UNIQUE KEY `mobile_7` (`mobile`),
+  UNIQUE KEY `email_8` (`email`),
+  UNIQUE KEY `mobile_8` (`mobile`),
+  UNIQUE KEY `email_9` (`email`),
+  UNIQUE KEY `mobile_9` (`mobile`),
+  UNIQUE KEY `email_10` (`email`),
+  UNIQUE KEY `mobile_10` (`mobile`),
+  UNIQUE KEY `email_11` (`email`),
+  UNIQUE KEY `mobile_11` (`mobile`),
+  UNIQUE KEY `email_12` (`email`),
+  UNIQUE KEY `mobile_12` (`mobile`),
+  UNIQUE KEY `email_13` (`email`),
+  UNIQUE KEY `mobile_13` (`mobile`),
+  UNIQUE KEY `email_14` (`email`),
+  UNIQUE KEY `mobile_14` (`mobile`),
+  UNIQUE KEY `email_15` (`email`),
+  UNIQUE KEY `mobile_15` (`mobile`),
+  UNIQUE KEY `email_16` (`email`),
+  UNIQUE KEY `mobile_16` (`mobile`),
+  UNIQUE KEY `email_17` (`email`),
+  UNIQUE KEY `mobile_17` (`mobile`),
+  UNIQUE KEY `email_18` (`email`),
+  UNIQUE KEY `mobile_18` (`mobile`),
+  UNIQUE KEY `email_19` (`email`),
+  UNIQUE KEY `mobile_19` (`mobile`),
+  UNIQUE KEY `email_20` (`email`),
+  UNIQUE KEY `mobile_20` (`mobile`),
+  UNIQUE KEY `email_21` (`email`),
+  UNIQUE KEY `mobile_21` (`mobile`),
+  UNIQUE KEY `email_22` (`email`),
+  UNIQUE KEY `mobile_22` (`mobile`),
+  UNIQUE KEY `email_23` (`email`),
+  UNIQUE KEY `mobile_23` (`mobile`),
+  UNIQUE KEY `email_24` (`email`),
+  UNIQUE KEY `mobile_24` (`mobile`),
+  UNIQUE KEY `email_25` (`email`),
+  UNIQUE KEY `mobile_25` (`mobile`),
+  UNIQUE KEY `email_26` (`email`),
+  UNIQUE KEY `mobile_26` (`mobile`),
+  UNIQUE KEY `email_27` (`email`),
+  UNIQUE KEY `mobile_27` (`mobile`),
+  UNIQUE KEY `email_28` (`email`),
+  UNIQUE KEY `mobile_28` (`mobile`),
+  UNIQUE KEY `email_29` (`email`),
+  UNIQUE KEY `mobile_29` (`mobile`)
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `Users`
@@ -558,226 +688,6 @@ INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `is_onlin
 (72, 'waqartw1w@gmail.com', 'waqartw1@gmail.com', '$2b$10$4D14EdWl9hVBdxAm0EC9huF9G5gI4RrMURQ2Qehw5SB..qhc2erau', 'individual', 0, 0, 0, 1, 0, '2026-04-21 18:42:03', '2026-04-21 18:42:20', NULL);
 
 --
--- Indexes for dumped tables
---
-
---
--- Indexes for table `Dislikes`
---
-ALTER TABLE `Dislikes`
-
-  ADD KEY `user_id` (`user_id`),
-  ADD KEY `target_user_id` (`target_user_id`);
-
---
--- Indexes for table `Guardians`
---
-ALTER TABLE `Guardians`
-
-  ADD UNIQUE KEY `guardians_individual_id_guardian_id` (`individual_id`,`guardian_id`),
-  ADD KEY `guardian_id` (`guardian_id`);
-
---
--- Indexes for table `Interests`
---
-ALTER TABLE `Interests`
-
-  ADD KEY `from_user` (`from_user`),
-  ADD KEY `to_user` (`to_user`),
-  ADD KEY `from_guardian` (`from_guardian`),
-  ADD KEY `to_guardian` (`to_guardian`);
-
---
--- Indexes for table `Matches`
---
-ALTER TABLE `Matches`
-
-  ADD KEY `user1` (`user1`),
-  ADD KEY `user2` (`user2`),
-  ADD KEY `interest_id` (`interest_id`);
-
---
--- Indexes for table `Messages`
---
-ALTER TABLE `Messages`
-
-  ADD KEY `sender_id` (`sender_id`),
-  ADD KEY `receiver_id` (`receiver_id`),
-  ADD KEY `interest_id` (`interest_id`);
-
---
--- Indexes for table `Options`
---
-ALTER TABLE `Options`
-
-  ADD UNIQUE KEY `country` (`country`),
-  ADD UNIQUE KEY `country_2` (`country`),
-  ADD UNIQUE KEY `country_3` (`country`),
-  ADD UNIQUE KEY `country_4` (`country`),
-  ADD UNIQUE KEY `country_5` (`country`),
-  ADD UNIQUE KEY `country_6` (`country`);
-
---
--- Indexes for table `Otps`
---
-ALTER TABLE `Otps`
-
-  ADD KEY `user_id` (`user_id`);
-
---
--- Indexes for table `Prefs`
---
-ALTER TABLE `Prefs`
-
-  ADD KEY `individual_id` (`individual_id`);
-
---
--- Indexes for table `Profiles`
---
-ALTER TABLE `Profiles`
-
-  ADD KEY `individual_id` (`individual_id`),
-  ADD KEY `guardian_id` (`guardian_id`);
-
---
--- Indexes for table `Settings`
---
-ALTER TABLE `Settings`
-
-
---
--- Indexes for table `Users`
---
-ALTER TABLE `Users`
-
-  ADD UNIQUE KEY `email` (`email`),
-  ADD UNIQUE KEY `mobile` (`mobile`),
-  ADD UNIQUE KEY `email_2` (`email`),
-  ADD UNIQUE KEY `mobile_2` (`mobile`),
-  ADD UNIQUE KEY `email_3` (`email`),
-  ADD UNIQUE KEY `mobile_3` (`mobile`),
-  ADD UNIQUE KEY `email_4` (`email`),
-  ADD UNIQUE KEY `mobile_4` (`mobile`),
-  ADD UNIQUE KEY `email_5` (`email`),
-  ADD UNIQUE KEY `mobile_5` (`mobile`),
-  ADD UNIQUE KEY `email_6` (`email`),
-  ADD UNIQUE KEY `mobile_6` (`mobile`),
-  ADD UNIQUE KEY `email_7` (`email`),
-  ADD UNIQUE KEY `mobile_7` (`mobile`),
-  ADD UNIQUE KEY `email_8` (`email`),
-  ADD UNIQUE KEY `mobile_8` (`mobile`),
-  ADD UNIQUE KEY `email_9` (`email`),
-  ADD UNIQUE KEY `mobile_9` (`mobile`),
-  ADD UNIQUE KEY `email_10` (`email`),
-  ADD UNIQUE KEY `mobile_10` (`mobile`),
-  ADD UNIQUE KEY `email_11` (`email`),
-  ADD UNIQUE KEY `mobile_11` (`mobile`),
-  ADD UNIQUE KEY `email_12` (`email`),
-  ADD UNIQUE KEY `mobile_12` (`mobile`),
-  ADD UNIQUE KEY `email_13` (`email`),
-  ADD UNIQUE KEY `mobile_13` (`mobile`),
-  ADD UNIQUE KEY `email_14` (`email`),
-  ADD UNIQUE KEY `mobile_14` (`mobile`),
-  ADD UNIQUE KEY `email_15` (`email`),
-  ADD UNIQUE KEY `mobile_15` (`mobile`),
-  ADD UNIQUE KEY `email_16` (`email`),
-  ADD UNIQUE KEY `mobile_16` (`mobile`),
-  ADD UNIQUE KEY `email_17` (`email`),
-  ADD UNIQUE KEY `mobile_17` (`mobile`),
-  ADD UNIQUE KEY `email_18` (`email`),
-  ADD UNIQUE KEY `mobile_18` (`mobile`),
-  ADD UNIQUE KEY `email_19` (`email`),
-  ADD UNIQUE KEY `mobile_19` (`mobile`),
-  ADD UNIQUE KEY `email_20` (`email`),
-  ADD UNIQUE KEY `mobile_20` (`mobile`),
-  ADD UNIQUE KEY `email_21` (`email`),
-  ADD UNIQUE KEY `mobile_21` (`mobile`),
-  ADD UNIQUE KEY `email_22` (`email`),
-  ADD UNIQUE KEY `mobile_22` (`mobile`),
-  ADD UNIQUE KEY `email_23` (`email`),
-  ADD UNIQUE KEY `mobile_23` (`mobile`),
-  ADD UNIQUE KEY `email_24` (`email`),
-  ADD UNIQUE KEY `mobile_24` (`mobile`),
-  ADD UNIQUE KEY `email_25` (`email`),
-  ADD UNIQUE KEY `mobile_25` (`mobile`),
-  ADD UNIQUE KEY `email_26` (`email`),
-  ADD UNIQUE KEY `mobile_26` (`mobile`),
-  ADD UNIQUE KEY `email_27` (`email`),
-  ADD UNIQUE KEY `mobile_27` (`mobile`),
-  ADD UNIQUE KEY `email_28` (`email`),
-  ADD UNIQUE KEY `mobile_28` (`mobile`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `Dislikes`
---
-ALTER TABLE `Dislikes`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `Guardians`
---
-ALTER TABLE `Guardians`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `Interests`
---
-ALTER TABLE `Interests`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=226;
-
---
--- AUTO_INCREMENT for table `Matches`
---
-ALTER TABLE `Matches`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `Messages`
---
-ALTER TABLE `Messages`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=170;
-
---
--- AUTO_INCREMENT for table `Options`
---
-ALTER TABLE `Options`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
-
---
--- AUTO_INCREMENT for table `Otps`
---
-ALTER TABLE `Otps`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=212;
-
---
--- AUTO_INCREMENT for table `Prefs`
---
-ALTER TABLE `Prefs`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `Profiles`
---
-ALTER TABLE `Profiles`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=97;
-
---
--- AUTO_INCREMENT for table `Settings`
---
-ALTER TABLE `Settings`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `Users`
---
-ALTER TABLE `Users`
-  MODIFY `id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
-
---
 -- Constraints for dumped tables
 --
 
@@ -785,59 +695,59 @@ ALTER TABLE `Users`
 -- Constraints for table `Dislikes`
 --
 ALTER TABLE `Dislikes`
-  ADD CONSTRAINT `Dislikes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Dislikes_ibfk_2` FOREIGN KEY (`target_user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `dislikes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `dislikes_ibfk_2` FOREIGN KEY (`target_user_id`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Guardians`
 --
 ALTER TABLE `Guardians`
-  ADD CONSTRAINT `Guardians_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Guardians_ibfk_2` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `guardians_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `guardians_ibfk_2` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Interests`
 --
 ALTER TABLE `Interests`
-  ADD CONSTRAINT `Interests_ibfk_5` FOREIGN KEY (`from_user`) REFERENCES `Profiles` (`individual_id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Interests_ibfk_6` FOREIGN KEY (`to_user`) REFERENCES `Profiles` (`individual_id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Interests_ibfk_7` FOREIGN KEY (`from_guardian`) REFERENCES `Guardians` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `Interests_ibfk_8` FOREIGN KEY (`to_guardian`) REFERENCES `Guardians` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `interests_ibfk_93` FOREIGN KEY (`from_user`) REFERENCES `Profiles` (`individual_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `interests_ibfk_94` FOREIGN KEY (`to_user`) REFERENCES `Profiles` (`individual_id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `interests_ibfk_95` FOREIGN KEY (`from_guardian`) REFERENCES `Guardians` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `interests_ibfk_96` FOREIGN KEY (`to_guardian`) REFERENCES `Guardians` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD CONSTRAINT `Matches_ibfk_43` FOREIGN KEY (`user1`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Matches_ibfk_44` FOREIGN KEY (`user2`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Matches_ibfk_45` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `matches_ibfk_70` FOREIGN KEY (`user1`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `matches_ibfk_71` FOREIGN KEY (`user2`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `matches_ibfk_72` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Messages`
 --
 ALTER TABLE `Messages`
-  ADD CONSTRAINT `Messages_ibfk_43` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Messages_ibfk_44` FOREIGN KEY (`receiver_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Messages_ibfk_45` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `messages_ibfk_70` FOREIGN KEY (`sender_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `messages_ibfk_71` FOREIGN KEY (`receiver_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `messages_ibfk_72` FOREIGN KEY (`interest_id`) REFERENCES `Interests` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Otps`
 --
 ALTER TABLE `Otps`
-  ADD CONSTRAINT `Otps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `otps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Prefs`
 --
 ALTER TABLE `Prefs`
-  ADD CONSTRAINT `Prefs_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Profiles` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `prefs_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Profiles` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Profiles`
 --
 ALTER TABLE `Profiles`
-  ADD CONSTRAINT `Profiles_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `Profiles_ibfk_2` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `profiles_ibfk_1` FOREIGN KEY (`individual_id`) REFERENCES `Users` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `profiles_ibfk_2` FOREIGN KEY (`guardian_id`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

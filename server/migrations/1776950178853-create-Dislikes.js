@@ -3,7 +3,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('dislikes', {
+    await queryInterface.createTable('Dislikes', {
       id: {
         type: Sequelize.BIGINT,
         autoIncrement: true,
@@ -37,6 +37,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('dislikes');
+    await queryInterface.dropTable('Dislikes');
   }
 };

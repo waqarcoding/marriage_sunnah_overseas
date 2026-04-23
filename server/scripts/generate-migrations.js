@@ -34,7 +34,6 @@ files.forEach(file => {
 
     let model;
 
-    // ❌ STRICT FAIL: do not continue if model init fails
     try {
         // @ts-ignore
         model = defineModel(sequelize, Sequelize.DataTypes);
@@ -58,13 +57,37 @@ files.forEach(file => {
     Object.keys(attributes).forEach((key) => {
         const attr = attributes[key];
 
-        // skip system fields
         if (key === 'id' || key === 'createdAt' || key === 'updatedAt') return;
 
-        const type = attr.type?.key || 'STRING';
+        let type;
+        let skipField = false;
+
+        // ===================== ENUM FIX =====================
+        if (attr.type?.key === 'ENUM') {
+            const values = attr.type?.options?.values || attr.type?.values;
+
+            if (!values || !Array.isArray(values) || values.length === 0) {
+                console.log(`
+❌ ENUM ERROR in model: ${file}
+   Field: ${key}
+   Problem: Missing ENUM values
+
+👉 FIX: Add values like:
+   type: DataTypes.ENUM('value1', 'value2')
+        `);
+
+                skipField = true;
+            } else {
+                type = `Sequelize.ENUM(${values.map(v => `'${v}'`).join(', ')})`;
+            }
+        } else {
+            type = `Sequelize.${attr.type?.key || 'STRING'}`;
+        }
+
+        if (skipField) return;
 
         fields.push(`      ${key}: {
-        type: Sequelize.${type},
+        type: ${type},
         allowNull: ${attr.allowNull === false ? 'false' : 'true'}
       }`);
     });
@@ -117,4 +140,4 @@ console.log('\n==============================');
 console.log(`✅ Generated: ${generatedCount}`);
 console.log(`❌ Skipped: ${skippedCount}`);
 console.log('==============================');
-console.log('🎉 Done');
+console.log('🎉 Migration generation completed');

@@ -24,7 +24,7 @@ module.exports = {
         allowNull: false
       },
       role: {
-        type: Sequelize.ENUM,
+        type: Sequelize.ENUM('individual', 'guardian', 'admin', 'staff'),
         allowNull: true
       },
       avatar_url: {
