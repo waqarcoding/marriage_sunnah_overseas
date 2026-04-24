@@ -1,15 +1,18 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import { readdirSync } from 'fs';
-import { join, basename as pathBasename } from 'path';
-import { fileURLToPath } from 'url';
+import { join, dirname, basename as pathBasename } from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { createRequire } from 'module';
 import process from 'process';
-// @ts-ignore
-import configFile from '../config/config.js' assert { type: 'json' };
 
 // @ts-ignore
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = pathBasename(__filename);
+const __dirname = dirname(__filename);
 const basename = pathBasename(__filename);
+
+// @ts-ignore
+const require = createRequire(import.meta.url);
+const configFile = require('../config/config.js');
 const env = process.env.NODE_ENV || 'development';
 const config = configFile[env];
 const db = {};
@@ -43,8 +46,7 @@ if (config.use_env_variable) {
 
 // -------------------- LOAD MODELS --------------------
 // Models must each export a default function: (sequelize, DataTypes) => Model
-// @ts-ignore
-const modelFiles = readdirSync(new URL('.', import.meta.url).pathname)
+const modelFiles = readdirSync(__dirname)
   .filter(file =>
     !file.startsWith('.') &&
     file !== 'index.js' &&
@@ -53,12 +55,10 @@ const modelFiles = readdirSync(new URL('.', import.meta.url).pathname)
   );
 
 for (const file of modelFiles) {
-  const filePath = join(__dirname, file);
-  // Use dynamic import with path, but outside of top-level await context
-  // so wrap inside an async IIFE to allow for async/await usage if necessary
-  // Here, to keep the logic synchronous, use require instead  
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const modelDef = require(filePath).default;
+  // @ts-ignore
+  const imported = await import(pathToFileURL(join(__dirname, file)).href);
+  const modelDef = imported.default ?? imported;
+  if (typeof modelDef !== 'function') { console.warn(`Skipping ${file}`); continue; }
   const model = modelDef(sequelize, DataTypes);
   db[model.name] = model;
 }
