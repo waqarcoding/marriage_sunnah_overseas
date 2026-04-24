@@ -3,8 +3,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import bodyParser from "body-parser";
 import http from "http";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+// @ts-ignore
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /* ---------------- IMPORT DB ---------------- */
 import db from "./models/index.js";
@@ -26,13 +32,16 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 /* ---------------- MIDDLEWARE ---------------- */
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || '*',
+  credentials: true,
+}));
 app.use(bodyParser.json());
 
-/* ---------------- STATIC FILES ---------------- */
+/* ---------------- STATIC UPLOADS ---------------- */
 app.use("/uploads", express.static("uploads"));
 
-/* ---------------- ROUTES ---------------- */
+/* ---------------- API ROUTES ---------------- */
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/match", matchRoutes);
@@ -43,12 +52,19 @@ app.use("/api/interest", interestRoutes);
 app.use("/api/guardian", guardianRoutes);
 
 /* ---------------- HEALTH CHECK ---------------- */
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
-});
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+/* ---------------- SERVE REACT BUILD ---------------- */
+const clientDist = join(__dirname, "../client/dist");
+app.use(express.static(clientDist));
+
+// catch-all → serve React for any non-API route
+app.get("/{*path}", (req, res) => {
+  if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+    return res.status(404).json({ error: "Not found" });
+  }
+  res.sendFile(join(clientDist, "index.html"));
 });
 
 /* ---------------- ERROR HANDLER ---------------- */
@@ -57,13 +73,12 @@ app.use(errorMiddleware);
 /* ---------------- HTTP SERVER ---------------- */
 const server = http.createServer(app);
 
-/* ---------------- START FUNCTION (FIX) ---------------- */
+/* ---------------- START ---------------- */
 const startServer = async () => {
   try {
     console.log("🚀 Starting server...");
     await db.authenticateDatabase();
 
-    // ❌ Only run DB sync in development
     if (process.env.NODE_ENV !== "production") {
       await db.syncDatabase();
       console.log("🛠️ DB sync completed (development only)");
@@ -80,6 +95,7 @@ const startServer = async () => {
 
   } catch (err) {
     console.error("❌ Server failed to start:", err);
+    process.exit(1);
   }
 };
 
