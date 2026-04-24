@@ -281,11 +281,12 @@ exports.getExplore = async (req, res) => {
         */
 
         // Debug console output
-        // console.log("getExplore debug -- Current User:", currentUser?.id);
-        // console.log("getExplore debug -- Preferences:", prefs);
-        // console.log("getExplore debug -- Query params:", req.query);
-        //  console.log("getExplore debug -- Built profileWhere:", profileWhere);
-        // console.log("getExplore debug -- Exclude User IDs:", excludeIds);
+        console.log("getExplore debug -- Current User:", currentUser?.id);
+        console.log("getExplore debug -- Preferences:", prefs?.dataValues ?? prefs);
+
+        console.log("getExplore debug -- Query params:", req.query);
+        //console.log("getExplore debug -- Built profileWhere:", profileWhere);
+        console.log("getExplore debug -- Exclude User IDs:", excludeIds);
 
         const profiles = await Profile.findAll({
             // where: profileWhere,

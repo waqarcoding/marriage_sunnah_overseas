@@ -7,11 +7,25 @@ const onlineUsers = new Set();
 
 export const initSocket = (server) => {
     console.log('Connecting Socket...');
-    io = new Server(server, { cors: { origin: '*' } });
+    io = new Server(server, {
+        cors: {
+            origin: process.env.CLIENT_URL || '*',
+            methods: ['GET', 'POST'],
+            credentials: true,
+        },
+        // ── Required for DigitalOcean App Platform ─────────────────────
+        transports: ['polling', 'websocket'],
+        allowEIO3: true,
+        pingTimeout: 60000,
+        pingInterval: 25000,
+        upgradeTimeout: 30000,
+        allowUpgrades: true,
+    });
 
     io.on('connection', (socket) => {
         console.log('User connected:', socket.id);
         console.log('Connected Socket:' + socket.id);
+
         socket.on('join', (userId) => {
             socket.join(`user_${userId}`);
             onlineUsers.add(String(userId));
@@ -22,7 +36,8 @@ export const initSocket = (server) => {
         socket.on('typing', ({ to, from }) => io.to(`user_${to}`).emit('typing', { from }));
         socket.on('stop_typing', ({ to, from }) => io.to(`user_${to}`).emit('stop_typing', { from }));
 
-        socket.on('disconnect', () => {
+        socket.on('disconnect', (reason) => {
+            console.log(`User disconnected: ${socket.id}, reason: ${reason}`);
             for (const userId of onlineUsers) {
                 const rooms = io.sockets.adapter.sids.get(socket.id);
                 if (rooms && rooms.has(`user_${userId}`)) {
@@ -32,7 +47,10 @@ export const initSocket = (server) => {
                     break;
                 }
             }
-            console.log('User disconnected:', socket.id);
+        });
+
+        socket.on('error', (err) => {
+            console.error('Socket error:', err);
         });
     });
 
@@ -47,13 +65,9 @@ export const getIO = () => {
 export const isUserOnline = (userId) => onlineUsers.has(String(userId));
 
 // ─────────────────────────────────────────────────────────────
-// 🔔 INTEREST EVENTS  (from InterestService)
+// 🔔 INTEREST EVENTS
 // ─────────────────────────────────────────────────────────────
 
-/**
- * InterestService.send()
- * → notify receiver of new interest
- */
 export const notifyInterestReceived = (toUserId, data) => {
     getIO().to(`user_${toUserId}`).emit('interest_received', {
         type: 'interest_received',
@@ -66,10 +80,6 @@ export const notifyInterestReceived = (toUserId, data) => {
     console.log(`💌 interest_received → user_${toUserId}`);
 };
 
-/**
- * InterestService.accept()
- * → notify original sender their interest was accepted
- */
 export const notifyInterestAccepted = (toUserId, data) => {
     getIO().to(`user_${toUserId}`).emit('interest_accepted', {
         type: 'interest_accepted',
@@ -82,10 +92,6 @@ export const notifyInterestAccepted = (toUserId, data) => {
     console.log(`✅ interest_accepted → user_${toUserId}`);
 };
 
-/**
- * InterestService.decline()
- * → notify sender their interest was declined
- */
 export const notifyInterestDeclined = (toUserId, data) => {
     getIO().to(`user_${toUserId}`).emit('interest_declined', {
         type: 'interest_declined',
@@ -97,10 +103,6 @@ export const notifyInterestDeclined = (toUserId, data) => {
     console.log(`❌ interest_declined → user_${toUserId}`);
 };
 
-/**
- * InterestService.cancel()
- * → notify receiver that sender cancelled
- */
 export const notifyInterestCancelled = (toUserId, data) => {
     getIO().to(`user_${toUserId}`).emit('interest_cancelled', {
         type: 'interest_cancelled',
@@ -111,10 +113,6 @@ export const notifyInterestCancelled = (toUserId, data) => {
     console.log(`🚫 interest_cancelled → user_${toUserId}`);
 };
 
-/**
- * InterestService.pendingCount()
- * → push realtime pending count badge after any interest action
- */
 export const notifyInterestCount = (toUserId, count) => {
     getIO().to(`user_${toUserId}`).emit('interest_count', {
         type: 'interest_count',
@@ -123,9 +121,6 @@ export const notifyInterestCount = (toUserId, count) => {
     console.log(`🔢 interest_count (${count}) → user_${toUserId}`);
 };
 
-/**
- * When a new match is created after accept
- */
 export const notifyNewMatch = (userId1, userId2, matchData = {}) => {
     const payload = {
         type: 'new_match',
@@ -151,13 +146,9 @@ export const notifyNewMatch = (userId1, userId2, matchData = {}) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// 🕌 GUARDIAN EVENTS  (from GuardianService)
+// 🕌 GUARDIAN EVENTS
 // ─────────────────────────────────────────────────────────────
 
-/**
- * GuardianService.assignGuardian()
- * → notify guardian they have been assigned a ward
- */
 export const notifyGuardianAssigned = (guardianUserId, data) => {
     getIO().to(`user_${guardianUserId}`).emit('guardian_assigned', {
         type: 'guardian_assigned',
@@ -169,10 +160,6 @@ export const notifyGuardianAssigned = (guardianUserId, data) => {
     console.log(`🤝 guardian_assigned → user_${guardianUserId}`);
 };
 
-/**
- * GuardianService.removeGuardian()
- * → notify guardian they have been removed
- */
 export const notifyGuardianRemoved = (guardianUserId, data) => {
     getIO().to(`user_${guardianUserId}`).emit('guardian_removed', {
         type: 'guardian_removed',
@@ -183,10 +170,6 @@ export const notifyGuardianRemoved = (guardianUserId, data) => {
     console.log(`🗑️ guardian_removed → user_${guardianUserId}`);
 };
 
-/**
- * GuardianService.getPendingInterests()
- * → push realtime pending count to guardian when ward gets new interest
- */
 export const notifyGuardianPendingCount = (guardianUserId, count) => {
     getIO().to(`user_${guardianUserId}`).emit('guardian_pending_count', {
         type: 'guardian_pending_count',
@@ -195,33 +178,23 @@ export const notifyGuardianPendingCount = (guardianUserId, count) => {
     console.log(`🔢 guardian_pending_count (${count}) → user_${guardianUserId}`);
 };
 
-/**
- * GuardianService.approveInterest() / guardianApprove()
- * → notify ward that guardian approved their interest
- */
 export const notifyGuardianApproved = (wardUserId, data) => {
     getIO().to(`user_${wardUserId}`).emit('guardian_approved', {
         type: 'guardian_approved',
         interest_id: data.interest_id,
         guardian_id: data.guardian_id,
-
         guardian_avatar: data.guardian_avatar,
-        approved_for: data.approved_for, // 'send' | 'accept'
+        approved_for: data.approved_for,
         approved_at: new Date().toISOString(),
     });
     console.log(`✅ guardian_approved → user_${wardUserId}`);
 };
 
-/**
- * GuardianService.rejectInterest()
- * → notify ward that guardian rejected their interest
- */
 export const notifyGuardianRejected = (wardUserId, data) => {
     getIO().to(`user_${wardUserId}`).emit('guardian_rejected', {
         type: 'guardian_rejected',
         interest_id: data.interest_id,
         guardian_id: data.guardian_id,
-
         guardian_avatar: data.guardian_avatar,
         rejected_at: new Date().toISOString(),
     });
@@ -232,9 +205,6 @@ export const notifyGuardianRejected = (wardUserId, data) => {
 // 💬 MESSAGE EVENTS
 // ─────────────────────────────────────────────────────────────
 
-/**
- * → notify recipient of new chat message
- */
 export const notifyNewMessage = (toUserId, message) => {
     getIO().to(`user_${toUserId}`).emit('new_message', {
         type: 'new_message',

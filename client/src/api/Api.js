@@ -190,4 +190,4 @@ class Api {
 }
 
 // @ts-ignore
-export default new Api(import.meta.env.VITE_BASE_URL + "/api");
+export default new Api(import.meta.env.VITE_BASE_URL);
