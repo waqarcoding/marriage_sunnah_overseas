@@ -1,14 +1,14 @@
-const express = require('express');
+import express from 'express';
+import Joi from 'joi';
+import interestController from '../controllers/interest.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import { validateBody } from '../middlewares/validation.middleware.js';
+
 const router = express.Router();
-const interestController = require('../controllers/interest.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
-const { validateBody } = require('../middlewares/validation.middleware');
-const Joi = require('joi');
 
 // ===============================
 // Validation Schemas
 // ===============================
-
 
 const interestIdSchema = Joi.object({
     interestId: Joi.number().required(),
@@ -37,6 +37,7 @@ router.post(
     })),
     interestController.sendDislike
 );
+
 // Cancel interest
 router.post(
     '/cancel-interest',
@@ -45,14 +46,12 @@ router.post(
     interestController.cancelInterest
 );
 
-
 // Get user interests
 router.get(
     '/get-interests',
     authenticate,
     interestController.getInterests
 );
-
 
 // Accept interest
 router.post(
@@ -70,6 +69,4 @@ router.post(
     interestController.declineInterest
 );
 
-
-
-module.exports = router;
+export default router;

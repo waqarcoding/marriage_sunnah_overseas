@@ -6,7 +6,8 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
-const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// @ts-ignore
+const SERVER_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL?.replace('/api', '');
 
 const SocketContext = createContext(null);
 

@@ -1,8 +1,8 @@
 'use strict';
 
-const db = require('../models');
+import db from '../models/index.js';
 const { User, Profile, Interest, Dislike, Preference, Option } = db;
-const { Op } = require('sequelize');
+import { Op } from 'sequelize';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // In-memory cache
@@ -38,7 +38,6 @@ const loadGlobal = async () => {
 };
 
 const loadAllCountries = async () => {
-    // Only load once — cache in global
     if (_countryCache.__all) return _countryCache.__all;
     const rows = await Option.findAll({
         attributes: ['country', 'flag', 'currency', 'nationalities', 'mother_tongues', 'cities', 'monthly_salary'],
@@ -85,9 +84,8 @@ const toJsonPref = (value) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/options
-// Returns ALL global options + all country data + saved prefs in ONE call
 // ─────────────────────────────────────────────────────────────────────────────
-exports.getOptions = async (req, res) => {
+export const getOptions = async (req, res) => {
     try {
         const [global, allCountries, prefs] = await Promise.all([
             loadGlobal(),
@@ -97,12 +95,10 @@ exports.getOptions = async (req, res) => {
 
         if (!global) return res.status(500).json({ error: 'Options not configured' });
 
-        // ── Build country maps ─────────────────────────────────────────────
         const COUNTRY_FLAGS = Object.fromEntries(allCountries.map(c => [c.country, c.flag]));
         const COUNTRY_TO_CURRENCY = Object.fromEntries(allCountries.map(c => [c.country, c.currency]));
         const APP_COUNTRIES = allCountries.map(c => c.country);
 
-        // ── Build country_data map { Pakistan: { cities, mother_tongues, nationalities, monthly_salaries } }
         const COUNTRY_DATA = {};
         for (const c of allCountries) {
             const salaryMap = global.monthly_salary || {};
@@ -117,7 +113,6 @@ exports.getOptions = async (req, res) => {
             };
         }
 
-        // ── Parse saved prefs ──────────────────────────────────────────────
         const parsedPrefs = prefs ? {
             ...prefs.toJSON(),
             pref_marital_status: parseJsonPref(prefs.pref_marital_status),
@@ -132,19 +127,13 @@ exports.getOptions = async (req, res) => {
 
         return res.json({
             success: true,
-
-            // ── countries ──────────────────────────────────────────────────
             countries: APP_COUNTRIES,
             country_flags: COUNTRY_FLAGS,
             country_to_currency: COUNTRY_TO_CURRENCY,
-            country_data: COUNTRY_DATA,   // ✅ all country details in one map
-
-            // ── world data ─────────────────────────────────────────────────
+            country_data: COUNTRY_DATA,
             all_countries: global.all_countries,
             all_nationalities: global.nationalities,
             all_mother_tongues: global.mother_tongues,
-
-            // ── global options ─────────────────────────────────────────────
             religions: global.religions,
             sects: global.sects,
             castes: global.castes,
@@ -157,8 +146,6 @@ exports.getOptions = async (req, res) => {
             willing_to_relocate: global.willing_to_relocate,
             interests: global.interests,
             professions: global.professions,
-
-            // ── saved prefs (null if none) ─────────────────────────────────
             preferences: parsedPrefs,
         });
 
@@ -169,9 +156,9 @@ exports.getOptions = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /explore/country/:country  (kept for manual country change)
+// GET /explore/country/:country
 // ─────────────────────────────────────────────────────────────────────────────
-exports.getCountryOptions = async (req, res) => {
+export const getCountryOptions = async (req, res) => {
     try {
         const allCountries = await loadAllCountries();
         const global = await loadGlobal();
@@ -205,40 +192,18 @@ exports.getCountryOptions = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/get-explore
 // ─────────────────────────────────────────────────────────────────────────────
-exports.getExplore = async (req, res) => {
+export const getExplore = async (req, res) => {
     try {
         const currentUser = await User.findByPk(req.user.id);
         if (!currentUser) return res.status(404).json({ error: 'User not found' });
 
         const prefs = await Preference.findOne({ where: { individual_id: currentUser.id } });
 
-        const gender = req.query.gender || prefs?.pref_gender || null;
-        const minAge = req.query.minAge || prefs?.pref_age_min || null;
-        const maxAge = req.query.maxAge || prefs?.pref_age_max || null;
-        const minHeight = req.query.minHeight || prefs?.pref_height_min_inches || null;
-        const maxHeight = req.query.maxHeight || prefs?.pref_height_max_inches || null;
-        const city = req.query.city || prefs?.pref_city || null;
-        const religion = req.query.religion || prefs?.pref_religion || null;
-        const practiceLevel = req.query.practiceLevel || prefs?.pref_religious_practice_level || null;
-        const education = req.query.education || prefs?.pref_education || null;
-        const monthlySalary = req.query.monthlySalary || prefs?.pref_monthly_salary || null;
-        const hasChildren = req.query.hasChildren || prefs?.pref_has_children || null;
-        const willingToRelocate = req.query.willingToRelocate || null;
-
         const parseQuery = (key) => {
             const q = req.query[key];
             if (q) return Array.isArray(q) ? q : q.split(',').map(s => s.trim()).filter(Boolean);
             return null;
         };
-
-        const maritalStatus = parseQuery('maritalStatus') || parseJsonPref(prefs?.pref_marital_status);
-        const nationality = parseQuery('nationality') || parseJsonPref(prefs?.pref_nationality);
-        const country = parseQuery('country') || parseJsonPref(prefs?.pref_country);
-        const sect = parseQuery('sect') || parseJsonPref(prefs?.pref_sect);
-        const bodyType = parseQuery('bodyType') || parseJsonPref(prefs?.pref_body_type);
-        const caste = parseQuery('caste') || parseJsonPref(prefs?.pref_caste);
-        const motherTongue = parseQuery('motherTongue') || parseJsonPref(prefs?.pref_mother_tongue);
-        const employmentType = parseQuery('employmentType') || parseJsonPref(prefs?.pref_employment_type);
 
         const [sentInterests, dislikesSent] = await Promise.all([
             Interest.findAll({ where: { from_user: currentUser.id }, attributes: ['to_user'], raw: true }),
@@ -251,45 +216,12 @@ exports.getExplore = async (req, res) => {
             ...dislikesSent.map(d => d.target_user_id),
         ].filter(id => id != null);
 
-
-        /*
-               const profileWhere = {
-            individual_id: { [Op.notIn]: excludeIds.length ? excludeIds : [0] },
-            ...(gender && { gender }),
-            ...(city && { city }),
-            ...(religion && { religion }),
-            ...(practiceLevel && { religious_practice_level: practiceLevel }),
-            ...(education && { education }),
-            ...(monthlySalary && { monthly_salary: monthlySalary }),
-            ...(hasChildren != null && hasChildren !== '' && { has_children: hasChildren }),
-            ...(willingToRelocate != null && { willing_to_relocate: willingToRelocate }),
-            ...(minAge && maxAge && { age: { [Op.between]: [Number(minAge), Number(maxAge)] } }),
-            ...(minAge && !maxAge && { age: { [Op.gte]: Number(minAge) } }),
-            ...(maxAge && !minAge && { age: { [Op.lte]: Number(maxAge) } }),
-            ...(minHeight && maxHeight && { height_inches: { [Op.between]: [Number(minHeight), Number(maxHeight)] } }),
-            ...(minHeight && !maxHeight && { height_inches: { [Op.gte]: Number(minHeight) } }),
-            ...(maxHeight && !minHeight && { height_inches: { [Op.lte]: Number(maxHeight) } }),
-            ...(maritalStatus?.length && { marital_status: { [Op.in]: maritalStatus } }),
-            ...(nationality?.length && { nationality: { [Op.in]: nationality } }),
-            ...(country?.length && { country: { [Op.in]: country } }),
-            ...(sect?.length && { sect: { [Op.in]: sect } }),
-            ...(bodyType?.length && { body_type: { [Op.in]: bodyType } }),
-            ...(caste?.length && { caste: { [Op.in]: caste } }),
-            ...(motherTongue?.length && { mother_tongue: { [Op.in]: motherTongue } }),
-            ...(employmentType?.length && { employment_type: { [Op.in]: employmentType } }),
-        };
-        */
-
-        // Debug console output
         console.log("getExplore debug -- Current User:", currentUser?.id);
         console.log("getExplore debug -- Preferences:", prefs?.dataValues ?? prefs);
-
         console.log("getExplore debug -- Query params:", req.query);
-        //console.log("getExplore debug -- Built profileWhere:", profileWhere);
         console.log("getExplore debug -- Exclude User IDs:", excludeIds);
 
         const profiles = await Profile.findAll({
-            // where: profileWhere,
             include: [{ model: User.unscoped(), as: 'individual', attributes: ['id', 'is_online', 'is_premium'], required: true }],
             order: [['created_at', 'DESC']],
             limit: 50,
@@ -308,7 +240,7 @@ exports.getExplore = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /explore/save-preferences
 // ─────────────────────────────────────────────────────────────────────────────
-exports.savePreferences = async (req, res) => {
+export const savePreferences = async (req, res) => {
     try {
         const individualId = req.user.id;
         const {
@@ -364,7 +296,7 @@ exports.savePreferences = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/get-preferences
 // ─────────────────────────────────────────────────────────────────────────────
-exports.getPreferences = async (req, res) => {
+export const getPreferences = async (req, res) => {
     try {
         const prefs = await Preference.findOne({ where: { individual_id: req.user.id } });
         if (!prefs) return res.json({ success: true, preferences: null });
@@ -390,9 +322,9 @@ exports.getPreferences = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /explore/update-option  (admin only)
+// POST /explore/update-option (admin only)
 // ─────────────────────────────────────────────────────────────────────────────
-exports.updateOption = async (req, res) => {
+export const updateOption = async (req, res) => {
     try {
         const { country, field, value } = req.body;
         if (!field || value === undefined) return res.status(400).json({ error: 'field and value required' });
@@ -405,4 +337,13 @@ exports.updateOption = async (req, res) => {
         console.error('updateOption error:', err);
         return res.status(500).json({ error: 'Server error' });
     }
+};
+
+export default {
+    getOptions,
+    getCountryOptions,
+    getExplore,
+    savePreferences,
+    getPreferences,
+    updateOption,
 };

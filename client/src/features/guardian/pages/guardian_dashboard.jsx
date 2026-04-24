@@ -20,7 +20,7 @@ import {
 
 // ── Same SERVER_URL + helpers as AppBar ──────────────────────
 // @ts-ignore
-const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const SERVER_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL?.replace('/api', '');
 
 function getJwtData() {
     try {
@@ -140,11 +140,11 @@ export default function GuardianDashboard({ onLogout, onSidebarLogout }) {
 
     useEffect(() => {
         const h = { Authorization: `Bearer ${localStorage.getItem("jwtToken")}` };
-        fetch(`${SERVER_URL}/api/interest/pending-count`, { headers: h })
+        fetch(`${SERVER_URL}/interest/pending-count`, { headers: h })
             .then(r => r.json())
             .then(d => { if (d.success) socketCtx?.setInterestCount(d.data?.count || 0); })
             .catch(() => { });
-        fetch(`${SERVER_URL}/api/chat/conversation-users`, { headers: h })
+        fetch(`${SERVER_URL}/chat/conversation-users`, { headers: h })
             .then(r => r.json())
             .then(d => {
                 if (d.success && Array.isArray(d.data))
@@ -152,7 +152,7 @@ export default function GuardianDashboard({ onLogout, onSidebarLogout }) {
             })
             .catch(() => { });
         if (role === "guardian") {
-            fetch(`${SERVER_URL}/api/guardian/pending-interests`, { headers: h })
+            fetch(`${SERVER_URL}/guardian/pending-interests`, { headers: h })
                 .then(r => r.json())
                 .then(d => { if (d.success) socketCtx?.setGuardianCount(d.data?.length || 0); })
                 .catch(() => { });

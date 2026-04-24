@@ -45,12 +45,14 @@ export default function InterestPage() {
 
     function isOnline(dateStr) {
         if (!dateStr) return false;
+        // @ts-ignore
         const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
         return diff < 3600;
     }
 
     function formatLastSeen(dateStr) {
         if (!dateStr) return "";
+        // @ts-ignore
         const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
         if (diff < 60) return "just now";
         if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -370,6 +372,7 @@ export default function InterestPage() {
                                                 images={images}
                                                 gender={profile.gender}
                                                 alt={profile.name}
+                                                // @ts-ignore
                                                 isAccepted={item.status}
                                                 className="w-full h-full object-cover"
                                             />

@@ -1,7 +1,7 @@
 // uploadfilemulter.js
-const multer = require("multer")
-const path = require("path")
-const fs = require("fs")
+import multer from "multer"
+import path from "path"
+import fs from "fs"
 
 const dir = "uploads/profiles"
 if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -23,4 +23,4 @@ const uploadPublic = multer({
     },
 })
 
-module.exports = uploadPublic
+export default uploadPublic

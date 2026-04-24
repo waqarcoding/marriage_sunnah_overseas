@@ -1,9 +1,9 @@
 // controllers/interest.controller.js
 
-const db = require('../models');
+import db from '../models/index.js';
 const { User, Profile, Interest, Match, Guardian } = db;
-const { Op } = require('sequelize');
-const {
+import { Op } from 'sequelize';
+import {
     notifyInterestReceived,
     notifyInterestAccepted,
     notifyInterestDeclined,
@@ -11,7 +11,7 @@ const {
     notifyInterestCount,
     notifyNewMatch,
     notifyGuardianPendingCount,
-} = require('../config/socket');
+} from '../config/socket.js';
 
 // ── Helper: pending count for receiver ───────────────────────
 const pushInterestCount = async (toUserId) => {
@@ -49,27 +49,22 @@ const getGuardianOf = async (userId) => {
     return row?.guardian_id || null;
 };
 
-// ── Profile include — uses "images" not "avatar" ──────────────
+// ── Profile include ──────────────────────────────────────────
 const profileInclude = [
     { model: Profile, as: 'fromProfile', attributes: ['individual_id', 'name', 'images', 'age', 'city', 'country'] },
     { model: Profile, as: 'toProfile', attributes: ['individual_id', 'name', 'images', 'age', 'city', 'country'] },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// POST /interest/send-interest
-// body: { interestId (= to_user), isSuperLike }
-// ─────────────────────────────────────────────────────────────
-exports.sendInterest = async (req, res) => {
+export const sendInterest = async (req, res) => {
     try {
         const fromUserId = req.user.id;
-        const { interestId, isSuperLike = false } = req.body; // interestId = to_user profile/user id
+        const { interestId, isSuperLike = false } = req.body;
 
         if (!interestId)
             return res.status(400).json({ success: false, message: 'interestId is required' });
 
         const toUserId = Number(interestId);
 
-        // Check duplicate
         const existing = await Interest.findOne({
             where: {
                 from_user: fromUserId,
@@ -80,7 +75,6 @@ exports.sendInterest = async (req, res) => {
         if (existing)
             return res.status(409).json({ success: false, message: 'Interest already sent' });
 
-        // Interest table has NO message field — only: from_user, to_user, status, is_super_like, is_mutual
         const interest = await Interest.create({
             from_user: fromUserId,
             to_user: toUserId,
@@ -94,7 +88,6 @@ exports.sendInterest = async (req, res) => {
             attributes: ['name', 'images'],
         });
 
-        // 🔔 Notify receiver
         notifyInterestReceived(toUserId, {
             interest_id: interest.id,
             sender_id: fromUserId,
@@ -102,10 +95,8 @@ exports.sendInterest = async (req, res) => {
             sender_avatar: senderProfile?.images ? senderProfile.images[0] : null,
         });
 
-        // 🔢 Update receiver badge
         await pushInterestCount(toUserId);
 
-        // 🕌 Update guardian badge
         const guardianId = await getGuardianOf(toUserId);
         if (guardianId) await pushGuardianPendingCount(guardianId);
 
@@ -116,11 +107,7 @@ exports.sendInterest = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /interest/cancel-interest
-// body: { interestId }
-// ─────────────────────────────────────────────────────────────
-exports.cancelInterest = async (req, res) => {
+export const cancelInterest = async (req, res) => {
     try {
         const fromUserId = req.user.id;
         const { interestId } = req.body;
@@ -149,11 +136,7 @@ exports.cancelInterest = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /interest/accept-interest
-// body: { interestId }
-// ─────────────────────────────────────────────────────────────
-exports.acceptInterest = async (req, res) => {
+export const acceptInterest = async (req, res) => {
     try {
         const toUserId = req.user.id;
         const { interestId } = req.body;
@@ -167,7 +150,6 @@ exports.acceptInterest = async (req, res) => {
 
         await interest.update({ status: 'accepted', is_mutual: true });
 
-        // Match table: only user1, user2 — NO interest_id
         const match = await Match.create({
             interest_id: interest.get('id'),
             user1: interest.from_user,
@@ -200,11 +182,7 @@ exports.acceptInterest = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /interest/decline-interest
-// body: { interestId }
-// ─────────────────────────────────────────────────────────────
-exports.declineInterest = async (req, res) => {
+export const declineInterest = async (req, res) => {
     try {
         const toUserId = req.user.id;
         const { interestId } = req.body;
@@ -235,11 +213,7 @@ exports.declineInterest = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /interest/dislike
-// body: { interestId }
-// ─────────────────────────────────────────────────────────────
-exports.sendDislike = async (req, res) => {
+export const sendDislike = async (req, res) => {
     try {
         const fromUserId = req.user.id;
         const { interestId } = req.body;
@@ -267,22 +241,17 @@ exports.sendDislike = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /interest/get-interests
-// ─────────────────────────────────────────────────────────────
-exports.getInterests = async (req, res) => {
+export const getInterests = async (req, res) => {
     try {
         const user = await User.findOne({
             where: { id: req.user.id },
             include: [{ as: 'profile', model: Profile }]
         });
 
-        // ── Null check ─────────────────────────────────────────────────────
         if (!user) {
             return res.status(404).json({ success: false, error: 'User not found' });
         }
 
-        // ── Fetch interests ────────────────────────────────────────────────
         const [sentInterests, receivedInterests, matches] = await Promise.all([
             user.getInterestsSent({
                 where: { status: 'pending' },
@@ -307,7 +276,6 @@ exports.getInterests = async (req, res) => {
             })
         ]);
 
-        // ── Counts ─────────────────────────────────────────────────────────
         const [likesSentCount, likesReceivedCount, matchesCount] = await Promise.all([
             Interest.count({ where: { from_user: req.user.id } }),
             Interest.count({ where: { to_user: req.user.id } }),
@@ -342,10 +310,7 @@ exports.getInterests = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /interest/pending-count
-// ─────────────────────────────────────────────────────────────
-exports.getPendingCount = async (req, res) => {
+export const getPendingCount = async (req, res) => {
     try {
         const count = await Interest.count({
             where: { to_user: req.user.id, status: 'pending' },
@@ -357,6 +322,17 @@ exports.getPendingCount = async (req, res) => {
     }
 };
 
-// Aliases
-exports.getallInterests = exports.getInterests;
-exports.pendingCount = exports.getPendingCount;
+export const getallInterests = getInterests;
+export const pendingCount = getPendingCount;
+
+export default {
+    sendInterest,
+    cancelInterest,
+    acceptInterest,
+    declineInterest,
+    sendDislike,
+    getInterests,
+    getPendingCount,
+    getallInterests,
+    pendingCount,
+};

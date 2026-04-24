@@ -226,7 +226,9 @@ function PendingPage({ frontId, backId }) {
                 {[{ label: "Front side", path: frontId }, { label: "Back side", path: backId }].map((doc, i) => (
                     <div key={i} style={{ background: SECONDARY, border: `1px solid ${PRIMARY}18`, borderRadius: 12, overflow: "hidden" }}>
                         <img
-                            src={`http://localhost:5000${doc.path}`}
+                            // @ts-ignore
+                            src={`${import.meta.env.VITE_BASE_URL?.replace('/api', '')}${doc.path}`}
+
                             alt={doc.label}
                             style={{ width: "100%", height: 90, objectFit: "cover" }}
                             onError={e => {

@@ -1,19 +1,15 @@
-const express = require('express');
+import express from 'express';
+import Joi from 'joi';
+import authController from '../controllers/auth.controller.js';
+import { validateBody } from '../middlewares/validation.middleware.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import upload from '../middlewares/uploadfilemulter.js';
+
 const router = express.Router();
-const authController = require('../controllers/auth.controller');
-const { validateBody } = require('../middlewares/validation.middleware');
-const Joi = require('joi');
-const { authenticate } = require('../middlewares/auth.middleware');
 
-const upload = require('../middlewares/uploadfilemulter');
-
-
-// routes/authRoutes.js
 router.post(
   '/register',
-
-  upload.single('profilePhoto'),   // ← multer middleware here
-
+  upload.single('profilePhoto'),
   validateBody(
     Joi.object({
       name: Joi.string().required(),
@@ -22,10 +18,10 @@ router.post(
       mobile: Joi.string().optional(),
       password_hash: Joi.string().required(),
       role: Joi.string().required()
-    }).unknown(true)  // ← allows extra fields multer might add
+    }).unknown(true)
   ),
   authController.signup
-)
+);
 
 router.post(
   '/login',
@@ -38,18 +34,17 @@ router.post(
   authController.login
 );
 
-
 router.post(
   '/verify-otp',
   authenticate,
   validateBody(
     Joi.object({
-
       otp: Joi.string().required(),
     })
   ),
   authController.verifyOtp
 );
+
 router.post(
   '/send-otp',
   authenticate,
@@ -57,7 +52,7 @@ router.post(
 );
 
 router.post(
-  "/send-otp-byemail",
+  '/send-otp-byemail',
   validateBody(
     Joi.object({
       email: Joi.string().email().required(),
@@ -65,9 +60,9 @@ router.post(
   ),
   authController.sendOTPbyEmail
 );
-router.post(
-  "/forgot-password-reset",
 
+router.post(
+  '/forgot-password-reset',
   validateBody(
     Joi.object({
       email: Joi.string().email().required(),
@@ -76,6 +71,6 @@ router.post(
     })
   ),
   authController.ressetPassword
-) // includes middleware for { email, otp, newPassword } required
+);
 
-module.exports = router;
+export default router;

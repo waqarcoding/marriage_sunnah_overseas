@@ -1,20 +1,8 @@
-const express = require('express');
+import express from 'express';
+import * as matchController from '../controllers/match.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+
 const router = express.Router();
-const matchController = require('../controllers/match.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
-const { validateBody } = require('../middlewares/validation.middleware');
-const Joi = require('joi');
-
-// ===============================
-// Validation Schemas
-// ===============================
-
-
-
-// ===============================
-// Routes
-// ===============================
-
 
 // Get matches (mutual + guardian approved)
 router.get(
@@ -23,5 +11,4 @@ router.get(
     matchController.getMatches
 );
 
-
-module.exports = router;
+export default router;

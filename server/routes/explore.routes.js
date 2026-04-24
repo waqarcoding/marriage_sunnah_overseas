@@ -1,9 +1,9 @@
-const express = require('express');
-const router = express.Router();
+import express from 'express';
+import exploreController from '../controllers/explore.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../middlewares/role.middleware.js';
 
-const exploreController = require('../controllers/explore.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
-const { authorizeRoles } = require('../middlewares/role.middleware');
+const router = express.Router();
 
 // ── Explore feed ──────────────────────────────────────────────────────────────
 router.get('/get-explore', authenticate, exploreController.getExplore);
@@ -17,7 +17,6 @@ router.get('/get-preferences', authenticate, exploreController.getPreferences);
 router.post('/save-preferences', authenticate, exploreController.savePreferences);
 
 // ── Admin: update any option field ───────────────────────────────────────────
-// Body: { country: "Pakistan" | null, field: "religions", value: [...] }
 router.post('/update-option', authenticate, authorizeRoles('admin'), exploreController.updateOption);
 
-module.exports = router;
+export default router;

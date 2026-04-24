@@ -1,9 +1,9 @@
 // controllers/guardian.controller.js
 
-const db = require('../models');
+import db from '../models/index.js';
 const { User, Profile, Interest, Guardian } = db;
-const { Op } = require('sequelize');
-const {
+import { Op } from 'sequelize';
+import {
     notifyGuardianAssigned,
     notifyGuardianRemoved,
     notifyGuardianApproved,
@@ -11,11 +11,7 @@ const {
     notifyGuardianPendingCount,
     notifyInterestReceived,
     notifyInterestCount,
-} = require('../config/socket');
-
-// ── Guardian table fields (latest): 
-// id, individual_id, guardian_id, image, contact_hidden, created_at, updated_at,
-// guardian_name, guardian_phone, guardian_email, guardian_relationship, guardian_image
+} from '../config/socket.js';
 
 // ── Helper: guardian pending count ───────────────────────────
 const pushGuardianPendingCount = async (guardianUserId) => {
@@ -36,10 +32,7 @@ const pushGuardianPendingCount = async (guardianUserId) => {
     notifyGuardianPendingCount(guardianUserId, count);
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /guardian/search?q=
-// ─────────────────────────────────────────────────────────────
-exports.searchGuardians = async (req, res) => {
+export const searchGuardians = async (req, res) => {
     try {
         const { q } = req.query;
         if (!q) return res.status(400).json({ success: false, message: 'Query required' });
@@ -63,10 +56,7 @@ exports.searchGuardians = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /guardian/assign
-// ─────────────────────────────────────────────────────────────
-exports.assignGuardian = async (req, res) => {
+export const assignGuardian = async (req, res) => {
     try {
         const individualId = req.user.id;
         const { guardian_id } = req.body;
@@ -81,20 +71,17 @@ exports.assignGuardian = async (req, res) => {
         if (!guardian)
             return res.status(404).json({ success: false, message: 'Guardian not found' });
 
-        // Upsert Guardian row
         const [row, created] = await Guardian.findOrCreate({
             where: { individual_id: individualId },
             defaults: { individual_id: individualId, guardian_id },
         });
         if (!created) await row.update({ guardian_id });
 
-        // Get ward profile for notification
         const wardProfile = await Profile.findOne({
             where: { individual_id: individualId },
             attributes: ['name', 'images'],
         });
 
-        // 🔔 Notify guardian
         notifyGuardianAssigned(guardian_id, {
             ward_id: individualId,
             ward_name: wardProfile?.name || '',
@@ -108,28 +95,15 @@ exports.assignGuardian = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /guardian/my-guardian
-// ─────────────────────────────────────────────────────────────
-exports.getMyGuardian = async (req, res) => {
+export const getMyGuardian = async (req, res) => {
     try {
-        // Guardian table now has extended fields
         const row = await Guardian.findOne({
             where: { individual_id: req.user.id },
             attributes: [
-                // Full guardian record including latest fields
-                'id',
-                'individual_id',
-                'guardian_id',
-                'image',
-                'contact_hidden',
-                'created_at',
-                'updated_at',
-                'guardian_name',
-                'guardian_phone',
-                'guardian_email',
-                'guardian_relationship',
-                'guardian_image',
+                'id', 'individual_id', 'guardian_id', 'image',
+                'contact_hidden', 'created_at', 'updated_at',
+                'guardian_name', 'guardian_phone', 'guardian_email',
+                'guardian_relationship', 'guardian_image',
             ],
             include: [{
                 model: User,
@@ -145,16 +119,11 @@ exports.getMyGuardian = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /guardian/remove
-// ─────────────────────────────────────────────────────────────
-exports.removeGuardian = async (req, res) => {
+export const removeGuardian = async (req, res) => {
     try {
         const individualId = req.user.id;
 
-        const row = await Guardian.findOne({
-            where: { individual_id: individualId },
-        });
+        const row = await Guardian.findOne({ where: { individual_id: individualId } });
         if (!row)
             return res.status(400).json({ success: false, message: 'No guardian assigned' });
 
@@ -167,7 +136,6 @@ exports.removeGuardian = async (req, res) => {
 
         await row.destroy();
 
-        // 🔔 Notify guardian
         notifyGuardianRemoved(guardianId, {
             ward_id: individualId,
             ward_name: wardProfile?.name || '',
@@ -180,10 +148,7 @@ exports.removeGuardian = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// POST /guardian/assign-children
-// ─────────────────────────────────────────────────────────────
-exports.assignChildren = async (req, res) => {
+export const assignChildren = async (req, res) => {
     try {
         const guardianId = req.user.id;
         const { ward_ids } = req.body;
@@ -206,10 +171,7 @@ exports.assignChildren = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// GET /guardian/pending-interests
-// ─────────────────────────────────────────────────────────────
-exports.getPendingInterests = async (req, res) => {
+export const getPendingInterests = async (req, res) => {
     try {
         const guardianId = req.user.id;
 
@@ -242,10 +204,7 @@ exports.getPendingInterests = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// PUT /guardian/interests/:interestId/approve
-// ─────────────────────────────────────────────────────────────
-exports.approveInterest = async (req, res) => {
+export const approveInterest = async (req, res) => {
     try {
         const guardianId = req.user.id;
         const { interestId } = req.params;
@@ -266,17 +225,11 @@ exports.approveInterest = async (req, res) => {
         if (!interest)
             return res.status(404).json({ success: false, message: 'Interest not found' });
 
-        // The Guardian table contains the latest guardian info fields per ward.
         const guardianRow = await Guardian.findOne({
             where: { guardian_id: guardianId, individual_id: interest.to_user },
             attributes: [
-                'guardian_name',
-                'guardian_phone',
-                'guardian_email',
-                'guardian_relationship',
-                'guardian_image',
-                'name', // legacy support
-                'image', // legacy support
+                'guardian_name', 'guardian_phone', 'guardian_email',
+                'guardian_relationship', 'guardian_image', 'name', 'image',
             ],
         });
 
@@ -285,7 +238,6 @@ exports.approveInterest = async (req, res) => {
             guardian_approved_at: new Date(),
         });
 
-        // 🔔 Notify ward
         notifyGuardianApproved(interest.to_user, {
             interest_id: interest.id,
             guardian_id: guardianId,
@@ -297,8 +249,6 @@ exports.approveInterest = async (req, res) => {
             approved_for: 'accept',
         });
 
-
-        // 🔔 Notify receiver the interest is now active
         notifyInterestReceived(interest.to_user, {
             interest_id: interest.id,
             sender_id: interest.from_user,
@@ -306,12 +256,10 @@ exports.approveInterest = async (req, res) => {
             sender_avatar: interest.fromProfile?.images ? interest.fromProfile.images[0] : null,
         });
 
-        // 🔢 Update badges
         const count = await Interest.count({
             where: { to_user: interest.to_user, status: 'pending' },
         });
         notifyInterestCount(interest.to_user, count);
-
         await pushGuardianPendingCount(guardianId);
 
         return res.json({ success: true, message: 'Interest approved' });
@@ -321,10 +269,7 @@ exports.approveInterest = async (req, res) => {
     }
 };
 
-// ─────────────────────────────────────────────────────────────
-// PUT /guardian/interests/:interestId/reject
-// ─────────────────────────────────────────────────────────────
-exports.rejectInterest = async (req, res) => {
+export const rejectInterest = async (req, res) => {
     try {
         const guardianId = req.user.id;
         const { interestId } = req.params;
@@ -344,19 +289,13 @@ exports.rejectInterest = async (req, res) => {
         const guardianRow = await Guardian.findOne({
             where: { guardian_id: guardianId, individual_id: interest.to_user },
             attributes: [
-                'guardian_name',
-                'guardian_phone',
-                'guardian_email',
-                'guardian_relationship',
-                'guardian_image',
-                'name', // legacy support
-                'image', // legacy support
+                'guardian_name', 'guardian_phone', 'guardian_email',
+                'guardian_relationship', 'guardian_image', 'name', 'image',
             ],
         });
 
         await interest.update({ guardian_approved: false, status: 'declined' });
 
-        // 🔔 Notify ward
         notifyGuardianRejected(interest.to_user, {
             interest_id: interest.id,
             guardian_id: guardianId,
@@ -373,5 +312,16 @@ exports.rejectInterest = async (req, res) => {
     }
 };
 
-// Alias
-exports.guardianApprove = (req, res) => exports.approveInterest(req, res);
+export const guardianApprove = (req, res) => approveInterest(req, res);
+
+export default {
+    searchGuardians,
+    assignGuardian,
+    getMyGuardian,
+    removeGuardian,
+    assignChildren,
+    getPendingInterests,
+    approveInterest,
+    rejectInterest,
+    guardianApprove,
+};

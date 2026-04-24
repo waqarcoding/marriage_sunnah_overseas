@@ -1,14 +1,11 @@
-const express = require('express');
+import express from 'express';
+import * as profileController from '../controllers/profile.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../middlewares/role.middleware.js';
+import { validateBody } from '../middlewares/validation.middleware.js';
+import upload from '../middlewares/upload.js';
+
 const router = express.Router();
-const profileController = require('../controllers/profile.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
-const { authorizeRoles } = require('../middlewares/role.middleware');
-const { validateBody } = require('../middlewares/validation.middleware');
-
-const Joi = require('joi');
-const upload = require('../middlewares/upload');
-
-
 
 // Create / update profile
 router.post('/create-profile', authenticate, profileController.createProfile);
@@ -17,18 +14,16 @@ router.post('/upload-idcard', authenticate, profileController.uploadIdCard);
 router.put('/update-profile', authenticate, profileController.updateProfile);
 router.put('/update-guardian', authenticate, profileController.updateGuardian);
 
-
 // Get my profile
 router.get('/get-profile', authenticate, profileController.getMyProfile);
 
 router.post(
-  "/upload-image",
+  '/upload-image',
   authenticate,
-  upload.single("image"),
+  upload.single('image'),
   profileController.uploadImage
 );
 
-
-
 router.get('/last-seen', authenticate, profileController.updateLastSeen);
-module.exports = router;
+
+export default router;

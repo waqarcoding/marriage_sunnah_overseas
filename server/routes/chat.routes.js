@@ -1,20 +1,28 @@
-const express = require('express');
+import express from 'express';
+import {
+    sendMessage,
+    getMessages,
+    getConversationUsers,
+    addConversationUser,
+    deleteConversation
+} from '../controllers/chat.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+
 const router = express.Router();
-const chatController = require('../controllers/chat.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
 
 // Send a message
-router.post('/send-message', authenticate, chatController.sendMessage);
+router.post('/send-message', authenticate, sendMessage);
 
 // Get messages for a conversation / interest
-router.get('/get-messages', authenticate, chatController.getMessages);
+router.get('/get-messages', authenticate, getMessages);
 
 // Get users for conversation (based on JWT)
-router.get('/conversation-users', authenticate, chatController.getConversationUsers);
+router.get('/conversation-users', authenticate, getConversationUsers);
 
 // Add a new conversation (send first message)
-router.post('/add-conversation', authenticate, chatController.addConversationUser);
-// Delete a conversation by id
-router.delete('/conversation/:id', authenticate, chatController.deleteConversation);
+router.post('/add-conversation', authenticate, addConversationUser);
 
-module.exports = router;
+// Delete a conversation by id
+router.delete('/conversation/:id', authenticate, deleteConversation);
+
+export default router;
