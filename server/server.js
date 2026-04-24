@@ -8,7 +8,6 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-// @ts-ignore
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -59,7 +58,7 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 const clientDist = join(__dirname, "../client/dist");
 app.use(express.static(clientDist));
 
-// catch-all → serve React for any non-API route
+// catch-all → serve React for any non-API route (Express 5 syntax)
 app.get("/{*path}", (req, res) => {
   if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
     return res.status(404).json({ error: "Not found" });
