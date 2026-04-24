@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import http from "http";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { existsSync } from "fs";
 
 dotenv.config();
 
@@ -13,9 +14,7 @@ const __dirname = dirname(__filename);
 
 /* ---------------- IMPORT DB ---------------- */
 import db from "./models/index.js";
-
 import errorMiddleware from "./middlewares/error.middleware.js";
-
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import matchRoutes from "./routes/match.routes.js";
@@ -24,17 +23,13 @@ import adminRoutes from "./routes/admin.routes.js";
 import exploreRoutes from "./routes/explore.routes.js";
 import interestRoutes from "./routes/interest.routes.js";
 import guardianRoutes from "./routes/guardian.routes.js";
-
 import { initSocket } from "./config/socket.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 /* ---------------- MIDDLEWARE ---------------- */
-app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
-  credentials: true,
-}));
+app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
 app.use(bodyParser.json());
 
 /* ---------------- STATIC UPLOADS ---------------- */
@@ -55,10 +50,14 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 /* ---------------- SERVE REACT BUILD ---------------- */
+// server.js is in /server/ so client/dist is one level up
 const clientDist = join(__dirname, "../client/dist");
+console.log(`📁 __dirname: ${__dirname}`);
+console.log(`📁 clientDist: ${clientDist}`);
+console.log(`📁 exists: ${existsSync(clientDist)}`);
+
 app.use(express.static(clientDist));
 
-// catch-all → serve React for any non-API route (Express 5 syntax)
 app.get("/{*path}", (req, res) => {
   if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
     return res.status(404).json({ error: "Not found" });
