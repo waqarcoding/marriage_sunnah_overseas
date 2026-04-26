@@ -17,6 +17,7 @@ export default function UsersPage() {
             try {
                 const token = localStorage.getItem('jwtToken');
 
+                // @ts-ignore
                 const baseurl = import.meta.env.VITE_BASE_URL; // get token from env
                 const res = await axios.get(`${baseurl}/api/profile/all`, {
                     headers: {

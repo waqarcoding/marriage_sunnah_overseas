@@ -36,25 +36,40 @@ class Api {
     }
 
     // ---------------- Central handle request ----------------
+    // Fix for Api.js handleRequest — guard against null response
+
     async handleRequest(promise, callbacks = {}) {
-
         const { onSuccess, onFailed } = callbacks;
-
         try {
             const res = await promise;
+
+            // ✅ Guard against null/undefined response
+            if (!res) {
+                const err = new Error('No response from server');
+                if (onFailed) onFailed(err);
+                return null;
+            }
 
             if (res.success) {
                 if (onSuccess) onSuccess(res);
             } else {
                 if (onFailed) onFailed(res);
-                toast.error(res.message || "Request failed");
+                toast.error(res.message || 'Request failed');
             }
-
             return res;
         } catch (err) {
             if (onFailed) onFailed(err);
-            toast.error(err.message || "Network error");
-            return Promise.reject(err);
+
+            if (err.data?.errors) {
+                Object.entries(err.data.errors).forEach(([field, msg]) => {
+                    toast.error(`${field}: ${msg}`);
+                });
+            } else {
+                toast.error(err.message || 'Network error');
+            }
+
+            console.error('API Error:', err.data || err.message);
+            return null; // ✅ return null instead of Promise.reject to prevent uncaught
         }
     }
 
@@ -69,12 +84,20 @@ class Api {
             data = null;
         }
 
+
         if (!res.ok) {
+            // ✅ Create error with full response data attached
             const msg = (data && (data.error || data.message)) || res.statusText;
+            const err = new Error(msg);
+            // @ts-ignore
+            err.data = data;       // attach full JSON { errors, missingFields, etc }
+            // @ts-ignore
+            err.status = res.status;
             if (res.status === 401) this._handleTokenExpired();
-            throw new Error(msg);
+            throw err;
         }
-        console.log("result:", data);
+
+        console.log("result:", data.message);
         this._pingLastSeen();
 
         return data;

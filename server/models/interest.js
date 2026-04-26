@@ -264,8 +264,10 @@ module.exports = (sequelize, DataTypes) => {
       sequelize,
       modelName: 'Interest',
       tableName: 'Interests',
-      underscored: true,
+
       timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at',
       indexes: [
         { fields: ['from_user'] },
         { fields: ['to_user'] },

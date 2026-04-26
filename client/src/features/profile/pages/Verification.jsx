@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import ProfileService from "../api/ProfileService";
+import { useState, useEffect, useRef } from "react";
+import ProfileService from "../services/ProfileService";
 
 const PRIMARY = "#1B4D3E";
 const PRIMARY_FG = "#f5f0e8";
@@ -77,10 +77,15 @@ function VerifiedPill() {
     );
 }
 
+// ─── Upload Card ──────────────────────────────────────────────────────────────
 function UploadCard({ side, icon, sub, onFile, preview, uploaded }) {
+    const inputRef = useRef(null);
     return (
-        <div onClick={() => !uploaded && document.getElementById(`input-${side}`).click()} style={{ background: uploaded ? SECONDARY : "#fff", border: `1.5px dashed ${uploaded ? PRIMARY : "#b6cfc9"}`, borderRadius: 14, padding: "1.25rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, cursor: "pointer", minHeight: 164, justifyContent: "center", position: "relative", transition: "all 0.2s" }}>
-            <input id={`input-${side}`} type="file" accept="image/*" style={{ display: "none" }} onChange={onFile} />
+        <div
+            onClick={() => !uploaded && inputRef.current?.click()}
+            style={{ background: uploaded ? SECONDARY : "#fff", border: `1.5px dashed ${uploaded ? PRIMARY : "#b6cfc9"}`, borderRadius: 14, padding: "1.25rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, cursor: uploaded ? "default" : "pointer", minHeight: 164, justifyContent: "center", position: "relative", transition: "all 0.2s" }}
+        >
+            <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFile} />
             {uploaded && preview ? (
                 <>
                     <img src={preview} alt={side} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 8 }} />
@@ -88,6 +93,13 @@ function UploadCard({ side, icon, sub, onFile, preview, uploaded }) {
                     <div style={{ position: "absolute", top: 10, right: 10, width: 22, height: 22, borderRadius: "50%", background: PRIMARY, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 13 9 17 19 7" /></svg>
                     </div>
+                    {/* Re-upload option */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                        style={{ fontSize: 11, color: PRIMARY, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                    >
+                        Change
+                    </button>
                 </>
             ) : (
                 <>
@@ -104,23 +116,47 @@ function UploadCard({ side, icon, sub, onFile, preview, uploaded }) {
 // PAGE 1 — Submit for verification
 // ════════════════════════════════════════════════════════════════════════════
 function SubmitVerificationPage({ onSubmit, onSkip }) {
-    const [front, setFront] = useState(null);
-    const [back, setBack] = useState(null);
+    // ✅ Store both preview (base64) AND actual File object
+    const [frontPreview, setFrontPreview] = useState(null);
+    const [backPreview, setBackPreview] = useState(null);
+    const [frontFile, setFrontFile] = useState(null); // actual File
+    const [backFile, setBackFile] = useState(null); // actual File
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleFile = (side) => (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        // ✅ Store the real File object for FormData upload
+        if (side === "front") setFrontFile(file);
+        else setBackFile(file);
+
+        // Generate base64 for preview only
         const reader = new FileReader();
-        reader.onload = (ev) => side === "front" ? setFront(ev.target.result) : setBack(ev.target.result);
+        reader.onload = (ev) => {
+            if (side === "front") setFrontPreview(ev.target.result);
+            else setBackPreview(ev.target.result);
+        };
         reader.readAsDataURL(file);
     };
 
-    const handleSubmit = () => {
-        ProfileService.uploadIdCard(front, back);
+    const handleSubmit = async () => {
+        if (!frontFile || !backFile) return;
         setSubmitting(true);
-        setTimeout(() => onSubmit(), 1400);
+        setError(null);
+        try {
+            // ✅ Pass actual File objects — NOT base64 strings
+            await ProfileService.uploadIdCard(frontFile, backFile);
+            onSubmit();
+        } catch (err) {
+            console.error("ID upload failed:", err);
+            setError(err?.message || "Upload failed. Please check your connection and try again.");
+            setSubmitting(false);
+        }
     };
+
+    const canSubmit = !!frontFile && !!backFile && !submitting;
 
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
@@ -129,43 +165,55 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
             </div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 600, color: PRIMARY, marginBottom: 8, lineHeight: 1.25 }}>Verify your identity</h1>
             <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, marginBottom: "2rem" }}>Upload a clear photo of your government-issued ID. Your information is encrypted and kept private.</p>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: "1.5rem" }}>
-                <UploadCard side="front" uploaded={!!front} preview={front} onFile={handleFile("front")} sub={"National ID, passport\nor driving licence"} icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="17" y2="10" /><line x1="7" y1="14" x2="13" y2="14" /></svg>} />
-                <UploadCard side="back" uploaded={!!back} preview={back} onFile={handleFile("back")} sub={"Clear photo,\nall corners visible"} icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="12" y2="10" /><circle cx="16" cy="12" r="2.5" /></svg>} />
+                <UploadCard
+                    side="front"
+                    uploaded={!!frontPreview}
+                    preview={frontPreview}
+                    onFile={handleFile("front")}
+                    sub="National ID, passport\nor driving licence"
+                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="17" y2="10" /><line x1="7" y1="14" x2="13" y2="14" /></svg>}
+                />
+                <UploadCard
+                    side="back"
+                    uploaded={!!backPreview}
+                    preview={backPreview}
+                    onFile={handleFile("back")}
+                    sub="Clear photo,\nall corners visible"
+                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="12" y2="10" /><circle cx="16" cy="12" r="2.5" /></svg>}
+                />
             </div>
+
             <div style={{ background: ACCENT, borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.75rem", display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><circle cx="12" cy="16" r="0.5" fill={PRIMARY} /></svg>
                 <p style={{ fontSize: 13, color: PRIMARY, lineHeight: 1.55 }}><strong style={{ fontWeight: 500 }}>Tips for a clear photo:</strong> Ensure all four corners are visible, no glare or blur, and the text is fully readable.</p>
             </div>
-            <button disabled={!front || !back || submitting} onClick={handleSubmit} style={{ width: "100%", background: !front || !back || submitting ? "#9ca3af" : PRIMARY, color: PRIMARY_FG, border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", cursor: !front || !back || submitting ? "not-allowed" : "pointer", marginBottom: 10, transition: "background 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                {submitting ? (<><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>Submitting…</>) : "Submit for verification"}
+
+            {/* Error message */}
+            {error && (
+                <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 10, padding: "10px 14px", marginBottom: "1rem", fontSize: 13, color: "#dc2626" }}>
+                    {error}
+                </div>
+            )}
+
+            <button
+                disabled={!canSubmit}
+                onClick={handleSubmit}
+                style={{ width: "100%", background: canSubmit ? PRIMARY : "#9ca3af", color: PRIMARY_FG, border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", cursor: canSubmit ? "pointer" : "not-allowed", marginBottom: 10, transition: "background 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            >
+                {submitting ? (
+                    <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>Uploading…</>
+                ) : "Submit for verification"}
             </button>
+
             <div style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>or</div>
             <button
                 onClick={onSkip}
-                style={{
-                    width: "100%",
-                    background: "transparent",
-                    color: "#6b7280",
-                    border: "1.5px solid #d1d5db",
-                    borderRadius: 10,
-                    padding: "13px",
-                    fontSize: 14,
-                    fontFamily: "'DM Sans', sans-serif",
-                    cursor: "pointer"
-                }}
-                onMouseEnter={e => {
-                    const target = e.currentTarget;
-                    target.style.borderColor = PRIMARY;
-                    target.style.color = PRIMARY;
-                }}
-                onMouseLeave={e => {
-                    const target = e.currentTarget;
-                    target.style.borderColor = "#d1d5db";
-                    target.style.color = "#6b7280";
-                }}
+                style={{ width: "100%", background: "transparent", color: "#6b7280", border: "1.5px solid #d1d5db", borderRadius: 10, padding: "13px", fontSize: 14, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#6b7280"; }}
             >
-
                 Skip for now — verify later
             </button>
         </div>
@@ -179,6 +227,15 @@ function PendingPage({ frontId, backId }) {
     const [visible, setVisible] = useState(false);
     useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t); }, []);
 
+    // @ts-ignore
+    const baseUrl = import.meta.env.VITE_BASE_URL?.replace('/api', '') || '';
+
+    const getImageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http')) return path; // already full URL (DO Spaces)
+        return `${baseUrl}${path}`;               // local path
+    };
+
     const steps = [
         { label: "Documents submitted", done: true },
         { label: "Under review", done: false, active: true },
@@ -187,16 +244,12 @@ function PendingPage({ frontId, backId }) {
 
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
-
-            {/* Header */}
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#fef9ec", color: "#92650a", fontSize: 12, fontWeight: 500, padding: "4px 12px", borderRadius: 20, marginBottom: "1.25rem", border: "1px solid #f5d97a40" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f0b429", animation: "pulse 1.5s ease-in-out infinite" }} /> Under Review
             </div>
-
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 600, color: PRIMARY, marginBottom: 8 }}>Verification pending</h1>
             <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, marginBottom: "2rem" }}>Your documents have been submitted. Our team typically reviews submissions within 24–48 hours.</p>
 
-            {/* Progress steps */}
             <div style={{ background: "#fff", border: `1px solid ${PRIMARY}18`, borderRadius: 16, padding: "1.5rem", marginBottom: "1.5rem", boxShadow: `0 2px 12px ${PRIMARY}08` }}>
                 {steps.map((step, i) => (
                     <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < steps.length - 1 ? 0 : undefined }}>
@@ -220,25 +273,23 @@ function PendingPage({ frontId, backId }) {
                 ))}
             </div>
 
-            {/* Submitted ID previews */}
             <p style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500, letterSpacing: "0.06em", marginBottom: 10 }}>SUBMITTED DOCUMENTS</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: "1.5rem" }}>
                 {[{ label: "Front side", path: frontId }, { label: "Back side", path: backId }].map((doc, i) => (
                     <div key={i} style={{ background: SECONDARY, border: `1px solid ${PRIMARY}18`, borderRadius: 12, overflow: "hidden" }}>
-                        <img
-                            // @ts-ignore
-                            src={`${import.meta.env.VITE_BASE_URL?.replace('/api', '')}${doc.path}`}
-
-                            alt={doc.label}
-                            style={{ width: "100%", height: 90, objectFit: "cover" }}
-                            onError={e => {
-                                // Fix: e.target could be an EventTarget, so cast to HTMLImageElement
-                                if (e && e.target && e.target instanceof window.HTMLImageElement) {
-                                    e.target.style.display = "none";
-                                }
-                            }}
-                        />
-
+                        {doc.path ? (
+                            <img
+                                src={getImageUrl(doc.path)}
+                                alt={doc.label}
+                                style={{ width: "100%", height: 90, objectFit: "cover" }}
+                                // @ts-ignore
+                                onError={e => { e.target.style.display = "none"; }}
+                            />
+                        ) : (
+                            <div style={{ width: "100%", height: 90, background: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /></svg>
+                            </div>
+                        )}
                         <div style={{ padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 500 }}>{doc.label}</span>
                             <span style={{ fontSize: 10, color: "#f0b429", fontWeight: 500, background: "#fef9ec", padding: "2px 7px", borderRadius: 10 }}>Pending</span>
@@ -247,7 +298,6 @@ function PendingPage({ frontId, backId }) {
                 ))}
             </div>
 
-            {/* Info box */}
             <div style={{ background: "#fef9ec", border: "1px solid #f5d97a40", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#92650a" strokeWidth="1.5" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><circle cx="12" cy="16" r="0.5" fill="#92650a" /></svg>
                 <p style={{ fontSize: 13, color: "#92650a", lineHeight: 1.55 }}>You will be notified once your identity has been reviewed. You can continue using the app in the meantime.</p>
@@ -259,8 +309,9 @@ function PendingPage({ frontId, backId }) {
 // ════════════════════════════════════════════════════════════════════════════
 // PAGE 3 — Already verified
 // ════════════════════════════════════════════════════════════════════════════
-function VerifiedPage({ name = "Fatima" }) {
+function VerifiedPage({ name = "User", userImage }) {
     const [visible, setVisible] = useState(false);
+
     useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t); }, []);
 
     const sparkles = [
@@ -293,18 +344,32 @@ function VerifiedPage({ name = "Fatima" }) {
             </div>
 
             <div style={{ background: "#fff", border: `1px solid ${PRIMARY}18`, borderRadius: 14, padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: 14, marginBottom: "1.5rem", animation: visible ? "fadeUp 0.5s ease 0.8s both" : "none", opacity: visible ? undefined : 0, boxShadow: `0 2px 12px ${PRIMARY}0a` }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg, ${SECONDARY}, ${ACCENT})`, border: `2px solid ${PRIMARY}22`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: PRIMARY, position: "relative" }}>
-                    {name.charAt(0)}
+                <div style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg, ${SECONDARY}, ${ACCENT})`, border: `2px solid ${PRIMARY}22`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+                    {/* Show profile image if available, else fallback avatar */}
+                    {typeof userImage === "string" && userImage ? (
+                        <img
+                            src={userImage}
+                            alt={name}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                        />
+                    ) : (
+                        <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: PRIMARY }}>
+                            {name.charAt(0)}
+                        </span>
+                    )}
+
                     <div style={{ position: "absolute", bottom: -2, right: -2, background: "#fff", borderRadius: "50%", padding: 1 }}><BadgeIcon size={16} /></div>
                 </div>
                 <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                        <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 600, color: "#1a1a1a" }}>{name}</span>
+                        {/* Show name only if you need a fallback label, otherwise remove this span */}
+                        {/* <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 600, color: "#1a1a1a" }}>{name}</span> */}
                         <VerifiedPill />
                     </div>
                     <span style={{ fontSize: 12, color: "#9ca3af" }}>This is how others see your profile</span>
                 </div>
             </div>
+
 
             <p style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500, letterSpacing: "0.06em", marginBottom: 10, animation: visible ? "fadeUp 0.5s ease 0.9s both" : "none", opacity: visible ? undefined : 0 }}>WHAT YOU UNLOCKED</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: "1.75rem", animation: visible ? "fadeUp 0.5s ease 1s both" : "none", opacity: visible ? undefined : 0 }}>
@@ -320,23 +385,9 @@ function VerifiedPage({ name = "Fatima" }) {
 
             <button
                 type="button"
-                style={{
-                    width: "100%",
-                    background: PRIMARY,
-                    color: PRIMARY_FG,
-                    border: "none",
-                    borderRadius: 10,
-                    padding: "14px",
-                    fontSize: 15,
-                    fontWeight: 500,
-                    fontFamily: "'DM Sans', sans-serif",
-                    cursor: "pointer",
-                    animation: visible ? "fadeUp 0.5s ease 1.1s both" : "none",
-                    opacity: visible ? undefined : 0,
-                }}
                 onClick={() => window.history.length > 1 ? window.history.back() : window.close()}
+                style={{ width: "100%", background: PRIMARY, color: PRIMARY_FG, border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", animation: visible ? "fadeUp 0.5s ease 1.1s both" : "none", opacity: visible ? undefined : 0 }}
             >
-
                 View my profile
             </button>
         </div>
@@ -351,30 +402,39 @@ export default function VerificationPage({ onSubmit, onSkip }) {
     const [status, setStatus] = useState("submit"); // "submit" | "pending" | "verified"
     const [frontId, setFrontId] = useState(null);
     const [backId, setBackId] = useState(null);
+    const [userimage, setuserimage] = useState(null);
     const [userName, setUserName] = useState("User");
 
     useEffect(() => {
         const loadProfile = async () => {
             try {
-                const res = await ProfileService.getMyProfile();
+                const res = await ProfileService.getCurrentUser();
                 const data = res;
 
+
+
                 const isVerified = data.is_verified === true || data.is_verified === 1;
-                const hasFront = !!data.profile?.front_id;
-                const hasBack = !!data.profile?.back_id;
-                const name = data.profile?.name || "User";
+                const hasFront = !!data.frontid_url;
+                const hasBack = !!data.backid_url;
+                const userimageurl = !!data.avatar_url;
+                const name = data.name || "User";
+                setuserimage(userimageurl);
+
+                console.log("isVerified:", isVerified);
+                console.log("hasFront:", hasFront);
+                console.log("hasBack:", hasBack);
+                console.log("name:", name);
 
                 setUserName(name);
-                setFrontId(data.profile?.front_id);
-                setBackId(data.profile?.back_id);
+                setFrontId(data.frontid_url);
+                setBackId(data.backid_url);
 
-                if (isVerified) {
-                    setStatus("verified");
-                } else if (hasFront && hasBack) {
-                    setStatus("pending");
-                } else {
-                    setStatus("submit");
-                }
+
+
+
+                if (isVerified && hasFront && hasBack) setStatus("verified");
+                else if (hasFront && hasBack) setStatus("pending");
+                else setStatus("submit");
             } catch (err) {
                 console.error("Failed to load profile:", err);
                 setStatus("submit");
@@ -382,17 +442,12 @@ export default function VerificationPage({ onSubmit, onSkip }) {
                 setLoading(false);
             }
         };
-
         loadProfile();
     }, []);
 
     const handleSubmit = () => {
         setStatus("pending");
         onSubmit?.();
-    };
-
-    const handleSkip = () => {
-        onSkip?.();
     };
 
     if (loading) {
@@ -409,9 +464,11 @@ export default function VerificationPage({ onSubmit, onSkip }) {
     return (
         <>
             <style>{KEYFRAMES}</style>
-            {status === "verified" && <VerifiedPage name={userName} />}
+
+            {status === "verified" && <VerifiedPage name={userName} userImage={userimage} />}
+
             {status === "pending" && <PendingPage frontId={frontId} backId={backId} />}
-            {status === "submit" && <SubmitVerificationPage onSubmit={handleSubmit} onSkip={handleSkip} />}
+            {status === "submit" && <SubmitVerificationPage onSubmit={handleSubmit} onSkip={onSkip} />}
         </>
     );
 }

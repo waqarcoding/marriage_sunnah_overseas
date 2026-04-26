@@ -45,6 +45,7 @@ module.exports = (sequelize, DataTypes) => {
 
   User.init({
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
+    name: { type: DataTypes.STRING(255), allowNull: false },
     email: { type: DataTypes.STRING, allowNull: false, unique: true },
     mobile: { type: DataTypes.STRING, allowNull: false, unique: true },
     password_hash: { type: DataTypes.STRING, allowNull: false },
@@ -59,13 +60,15 @@ module.exports = (sequelize, DataTypes) => {
     is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_premium: { type: DataTypes.BOOLEAN, defaultValue: false },
-
+    frontid_url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
+    backid_url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
   }, {
     sequelize,
     modelName: 'User',
     tableName: 'Users',
     timestamps: true,
-    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
 
     defaultScope: {
       where: { is_deleted: false },

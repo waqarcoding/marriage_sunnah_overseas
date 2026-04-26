@@ -44,8 +44,9 @@ module.exports = (sequelize, DataTypes) => {
 
             timestamps: true,
 
-            underscored: true,
 
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
             // IMPORTANT for DigitalOcean consistency
             freezeTableName: true,
         }

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
-import ChatService from "../api/ChatService";
+import ChatService from "../services/ChatService";
 
 import NewMatches from "../components/NewMatches";
 import ConversationsList from "../components/ConversationsList";
@@ -52,6 +52,7 @@ export default function ChatPage() {
             try {
                 const res = await ChatService.getConversationUsers();
                 if (res.success) setConversations(res.data);
+
 
                 const matches = await ExploreService.getExplore();
                 const list = matches?.profiles || matches?.data?.profiles || [];

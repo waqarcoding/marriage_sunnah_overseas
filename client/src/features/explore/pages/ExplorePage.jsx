@@ -4,14 +4,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import ExploreService from "../../explore/api/ExploreService";
-import InterestService from "../../interest/api/InterestService";
+import InterestService from "../../interest/services/InterestService";
 import { useNavigate } from "react-router-dom";
 import ImageAvatar from "../../../components/ImageAvatar";
 import { Badge } from "../../../components/ui/badge";
 import FilterRow from "../components/filter";
-import ProfileService from "../../profile/api/ProfileService";
-import AuthApi from "../../auth/api/AuthService";
-import AuthService from "../../auth/api/AuthService";
+import ProfileService from "../../profile/services/ProfileService";
+import AuthApi from "../../auth/services/AuthService";
+import AuthService from "../../auth/services/AuthService";
 
 
 
@@ -416,29 +416,37 @@ export default function ExplorePage({ onProfileClick }) {
 
     // Apply filters: search, filter bar, and advanced (age/city/gender)
     const filteredProfiles = profiles.filter(p => {
+        // ✅ Guard against undefined/null profiles
+        if (!p) return false;
+
         // Search filter
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             if (!p.name?.toLowerCase().includes(q) && !p.city?.toLowerCase().includes(q)) return false;
         }
         // FilterBar filters
-        if (activeFilters.includes("All")) {
-            // continue
-        } else {
+        if (!activeFilters.includes("All")) {
             if (activeFilters.includes("Female") && p.gender !== "female") return false;
             if (activeFilters.includes("Male") && p.gender !== "male") return false;
             if (activeFilters.includes("Verified") && !p.individual?.is_verified) return false;
             if (activeFilters.includes("Premium") && !p.individual?.is_premium) return false;
             if (activeFilters.includes("Active Now") && !isOnline(p.last_seen)) return false;
+            // Country filters
+            const countryFilters = ["Dubai", "Pakistan", "Qatar", "Saudi Arabia", "Bahrain", "Kuwait", "Oman", "USA"];
+            const activeCountry = activeFilters.find(f => countryFilters.includes(f));
+            if (activeCountry && p.country !== activeCountry && p.city !== activeCountry) return false;
         }
         // Modal Filters
-        if (filterCity && p.city && !p.city?.toLowerCase().includes(filterCity.toLowerCase())) return false;
-        if (interestedIn && ((interestedIn === "Men" && p.gender !== "male") || (interestedIn === "Women" && p.gender !== "female"))) return false;
-        if (p.age) {
+        if (filterCity && !p.city?.toLowerCase().includes(filterCity.toLowerCase())) return false;
+        if (interestedIn) {
+            if (interestedIn === "Men" && p.gender !== "male") return false;
+            if (interestedIn === "Women" && p.gender !== "female") return false;
+        }
+        // ✅ Guard ageRange before accessing [0]
+        if (p.age && Array.isArray(ageRange) && ageRange.length === 2) {
             const userAge = Number(p.age);
             if (userAge < ageRange[0] || userAge > ageRange[1]) return false;
         }
-        // All passed
         return true;
     });
 

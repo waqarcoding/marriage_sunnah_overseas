@@ -3,26 +3,25 @@ import Joi from 'joi';
 import authController from '../controllers/auth.controller.js';
 import { validateBody } from '../middlewares/validation.middleware.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
-import upload from '../middlewares/uploadfilemulter.js';
+import upload from '../middlewares/upload.middleware.js';
 
 const router = express.Router();
 
 router.post(
   '/register',
-  upload.single('profilePhoto'),
+  upload.fields([{ name: 'image', maxCount: 1 }]),
   validateBody(
     Joi.object({
       name: Joi.string().required(),
       gender: Joi.string().required(),
       email: Joi.string().email().required(),
-      mobile: Joi.string().optional(),
+      mobile: Joi.string().optional().allow('', null),
       password_hash: Joi.string().required(),
-      role: Joi.string().required()
+      role: Joi.string().optional().default('individual'),
     }).unknown(true)
   ),
   authController.signup
 );
-
 router.post(
   '/login',
   validateBody(

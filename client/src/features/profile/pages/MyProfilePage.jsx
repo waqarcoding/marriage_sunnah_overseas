@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import ProfileService from "../api/ProfileService";
+import ProfileService from "../services/ProfileService";
 import { Badge } from "../../../components/ui/badge";
 
 // ─── Success Dialog ───────────────────────────────────────────────────────────
@@ -70,6 +70,7 @@ export default function MyProfilePage() {
     const fileInputRef = useRef(null);
 
     const [profile, setProfile] = useState(null);
+    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [savingGuardian, setSavingGuardian] = useState(false);
@@ -97,8 +98,10 @@ export default function MyProfilePage() {
     const fetchProfile = async () => {
         setLoading(true);
         try {
-            const res = await ProfileService.getMyProfile();
+            const res = await ProfileService.getCurrentUser();
+            setUser(res);
             const p = res?.data || res?.profile || res;
+
             setCounts(res?.counts || {});
             setProfile(p);
             setPhotos(ProfileService.parseImages(p));
@@ -111,13 +114,18 @@ export default function MyProfilePage() {
             });
             setInterests(parseInterests(p));
 
-            // ✅ Guardian comes from profile.guardian (magic method in backend)
-            const g = p?.guardian;
+            // ✅ FIX: Use `res` directly — `user` state isn't updated yet at this point
+            // React batches setState calls, so reading `user` here returns the old value
+            const guardianData =
+                Array.isArray(res?.guardians) && res.guardians.length > 0
+                    ? res.guardians[0]
+                    : res?.guardian || {};
+
             setGuardianForm({
-                guardian_name: g?.guardian_name || "",
-                guardian_phone: g?.guardian_phone || "",
-                guardian_email: g?.guardian_email || "",
-                guardian_relationship: g?.guardian_relationship || "",
+                guardian_name: guardianData.guardian_name || "",
+                guardian_phone: guardianData.guardian_phone || "",
+                guardian_email: guardianData.guardian_email || "",
+                guardian_relationship: guardianData.guardian_relationship || "",
             });
 
         } catch {
@@ -137,11 +145,12 @@ export default function MyProfilePage() {
     const setField = (key, val) => setForm((f) => ({ ...f, [key]: val }));
     const setGField = (key, val) => setGuardianForm((f) => ({ ...f, [key]: val }));
 
-    // ✅ hasGuardian — checks profile.guardian from backend magic method
+    // ✅ FIX: Derive hasGuardian from guardianForm which is always in sync,
+    // instead of reading `user` state which may be stale during render cycles
     const hasGuardian = !!(
-        profile?.guardian?.guardian_name ||
-        profile?.guardian?.guardian_phone ||
-        profile?.guardian?.guardian_email
+        guardianForm.guardian_name ||
+        guardianForm.guardian_phone ||
+        guardianForm.guardian_email
     );
 
     // ── Save Profile ───────────────────────────────────────────────────────────
@@ -170,7 +179,6 @@ export default function MyProfilePage() {
         setSavingGuardian(true);
         try {
             await ProfileService.updateGuardian(guardianForm);
-            // update local profile.guardian to reflect saved data
             setProfile((prev) => ({ ...prev, guardian: { ...prev?.guardian, ...guardianForm } }));
             setEditGuardian(false);
             setShowSuccess(true);
@@ -178,8 +186,9 @@ export default function MyProfilePage() {
         finally { setSavingGuardian(false); }
     };
 
+    // ✅ FIX: Read from user?.guardians?.[0] first, falling back to user?.guardian
     const handleCancelGuardian = () => {
-        const g = profile?.guardian;
+        const g = user?.guardians?.[0] || user?.guardian || {};
         setGuardianForm({
             guardian_name: g?.guardian_name || "",
             guardian_phone: g?.guardian_phone || "",
@@ -430,7 +439,7 @@ export default function MyProfilePage() {
                         </div>
 
                     ) : hasGuardian ? (
-                        /* 2. View mode — profile.guardian exists */
+                        /* 2. View mode — guardian exists */
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                             {[
                                 { icon: UserCheck, label: guardianForm.guardian_name, sub: guardianForm.guardian_relationship || "Guardian", color: "#7c3aed", bg: "#ede9fe" },
@@ -450,7 +459,7 @@ export default function MyProfilePage() {
                         </div>
 
                     ) : (
-                        /* 3. ✅ No guardian — redirect to /add-guardian */
+                        /* 3. No guardian — redirect to /add-guardian */
                         <div style={{ textAlign: "center", padding: "20px 0" }}>
                             <div style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                                 <Shield style={{ width: 26, height: 26, color: "#d1d5db" }} />

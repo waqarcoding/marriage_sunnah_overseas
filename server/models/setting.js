@@ -44,7 +44,8 @@ module.exports = (sequelize, DataTypes) => {
         modelName: 'Setting',
         tableName: 'Settings',
         timestamps: true,
-        underscored: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at',
     });
 
     return Setting;

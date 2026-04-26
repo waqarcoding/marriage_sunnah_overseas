@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Heart, Mail } from "lucide-react"
-import AuthApi from "../api/AuthService"
+import AuthApi from "../services/AuthService"
 
 export default function OtpPage({ onSuccess }) {
     const [otp, setOtp] = useState(["", "", "", "", "", ""])

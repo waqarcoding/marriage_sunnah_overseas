@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
+
 import {
     ChevronLeft, ChevronDown, Check, Loader2, Shield, User, Baby,
     MapPin, BookOpen, Briefcase, Heart, Star, ChevronRight,
@@ -14,8 +15,8 @@ import {
     CompleteProfileController,
     defaultForm,
     defaultPrefs,
-} from "../api/CompleteProfileController"
-import ProfileService from "../api/ProfileService"
+} from "../services/CompleteProfileController"
+import ProfileService from "../services/ProfileService"
 import ExploreService from "../../explore/api/ExploreService"
 import InputField from "../../../components/ui/input_field"
 import Input from "../../../components/ui/input"
@@ -26,73 +27,21 @@ import SelectOption from "../../../components/ui/select_option"
 import { StepCard } from "../../../components/ui/step_card"
 import TextArea from "../../../components/ui/text_area"
 import { ToggleGroup } from "../../../components/ui/toggle_group"
+import { Toaster } from "react-hot-toast"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const first = (val) => (!val ? "" : Array.isArray(val) ? (val[0] ?? "") : val)
 const inchesToFtIn = (n) => { if (!n) return ""; const ft = Math.floor(n / 12); const i = n % 12; return `${ft}'${i}"` }
 const HEIGHT_OPTIONS = Array.from({ length: 31 }, (_, i) => ({ value: String(60 + i), label: `${inchesToFtIn(60 + i)} (${60 + i}")` }))
 
+// ─── Helpers — arrays fetched from DB via opts ────────────────────────────────
+// getRandomFamilyBackground, getRandomAboutMe, getRandomRelationship
+// use opts from DB (family_backgrounds, about_me, relationship_options)
+// See: opts?.family_backgrounds, opts?.about_me, opts?.relationship_options
 
-const getRandomFamilyBackground = () => FAMILY_BACKGROUNDS[Math.floor(Math.random() * FAMILY_BACKGROUNDS.length)]
-// ─── #8 Family Background ────────────────────────────────────────────────────
-const FAMILY_BACKGROUNDS = [
-    "We are a religious family with strong values, rooted in our cultural traditions and faith.",
-    "A close-knit family with educated parents. We value deen, respect, and simplicity.",
-    "Middle-class family with strong Islamic values. Parents are both educated professionals.",
-    "Conservative Muslim family with roots in Pakistan. We believe in maintaining family ties.",
-    "A warm and welcoming family. We prioritise faith, education and character above all.",
-    "Well-established family with a strong emphasis on religious education and community service.",
-    "Our family is deeply rooted in Islamic values. We are respectful, humble and family-oriented.",
-    "A peaceful and loving home. My parents raised us with the Quran and strong moral character.",
-    "We come from a respected background, placing high importance on deen and integrity.",
-    "A modest and practising Muslim family. We believe in simplicity, honesty and hard work.",
-]
-// ─── #13 About Me by Profession ──────────────────────────────────────────────
-const ABOUT_ME_BY_PROFESSION = {
-    "Doctor": ["A practising doctor with a passion for helping others. I balance a demanding career with my faith and family values.", "Medicine is my calling. I am caring, dedicated and looking for a partner who shares my values."],
-    "Surgeon": ["A surgeon who values precision and compassion. Outside the hospital, I enjoy quiet evenings and meaningful conversations.", "My work demands focus and dedication. I am looking for a like-minded partner to build a life with."],
-    "Software Engineer": ["A software engineer who loves solving problems. I am analytical yet deeply family-oriented and grounded in my deen.", "I build things for a living. Hoping to build a beautiful life with the right person."],
-    "Civil Engineer": ["A civil engineer with a structured mind and warm heart. I take pride in my work and my values.", "I design structures professionally, and hope to build a strong family foundation together."],
-    "Lawyer": ["A lawyer by profession, I believe in justice, honesty and strong family values.", "I advocate for others professionally. Looking for a life partner who values loyalty and integrity."],
-    "Teacher": ["Teaching is my passion. I love sharing knowledge and believe in raising a family with strong moral values.", "An educator who believes in continuous growth. I am patient, kind and deeply committed to my faith."],
-    "Accountant": ["A careful and responsible accountant. I value stability, honesty and a simple yet fulfilling family life.", "Numbers are my profession, but people are my priority. Looking for a sincere partner."],
-    "Nurse": ["A nurse who cares for others daily. Compassion and patience are at the heart of everything I do.", "Healthcare is my calling. I bring the same warmth to my personal life."],
-    "Entrepreneur": ["I run my own business and believe in hard work, vision and barakah. Looking for a supportive partner.", "Building something meaningful drives me every day. I want a partner who shares ambition and values."],
-    "Architect": ["I design spaces for a living, and hope to design a beautiful life with a like-minded partner.", "An architect with an eye for detail and a heart full of faith. I value beauty, balance and family."],
-    "default": [
-        "I am a sincere, family-oriented individual with strong Islamic values. I take this search seriously.",
-        "A practising Muslim with a good heart. I value honesty, respect and building a home filled with love.",
-        "Alhamdulillah, I have much to be grateful for. Looking for a sincere partner to complete half my deen.",
-        "I am simple, sincere and serious about marriage. My faith and family are my priorities.",
-        "A grounded, faith-driven individual looking for a genuine connection and a stable, loving family life.",
-    ],
-}
-// ─── #17 Relationship Options ─────────────────────────────────────────────────
-const RELATIONSHIP_OPTIONS_MUSLIM = [
-    "Open to nikah only",
-    "Seeking serious proposals only",
-    "Looking for a long-term nikah",
-    "Ready for marriage with family involvement",
-    "Prefer guardian/wali involvement",
-    "Serious about marriage, taking it step by step",
-]
-const RELATIONSHIP_OPTIONS_OTHER = [
-    "Seeking a serious long-term relationship",
-    "Looking for marriage-minded partner",
-    "Open to engagement first",
-    "Ready for commitment",
-    "Serious about settling down",
-    "Looking for a life partner",
-]
-const getRandomAboutMe = (profession) => {
-    const list = ABOUT_ME_BY_PROFESSION[profession] || ABOUT_ME_BY_PROFESSION["default"]
-    return list[Math.floor(Math.random() * list.length)]
-}
-
-
-const getRandomRelationship = (religion) => {
-    const list = religion === "Muslim" ? RELATIONSHIP_OPTIONS_MUSLIM : RELATIONSHIP_OPTIONS_OTHER
-    return list[Math.floor(Math.random() * Math.min(4, list.length))]
+const getRandomFromOpts = (arr) => {
+    if (!arr || arr.length === 0) return ""
+    return arr[Math.floor(Math.random() * arr.length)]
 }
 
 // ─── #22 Country religion mapping ─────────────────────────────────────────────
@@ -239,27 +188,65 @@ export default function CompleteProfile() {
                     const practice = data?.practice_levels ?? []
                     const bodyTypes = data?.body_types ?? []
 
-                    setForm(prev => ({
-                        ...prev,
-                        marital_status: !prev.marital_status ? (marital[0] ?? "") : prev.marital_status,
-                        height_inches: !prev.height_inches ? "68" : prev.height_inches,
-                        body_type: !prev.body_type ? (bodyTypes.find(b => b === "Average") ?? bodyTypes[2] ?? "") : prev.body_type,
-                        education: !prev.education ? (educ.find(e => e === "Intermediate") ?? educ[4] ?? "") : prev.education,
-                        employment_type: !prev.employment_type ? (employ.find(e => e === "Private") ?? employ[1] ?? "") : prev.employment_type,
-                        contact_hidden: prev.contact_hidden ?? "1",
-                        has_children: !prev.has_children ? (hasChild[0] ?? "") : prev.has_children,
-                        willing_to_relocate: !prev.willing_to_relocate ? "No" : prev.willing_to_relocate,
-                        religious_practice_level: !prev.religious_practice_level ? (practice[1] ?? "") : prev.religious_practice_level,
-                        family_background: !prev.family_background ? getRandomFamilyBackground() : prev.family_background,
-                        relationship: !prev.relationship ? getRandomRelationship(prev.religion || "Muslim") : prev.relationship,
-                    }))
+                    setForm(prev => {
+                        // ── Step 2 defaults: Pakistan, Islamabad, Pakistani ──
+                        const pakData = (data?.country_data ?? {})["Pakistan"]
+                        const defaultCity = pakData?.cities?.find(c => c === "Islamabad") ?? pakData?.cities?.[0] ?? ""
+                        const defaultNat = pakData?.nationalities?.[0] ?? "Pakistani"
+                        // ── Step 3 defaults: Muslim, Sunni, Moderately Religious, Punjabi ──
+                        const tongues = pakData?.mother_tongues ?? []
+                        const defaultTongue = tongues.find(t => t === "Punjabi") ?? tongues[0] ?? ""
+                        // ── Family background + relationship from DB ──
+                        const fbList = data?.family_backgrounds?.muslim ?? []
+                        const relList = data?.relationship_options?.muslim ?? []
+                        const fb = prev.family_background || getRandomFromOpts(fbList)
+                        const rel = prev.relationship || getRandomFromOpts(relList)
+                        return {
+                            ...prev,
+                            // Step 1
+                            marital_status: !prev.marital_status ? (marital[0] ?? "") : prev.marital_status,
+                            height_inches: !prev.height_inches ? "68" : prev.height_inches,
+                            body_type: !prev.body_type ? (bodyTypes.find(b => b === "Average") ?? bodyTypes[2] ?? "") : prev.body_type,
+                            has_children: !prev.has_children ? (hasChild[0] ?? "") : prev.has_children,
+                            // Step 2
+                            country: !prev.country ? "Pakistan" : prev.country,
+                            city: !prev.city ? defaultCity : prev.city,
+                            nationality: !prev.nationality ? (defaultNat || "Pakistani") : prev.nationality,
+                            contact_hidden: prev.contact_hidden ?? "1",
+                            // Step 3
+                            religion: !prev.religion ? "Muslim" : prev.religion,
+                            sect: !prev.sect ? "Sunni" : prev.sect,
+                            religious_practice_level: !prev.religious_practice_level ? (practice[2] ?? practice[1] ?? "Moderately Religious") : prev.religious_practice_level,
+                            mother_tongue: !prev.mother_tongue ? defaultTongue : prev.mother_tongue,
+                            family_background: fb,
+                            relationship: rel,
+                            // Family details defaults
+                            mother_occupation: !prev.mother_occupation ? "Housewife" : prev.mother_occupation,
+                            // Step 5
+                            education: !prev.education ? (educ.find(e => e === "Intermediate") ?? educ[4] ?? "") : prev.education,
+                            employment_type: !prev.employment_type ? (employ.find(e => e === "Private") ?? employ[1] ?? "") : prev.employment_type,
+                            // Step 6
+                            willing_to_relocate: !prev.willing_to_relocate ? "No" : prev.willing_to_relocate,
+                        }
+                    })
 
                     if (!p) {
+                        // Set defaults for prefs on first load
+                        const pakCountryData = (data?.country_data ?? {})["Pakistan"]
                         setPrefs(prev => ({
                             ...prev,
                             pref_education: educ.find(e => e === "Intermediate") ?? educ[4] ?? "",
                             pref_has_children: hasChild[0] ?? "",
                             pref_willing_to_relocate: "No",
+                            pref_country: "Pakistan",
+                            pref_city: pakCountryData?.cities?.[0] ?? "",
+                            pref_religion: "Muslim",
+                            pref_sect: ["Sunni"],
+                            pref_age_min: ageOpts[0] ?? "18",
+                            pref_age_max: ageOpts[ageOpts.length - 1] ?? "60",
+                            pref_height_min_inches: HEIGHT_OPTIONS[0]?.value ?? "60",
+                            pref_height_max_inches: HEIGHT_OPTIONS[HEIGHT_OPTIONS.length - 1]?.value ?? "90",
+                            pref_body_type: ["Average"],
                         }))
                     }
                 }
@@ -305,7 +292,7 @@ export default function CompleteProfile() {
     const age = ctrl.calcAge(form.date_of_birth)
     const ageOpts = Array.from({ length: 43 }, (_, i) => String(18 + i))
 
-    // ── #2 Country change ────────────────────────────────────────────────────
+    // ── #2 Country change — auto city[0], nationality[0], tongue[0], salary[1] ──
     const handleCountryChange = (country) => {
         const cd = COUNTRY_DATA[country]
         setForm(prev => ({
@@ -313,13 +300,13 @@ export default function CompleteProfile() {
             country,
             city: cd?.cities?.[0] ?? "",
             nationality: cd?.nationalities?.[0] ?? "",
-            mother_tongue: cd?.mother_tongues?.[0] ?? "",
+            mother_tongue: cd?.mother_tongues?.find(t => t === "Punjabi") ?? cd?.mother_tongues?.[0] ?? "",
             monthly_salary: cd?.monthly_salaries?.[1] ?? cd?.monthly_salaries?.[0] ?? "",
             religion: prev.religion || getCountryReligion(country),
         }))
     }
 
-    // ── #21 Pref country change ──────────────────────────────────────────────
+    // ── #21 Pref country change — auto city[0] ──────────────────────────────
     const handlePrefCountryChange = (v) => {
         const cd = COUNTRY_DATA[v]
         setp("pref_country")(v)
@@ -362,6 +349,23 @@ export default function CompleteProfile() {
 
     return (
         <div className="min-h-screen bg-background">
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        zIndex: 999999,
+                        marginTop: 70,
+                    },
+                }}
+                containerClassName=""
+                containerStyle={{
+                    top: 70,
+                    right: 16,
+                    zIndex: 999999,
+                    position: "fixed",
+                }}
+            />
             <div className="sticky top-0 z-20 bg-background border-b border-border">
                 <div className="px-4 py-3 flex items-center gap-3">
                     <button onClick={() => step > 1 ? setStep(s => s - 1) : navigate(-1)}
@@ -419,8 +423,17 @@ export default function CompleteProfile() {
                                 <InputField label="Date of Birth" type="date" value={form.date_of_birth} onChange={set("date_of_birth")} />
                                 {age && <p className="text-xs font-medium ml-1 text-primary">Age: {age} years</p>}
                                 {/* #4 Marital status default index 0 */}
-                                <RangeSelect label="Marital Status" value={form.marital_status} onChange={set("marital_status")} placeholder="Select marital status"
+                                <RangeSelect label="Marital Status" value={form.marital_status} onChange={(v) => { set("marital_status")(v); if (!["Divorced", "Widowed", "Separated"].includes(v)) { set("has_children")(""); set("no_of_children")("") } }}
+                                    placeholder="Select marital status"
                                     options={MARITAL.length ? MARITAL : ["Never Married", "Divorced", "Widowed", "Separated"]} />
+                                {/* Show has children + no of children only if divorced/widowed/separated */}
+                                {["Divorced", "Widowed", "Separated"].includes(form.marital_status) && (<>
+                                    <RangeSelect label="Have Children?" value={form.has_children} onChange={set("has_children")} placeholder="Select"
+                                        options={HAS_CHILDREN.length ? HAS_CHILDREN : ["No Children", "Has Children"]} />
+                                    {form.has_children === "Has Children" && (
+                                        <InputField label="Number of Children" value={form.no_of_children} onChange={set("no_of_children")} placeholder="e.g. 2" type="number" optional max={2} />
+                                    )}
+                                </>)}
                             </StepCard>
                         )}
 
@@ -428,17 +441,19 @@ export default function CompleteProfile() {
                         {step === 2 && (
                             <StepCard key="s2" icon={MapPin} title="Location & Contact" subtitle="Where are you based?" variant="muted">
                                 <InputField label="Phone Number" value={form.phone} onChange={set("phone")} placeholder="+92 300 0000000" type="tel" optional max={20} />
-                                {/* #2 Country auto-fills city, nationality, tongue, salary */}
-                                <RangeSelect label="Country of Residence" value={form.country} onChange={handleCountryChange} placeholder="Select country"
+                                {/* Country — default Pakistan */}
+                                <RangeSelect label="Country of Residence" value={form.country || "Pakistan"} onChange={handleCountryChange} placeholder="Select country"
                                     options={COUNTRY_LIST.length ? COUNTRY_LIST : ["Pakistan", "UAE", "UK", "USA", "Canada"]} />
-                                {form.country && CITIES.length > 0 ? (
-                                    <RangeSelect label="City" value={form.city} onChange={set("city")} placeholder="Select city" options={CITIES} />
+                                {/* City — default Islamabad (first index) */}
+                                {(form.country || "Pakistan") && CITIES.length > 0 ? (
+                                    <RangeSelect label="City" value={form.city || CITIES[0]} onChange={set("city")} placeholder="Select city" options={CITIES} />
                                 ) : (
                                     <InputField label="City" value={form.city} onChange={set("city")} placeholder="e.g. Lahore, London" max={255} />
                                 )}
-                                <RangeSelect label="Nationality" value={form.nationality} onChange={set("nationality")} placeholder="Select nationality"
+                                {/* Nationality — default Pakistani (first index) */}
+                                <RangeSelect label="Nationality" value={form.nationality || NATIONALITIES[0] || "Pakistani"} onChange={set("nationality")} placeholder="Select nationality"
                                     options={NATIONALITIES.length ? NATIONALITIES : ALL_NATS} />
-                                {/* #3 Contact hidden default "1" */}
+                                {/* Contact hidden — default Hidden */}
                                 <ToggleGroup label="Hide Contact from Matches?" value={form.contact_hidden ?? "1"} onChange={set("contact_hidden")}
                                     options={[
                                         { value: "0", label: "Visible", activeClass: "border-primary bg-secondary text-primary" },
@@ -451,37 +466,67 @@ export default function CompleteProfile() {
                         {/* ═══ STEP 3 ═══ */}
                         {step === 3 && (
                             <StepCard key="s3" icon={Star} title="Religion & Background" subtitle="Faith and cultural background" variant="accent">
-                                {/* #22 religion auto from country */}
-                                <RangeSelect label="Religion" value={form.religion}
-                                    onChange={(v) => { set("religion")(v); if (v !== "Muslim") set("sect")("") }}
+                                {/* Religion — default Muslim */}
+                                <RangeSelect label="Religion" value={form.religion || "Muslim"}
+                                    onChange={(v) => { set("religion")(v); if (v !== "Muslim") { set("sect")("") } else { if (!form.sect) set("sect")("Sunni") } }}
                                     placeholder="Select religion"
                                     options={RELIGIONS.length ? RELIGIONS : ["Muslim", "Christian", "Hindu", "Other"]} />
-                                {/* #5 Sect only for Muslim */}
-                                {form.religion === "Muslim" && (
-                                    <RangeSelect label="Sect" value={form.sect} onChange={set("sect")} placeholder="Select sect" optional
+                                {/* Sect — show only if Muslim, default Sunni */}
+                                {(form.religion || "Muslim") === "Muslim" && (
+                                    <RangeSelect label="Sect" value={form.sect || "Sunni"} onChange={set("sect")} placeholder="Select sect" optional
                                         options={SECTS.length ? SECTS : ["Sunni", "Shia", "Deobandi", "Barelvi", "Other"]} />
                                 )}
-                                {/* #6 Practice level default index 1 */}
-                                <RangeSelect label="Religious Practice Level" value={form.religious_practice_level}
+                                {/* Practice level — default Moderately Religious (index 1) */}
+                                <RangeSelect label="Religious Practice Level" value={form.religious_practice_level || (PRACTICE_LVLS[1] ?? "Moderately Religious")}
                                     onChange={set("religious_practice_level")} placeholder="Select level"
                                     options={PRACTICE_LVLS.length ? PRACTICE_LVLS : ["Very Religious", "Moderately Religious", "Somewhat Religious", "Not Religious"]} />
                                 <RangeSelect label="Caste / Biradari" value={form.caste} onChange={set("caste")} placeholder="Select caste" optional
                                     note="Optional — many families consider this"
-                                    options={CASTES.length ? CASTES : ["Syed", "Qureshi", "Malik", "Khan", "Other"]} />
-                                {/* #7 Mother tongue auto from country */}
-                                <RangeSelect label="Mother Tongue" value={form.mother_tongue} onChange={set("mother_tongue")} placeholder="Select language" optional
+                                    options={CASTES.length ? CASTES : []} />
+                                {/* Mother tongue — default Punjabi or first from country list */}
+                                <RangeSelect label="Mother Tongue" value={form.mother_tongue || (COUNTRY_TONGUES.find(t => t === "Punjabi") ?? COUNTRY_TONGUES[0] ?? "")} onChange={set("mother_tongue")} placeholder="Select language" optional
                                     options={COUNTRY_TONGUES.length ? COUNTRY_TONGUES : ALL_TONGUES} />
-                                {/* #8 Family background random */}
+                                {/* ── Family Details ── */}
+                                <div className="space-y-3">
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family Details</label>
+
+                                    {/* Father Occupation */}
+                                    <RangeSelect label="Father's Occupation" value={form.father_occupation} onChange={set("father_occupation")}
+                                        placeholder="Select profession"
+                                        options={["Passed Away", ...(PROFESSIONS.length ? PROFESSIONS : ["Doctor", "Engineer", "Teacher", "Business Owner", "Other"])]}
+                                        note="Select 'Passed Away' if applicable" />
+
+                                    {/* Mother Occupation */}
+                                    <RangeSelect label="Mother's Occupation" value={form.mother_occupation || "Housewife"}
+                                        onChange={set("mother_occupation")}
+                                        placeholder="Select profession"
+                                        options={["Housewife", "Passed Away", ...(PROFESSIONS.length ? PROFESSIONS : ["Doctor", "Engineer", "Teacher", "Other"])]}
+                                        note="Default: Housewife" />
+
+                                    {/* Brothers & Sisters */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <InputField label="No. of Brothers" value={form.brothers} onChange={set("brothers")}
+                                            placeholder="e.g. 2" type="number" />
+                                        <InputField label="No. of Sisters" value={form.sisters} onChange={set("sisters")}
+                                            placeholder="e.g. 1" type="number" />
+                                    </div>
+                                </div>
+
+                                {/* Family background — from DB opts */}
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family Background</label>
-                                        <button type="button" onClick={() => set("family_background")(getRandomFamilyBackground())}
-                                            className="flex items-center gap-1 text-xs text-primary underline underline-offset-2">
+                                        <button type="button" onClick={() => {
+                                            const fbList = (form.religion || "Muslim") === "Muslim"
+                                                ? (opts?.family_backgrounds?.muslim ?? [])
+                                                : (opts?.family_backgrounds?.other ?? [])
+                                            set("family_background")(getRandomFromOpts(fbList))
+                                        }} className="flex items-center gap-1 text-xs text-primary underline underline-offset-2">
                                             <RefreshCw className="w-3 h-3" /> Random
                                         </button>
                                     </div>
                                     <TextArea value={form.family_background} onChange={set("family_background")}
-                                        placeholder="Brief description of your family background..." optional rows={3} />
+                                        placeholder="Brief description of your family background, values and traditions..." optional rows={3} />
                                 </div>
                             </StepCard>
                         )}
@@ -522,46 +567,52 @@ export default function CompleteProfile() {
                         {/* ═══ STEP 6 ═══ */}
                         {step === 6 && (
                             <StepCard key="s6" icon={Sparkles} title="Lifestyle & About You" subtitle="Let matches know who you are" variant="primary">
-                                {/* #13 About me random by profession */}
+                                {/* About me — random from DB by profession */}
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">About Me (Bio)</label>
-                                        <button type="button" onClick={() => set("bio")(getRandomAboutMe(form.profession))}
-                                            className="flex items-center gap-1 text-xs text-primary underline underline-offset-2">
+                                        <button type="button" onClick={() => {
+                                            const rel = form.religion === "Muslim" ? "muslim" : "other"
+                                            const byProf = opts?.about_me?.[rel]?.[form.profession] || opts?.about_me?.[rel]?.default || []
+                                            set("bio")(getRandomFromOpts(byProf))
+                                        }} className="flex items-center gap-1 text-xs text-primary underline underline-offset-2">
                                             <RefreshCw className="w-3 h-3" /> Random
                                         </button>
                                     </div>
                                     <TextArea value={form.bio} onChange={set("bio")} placeholder="Tell potential matches about yourself..." rows={4} />
                                 </div>
-                                {/* #14 Interests MultiChips from options */}
+                                {/* Interests — from DB opts */}
                                 <div>
                                     <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Interests & Hobbies</label>
                                     <MultiChips label="" optional
                                         value={Array.isArray(form.interests) ? form.interests : (form.interests ? form.interests.split(",").map(s => s.trim()).filter(Boolean) : [])}
                                         onChange={(v) => set("interests")(v)}
-                                        options={opts?.interests ?? ["Reading", "Travelling", "Cooking", "Sports", "Photography"]} />
+                                        options={opts?.interests ?? []} />
                                 </div>
-                                {/* #1 Has children default No Children */}
-                                <RangeSelect label="Have Children?" value={form.has_children} onChange={set("has_children")} placeholder="Select"
-                                    options={HAS_CHILDREN.length ? HAS_CHILDREN : ["No Children", "Has Children"]} />
-                                {/* #16 Willing to relocate default No */}
+                                {/* Has children REMOVED — moved to Step 1 (Personal Details) */}
+                                {/* Willing to relocate — primary colour instead of red */}
                                 <ToggleGroup label="Willing to Relocate?" value={form.willing_to_relocate} onChange={set("willing_to_relocate")}
                                     options={[
                                         { value: "Yes", label: "Yes", activeClass: "border-primary/5 bg-secondary text-primary" },
-                                        { value: "No", label: "No", activeClass: "border-destructive/50 bg-destructive/10 text-destructive" },
-                                        { value: "Maybe", label: "Maybe", activeClass: "border-accent/60 bg-secondary text-accent-foreground" },
+                                        { value: "No", label: "No", activeClass: "border-primary/5 bg-secondary text-primary" },
+                                        { value: "Maybe", label: "Maybe", activeClass: "border-primary/5 bg-secondary text-primary" },
                                     ]} />
-                                {/* #17 Relationship intent random */}
+                                {/* Relationship intent — from DB opts */}
                                 <div>
                                     <div className="flex items-center justify-between mb-1">
                                         <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Relationship Intent</label>
-                                        <button type="button" onClick={() => set("relationship")(getRandomRelationship(form.religion))}
-                                            className="flex items-center gap-1 text-xs text-primary underline underline-offset-2">
+                                        <button type="button" onClick={() => {
+                                            const rel = (form.religion || "Muslim") === "Muslim" ? "muslim" : "other"
+                                            const list = opts?.relationship_options?.[rel] ?? []
+                                            set("relationship")(getRandomFromOpts(list))
+                                        }} className="flex items-center gap-1 text-xs text-primary underline underline-offset-2">
                                             <RefreshCw className="w-3 h-3" /> Random
                                         </button>
                                     </div>
                                     <RangeSelect label="" value={form.relationship} onChange={set("relationship")} placeholder="Select relationship intent" optional
-                                        options={form.religion === "Muslim" ? RELATIONSHIP_OPTIONS_MUSLIM : RELATIONSHIP_OPTIONS_OTHER} />
+                                        options={(form.religion || "Muslim") === "Muslim"
+                                            ? (opts?.relationship_options?.muslim ?? [])
+                                            : (opts?.relationship_options?.other ?? [])} />
                                 </div>
                             </StepCard>
                         )}
@@ -579,46 +630,55 @@ export default function CompleteProfile() {
                                 </div>
 
                                 <StepCard icon={User} title="Demographics" subtitle="Age, gender, marital status" variant="primary">
-                                    {/* #18 Preferred gender disabled auto */}
+                                    {/* #18 Preferred gender — one selected based on user gender, disabled */}
                                     <div>
                                         <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preferred Gender</label>
                                         <div className="flex gap-2">
                                             {["Male", "Female"].map(g => (
-                                                <div key={g} style={{ flex: 1, padding: "10px 0", borderRadius: 12, textAlign: "center", fontSize: 13, fontWeight: 600, cursor: "not-allowed", background: autoPreferredGender === g ? "var(--primary)" : "var(--muted)", color: autoPreferredGender === g ? "var(--primary-foreground)" : "var(--muted-foreground)", border: "1.5px solid", borderColor: autoPreferredGender === g ? "var(--primary)" : "transparent" }}>
+                                                <div key={g}
+                                                    style={{
+                                                        flex: 1, padding: "10px 0", borderRadius: 12, textAlign: "center",
+                                                        fontSize: 13, fontWeight: 600, cursor: "not-allowed",
+                                                        background: autoPreferredGender === g ? "var(--primary)" : "var(--muted)",
+                                                        color: autoPreferredGender === g ? "var(--primary-foreground)" : "var(--muted-foreground)",
+                                                        border: "1.5px solid",
+                                                        borderColor: autoPreferredGender === g ? "var(--primary)" : "transparent",
+                                                        opacity: autoPreferredGender === g ? 1 : 0.4,
+                                                    }}>
                                                     {g === "Male" ? "♂ Male" : "♀ Female"}
                                                 </div>
                                             ))}
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-1">Auto-selected based on your gender</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Auto-selected based on your gender — not editable</p>
                                     </div>
-                                    {/* #19 Age with toast validation */}
+                                    {/* #19 Age range — min first index (18), max last index (60) */}
                                     <RangeRow label="Age Range" optional
-                                        minVal={prefs.pref_age_min} maxVal={prefs.pref_age_max}
+                                        minVal={prefs.pref_age_min || ageOpts[0]}
+                                        maxVal={prefs.pref_age_max || ageOpts[ageOpts.length - 1]}
                                         onMinChange={handlePrefAgeMin} onMaxChange={handlePrefAgeMax}
                                         minOpts={ageOpts.map(a => ({ value: a, label: a }))}
                                         maxOpts={ageOpts.map(a => ({ value: a, label: a }))} />
-                                    <MultiChips label="Marital Status" value={prefs.pref_marital_status} onChange={setp("pref_marital_status")} optional
-                                        options={["No Preference", ...(MARITAL.length ? MARITAL : ["Never Married", "Divorced", "Widowed"])]} />
+                                    {/* Marital Status moved to Life Situation card */}
                                     {/* #20 Nationality removed */}
-                                    {/* #21 Pref country auto city[0] */}
-                                    <RangeSelect label="Preferred Country" value={prefs.pref_country} onChange={handlePrefCountryChange} placeholder="Any country" optional
+                                    {/* #21 Pref country — default Pakistan, city first index */}
+                                    <RangeSelect label="Preferred Country" value={prefs.pref_country || "Pakistan"} onChange={handlePrefCountryChange} placeholder="Any country" optional
                                         options={["No Preference", ...COUNTRY_LIST.map(c => c.label ?? c)]} />
-                                    {prefs.pref_country && prefs.pref_country !== "No Preference" && PREF_CITIES.length > 0 ? (
-                                        <RangeSelect label="Preferred City" value={prefs.pref_city} onChange={setp("pref_city")} placeholder="Any city" optional
+                                    {(prefs.pref_country || "Pakistan") !== "No Preference" && PREF_CITIES.length > 0 ? (
+                                        <RangeSelect label="Preferred City" value={prefs.pref_city || PREF_CITIES[0]} onChange={setp("pref_city")} placeholder="Any city" optional
                                             options={["No Preference", ...PREF_CITIES]} />
                                     ) : (
                                         <InputField label="Preferred City" value={prefs.pref_city} onChange={setp("pref_city")} placeholder="e.g. Karachi, London" optional max={100} />
                                     )}
                                 </StepCard>
 
-                                {/* #22 Religion — sect only for Muslim, no caste/mother tongue */}
+                                {/* #22 Religion — default Muslim, sect only for Muslim, default Sunni */}
                                 <StepCard icon={Star} title="Religion" subtitle="Faith & practice preferences" variant="accent">
-                                    <RangeSelect label="Religion" value={prefs.pref_religion}
-                                        onChange={(v) => { setp("pref_religion")(v); if (v !== "Muslim") setp("pref_sect")("") }}
+                                    <RangeSelect label="Religion" value={prefs.pref_religion || "Muslim"}
+                                        onChange={(v) => { setp("pref_religion")(v); if (v !== "Muslim") setp("pref_sect")(""); else if (!prefs.pref_sect) setp("pref_sect")("Sunni") }}
                                         placeholder="No preference" optional
                                         options={["No Preference", ...(RELIGIONS.length ? RELIGIONS : ["Muslim", "Christian", "Hindu", "Other"])]} />
-                                    {prefs.pref_religion === "Muslim" && (
-                                        <MultiChips label="Sect" value={prefs.pref_sect} onChange={setp("pref_sect")} optional
+                                    {(prefs.pref_religion || "Muslim") === "Muslim" && (
+                                        <MultiChips label="Sect" value={prefs.pref_sect || ["Sunni"]} onChange={setp("pref_sect")} optional
                                             options={["No Preference", ...(SECTS.length ? SECTS : ["Sunni", "Shia", "Deobandi", "Barelvi", "Other"])]} />
                                     )}
                                     <RangeSelect label="Practice Level" value={prefs.pref_religious_practice_level}
@@ -627,19 +687,24 @@ export default function CompleteProfile() {
                                 </StepCard>
 
                                 <StepCard icon={Heart} title="Physical" subtitle="Height & body type" variant="primary">
+                                    {/* Height range — min first index (60"), max last index (90") */}
                                     <RangeRow label="Height Range" optional
-                                        minVal={prefs.pref_height_min_inches} maxVal={prefs.pref_height_max_inches}
+                                        minVal={prefs.pref_height_min_inches || HEIGHT_OPTIONS[0]?.value}
+                                        maxVal={prefs.pref_height_max_inches || HEIGHT_OPTIONS[HEIGHT_OPTIONS.length - 1]?.value}
                                         onMinChange={setp("pref_height_min_inches")} onMaxChange={setp("pref_height_max_inches")}
                                         minOpts={HEIGHT_OPTIONS} maxOpts={HEIGHT_OPTIONS} />
-                                    <MultiChips label="Body Type" value={prefs.pref_body_type} onChange={setp("pref_body_type")} optional
+                                    {/* Body type — Average default */}
+                                    <MultiChips label="Body Type" value={prefs.pref_body_type || ["Average"]} onChange={setp("pref_body_type")} optional
                                         options={["No Preference", ...(BODY_TYPES.length ? BODY_TYPES : ["Slim", "Athletic", "Average", "Curvy", "Heavy"])]} />
                                 </StepCard>
 
                                 {/* #22 No caste/mother tongue card in prefs */}
 
                                 <StepCard icon={Briefcase} title="Education & Career" subtitle="Qualifications & income" variant="muted">
-                                    {/* #23 Min education Intermediate */}
-                                    <RangeSelect label="Min Education" value={prefs.pref_education} onChange={setp("pref_education")} placeholder="No preference" optional
+                                    {/* #23 Min education — Intermediate default */}
+                                    <RangeSelect label="Min Education"
+                                        value={prefs.pref_education || (EDUCATION.find(e => e === "Intermediate") ?? EDUCATION[4] ?? "")}
+                                        onChange={setp("pref_education")} placeholder="No preference" optional
                                         options={["No Preference", ...(EDUCATION.length ? EDUCATION : ["High School", "Bachelor's", "Master's", "PhD"])]} />
                                     <MultiChips label="Employment Type" value={prefs.pref_employment_type} onChange={setp("pref_employment_type")} optional
                                         options={["No Preference", ...(EMPLOYMENT.length ? EMPLOYMENT : ["Government", "Private", "Self-Employed", "Business Owner"])]} />
@@ -650,15 +715,23 @@ export default function CompleteProfile() {
                                     )}
                                 </StepCard>
 
-                                <StepCard icon={Sparkles} title="Life Situation" subtitle="Children & relocation" variant="primary">
-                                    {/* #24 No Children default, No relocate default */}
-                                    <RangeSelect label="Has Children" value={prefs.pref_has_children} onChange={setp("pref_has_children")} placeholder="No preference" optional
-                                        options={[...(HAS_CHILDREN.length ? HAS_CHILDREN : ["No Children", "Has Children"])]} />
-                                    <ToggleGroup label="Willing to Relocate" value={prefs.pref_willing_to_relocate} onChange={setp("pref_willing_to_relocate")} optional
+                                <StepCard icon={Sparkles} title="Life Situation" subtitle="Marital status & relocation" variant="primary">
+                                    {/* Partner marital status */}
+                                    <MultiChips label="Partner Marital Status" value={prefs.pref_marital_status} onChange={setp("pref_marital_status")} optional
+                                        options={["No Preference", ...(MARITAL.length ? MARITAL : ["Never Married", "Divorced", "Widowed", "Separated"])]} />
+                                    {/* Has Children — show only if Divorced, Widowed or Separated selected */}
+                                    {(Array.isArray(prefs.pref_marital_status)
+                                        ? prefs.pref_marital_status.some(s => ["Divorced", "Widowed", "Separated"].includes(s))
+                                        : ["Divorced", "Widowed", "Separated"].includes(prefs.pref_marital_status)) && (
+                                            <RangeSelect label="Has Children" value={prefs.pref_has_children} onChange={setp("pref_has_children")} placeholder="No preference" optional
+                                                options={["No Preference", ...(HAS_CHILDREN.length ? HAS_CHILDREN : ["No Children", "Has Children"])]} />
+                                        )}
+                                    {/* Willing to relocate — primary colour */}
+                                    <ToggleGroup label="Willing to Relocate" value={prefs.pref_willing_to_relocate || "No"} onChange={setp("pref_willing_to_relocate")} optional
                                         options={[
                                             { value: "No Preference", label: "Any", activeClass: "border-border bg-muted text-muted-foreground" },
                                             { value: "Yes", label: "Yes", activeClass: "border-primary/5 bg-secondary text-primary" },
-                                            { value: "No", label: "No", activeClass: "border-destructive/50 bg-destructive/10 text-destructive" },
+                                            { value: "No", label: "No", activeClass: "border-primary/5 bg-secondary text-primary" },
                                         ]} />
                                 </StepCard>
                             </motion.div>
@@ -668,10 +741,52 @@ export default function CompleteProfile() {
                 )}
             </div>
 
-            {/* ── Footer — #24 removed skip button, improved CTA ── */}
+            {/* ── Footer ── */}
             <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-4">
                 <motion.button whileTap={{ scale: 0.98 }}
-                    onClick={() => ctrl.next(step, TOTAL_STEPS, form, prefs)}
+                    onClick={() => {
+                        // ── Validate current step before proceeding ──
+                        const missing = []
+
+                        if (step === 1) {
+                            if (!form.date_of_birth) missing.push("Date of Birth")
+                            if (!form.marital_status) missing.push("Marital Status")
+                        }
+                        if (step === 2) {
+                            if (!form.country) missing.push("Country")
+                            if (!form.city) missing.push("City")
+                            if (!form.nationality) missing.push("Nationality")
+                        }
+                        if (step === 3) {
+                            if (!form.religion) missing.push("Religion")
+                            if (!form.religious_practice_level) missing.push("Practice Level")
+                            if (!form.father_occupation) missing.push("Father's Occupation")
+                            if (!form.brothers && form.brothers !== 0) missing.push("No. of Brothers")
+                            if (!form.sisters && form.sisters !== 0) missing.push("No. of Sisters")
+                        }
+                        if (step === 4) {
+                            if (!form.height_inches) missing.push("Height")
+                            if (!form.body_type) missing.push("Body Type")
+                        }
+                        if (step === 5) {
+                            if (!form.education) missing.push("Education Level")
+                            if (!form.profession) missing.push("Profession")
+                            if (!form.employment_type) missing.push("Employment Type")
+                        }
+                        if (step === 6) {
+                            if (!form.bio) missing.push("About Me")
+                            if (!form.relationship) missing.push("Relationship Intent")
+                        }
+
+                        if (missing.length > 0) {
+                            toast.error(`Please fill in: ${missing.join(", ")}`)
+                            return
+                        }
+
+                        // ── All good — proceed ──
+                        if (step === TOTAL_STEPS) ctrl.submit(form, prefs)
+                        else ctrl.next(step, TOTAL_STEPS, form, prefs)
+                    }}
                     disabled={saving || (step === 7 && optsLoading)}
                     className="w-full py-4 rounded-2xl text-primary-foreground font-semibold text-base shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
                     style={{ background: "var(--gradient-primary)" }}>

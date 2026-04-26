@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Heart, User, Pencil, Shield, ChevronLeft } from "lucide-react"
-import AuthApi from "../api/AuthService"
+import AuthApi from "../services/AuthService"
 import Input from "../../../components/ui/input"
 import Select from "../../../components/ui/select_option"
 
@@ -66,7 +66,7 @@ export default function Register({ onRegister }) {
         formData.append("password_hash", password)
         formData.append("role", role)
         formData.append("gender", gender)
-        formData.append("profilePhoto", profilePhoto)  // ← actual file object
+        formData.append("image", profilePhoto)  // ← actual file object
 
         AuthApi.register(formData, {
             onSuccess: () => {

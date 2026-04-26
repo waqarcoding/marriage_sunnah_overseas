@@ -1,34 +1,53 @@
+// @ts-nocheck
+// components/AppBar.jsx — Unified AppBar for both individual and guardian roles
+// Pass `tabs` prop to customize nav links per role
+
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useSocket } from "../sockets/SocketContext";
 import {
   HeartIcon as HeartOutline,
   UserIcon as UserOutline,
-  ChatBubbleLeftEllipsisIcon as MessageCircleOutline,
-  MapIcon as CompassOutline, // Use MapIcon instead of CompassIcon
+  ChatBubbleLeftEllipsisIcon as ChatOutline,
+  MapIcon as MapOutline,
+  HomeIcon as HomeOutline,
+  Square3Stack3DIcon as WardOutline,
+  XMarkIcon as CloseIcon,
+  Bars3Icon as MenuIcon,
 } from "@heroicons/react/24/outline";
 import {
   HeartIcon as HeartSolid,
   UserIcon as UserSolid,
-  ChatBubbleLeftEllipsisIcon as MessageCircleSolid,
-  MapIcon as CompassSolid, // Use MapIcon instead of CompassIcon
+  ChatBubbleLeftEllipsisIcon as ChatSolid,
+  MapIcon as MapSolid,
+  HomeIcon as HomeSolid,
+  Square3Stack3DIcon as WardSolid,
 } from "@heroicons/react/24/solid";
-import { useState, useEffect } from "react";
-import { useSocket } from "../sockets/SocketContext";
 
-// You may need to create these or replace with appropriate icons if they do not exist.
-import { XMarkIcon as CloseIcon, Bars3Icon as MenuIcon } from "@heroicons/react/24/outline";
+// ── Exported tab definitions ──────────────────────────────────────────────────
+export const INDIVIDUAL_TABS = [
+  { name: "Explore", to: "/explore", OutlineIcon: MapOutline, SolidIcon: MapSolid },
+  { name: "Interest", to: "/interest", OutlineIcon: HeartOutline, SolidIcon: HeartSolid },
+  { name: "Chats", to: "/chats", OutlineIcon: ChatOutline, SolidIcon: ChatSolid },
+  { name: "Profile", to: "/myprofile", OutlineIcon: UserOutline, SolidIcon: UserSolid },
+];
 
-// @ts-ignore
+export const GUARDIAN_TABS = [
+  { name: "Dashboard", to: "/guardian", OutlineIcon: HomeOutline, SolidIcon: HomeSolid },
+  { name: "Interests", to: "/guardian/interests", OutlineIcon: HeartOutline, SolidIcon: HeartSolid },
+  { name: "My Wards", to: "/guardian/add-ward", OutlineIcon: WardOutline, SolidIcon: WardSolid },
+  { name: "Profile", to: "/guardian/profile", OutlineIcon: UserOutline, SolidIcon: UserSolid },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const SERVER_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL?.replace('/api', '');
 
-// ── Auth helpers ──────────────────────────────────────────────
 function getJwtData() {
   try {
     const token = localStorage.getItem("jwtToken");
     if (!token) return null;
     return JSON.parse(atob(token.split(".")[1]));
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function getUserInfo() {
@@ -40,233 +59,143 @@ function getUserInfo() {
   };
 }
 
-// ── Red badge ─────────────────────────────────────────────────
-function Badge({ count }) {
+function isActive(tab, pathname) {
+  // Exact match for root guardian/explore, prefix match for children
+  const rootPaths = ["/guardian", "/explore", "/myprofile", "/interest", "/chats"];
+  if (rootPaths.includes(tab.to)) return pathname === tab.to;
+  return pathname.startsWith(tab.to);
+}
+
+function NotifBadge({ count }) {
   if (!count || count <= 0) return null;
   return (
-    <span
-      className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1
-      flex items-center justify-center bg-red-500 text-white text-[10px]
-      font-bold rounded-full leading-none z-10 shadow"
-    >
+    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1
+            flex items-center justify-center bg-red-500 text-white text-[10px]
+            font-bold rounded-full leading-none z-10 shadow">
       {count > 99 ? "99+" : count}
     </span>
   );
 }
 
-function AvatarOrInitial({ avatar, name }) {
-  if (avatar)
-    return (
-      <img
-        src={avatar}
-        alt={name}
-        className="h-8 w-8 rounded-full object-cover"
-      />
-    );
+function AvatarOrInitial({ avatar, name, size = 8 }) {
+  const cls = `h-${size} w-${size} rounded-full object-cover`;
+  if (avatar) return <img src={avatar} alt={name} className={cls} />;
   return (
-    <span
-      className="h-8 w-8 bg-primary text-white rounded-full flex items-center
-      justify-center text-lg font-semibold select-none"
-    >
+    <span className={`h-${size} w-${size} rounded-full flex items-center justify-center text-sm font-bold select-none`}
+      style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
       {(name?.[0] || "U").toUpperCase()}
     </span>
   );
 }
 
-// Updated ALL_TABS and ICONS for correct filled and outlined icons
-const ALL_TABS = [
-  {
-    name: "Match",
-    to: "/explore",
-    filledIcon: <CompassSolid className="w-6 h-6" />, // Use filled for active
-    outlinedIcon: <CompassOutline className="w-6 h-6" />, // Use outlined for inactive
-  },
-  {
-    name: "Interest",
-    to: "/interest",
-    filledIcon: <HeartSolid className="w-6 h-6" />,
-    outlinedIcon: <HeartOutline className="w-6 h-6" />,
-  },
-  {
-    name: "Chats",
-    to: "/chats",
-    filledIcon: <MessageCircleSolid className="w-6 h-6" />, // use filled from heroicons, not outline
-    outlinedIcon: <MessageCircleOutline className="w-6 h-6" />,
-  },
-  {
-    name: "Profile",
-    to: "/myprofile",
-    filledIcon: <UserSolid className="w-6 h-6" />,
-    outlinedIcon: <UserOutline className="w-6 h-6" />,
-  },
-];
-
-const ICONS = {
-  filled: {
-    Match: <CompassSolid className="w-6 h-6" />,
-    Interest: <HeartSolid className="w-6 h-6" />,
-    Chats: <MessageCircleSolid className="w-6 h-6" />,
-    Profile: <UserSolid className="w-6 h-6" />,
-  },
-  outlined: {
-    Match: <CompassOutline className="w-6 h-6" />,
-    Interest: <HeartOutline className="w-6 h-6" />,
-    Chats: <MessageCircleOutline className="w-6 h-6" />,
-    Profile: <UserOutline className="w-6 h-6" />,
-  },
-};
-
-// For backwards compatibility, you may optionally use the filled version as default
-ICONS.Match = ICONS.filled.Match;
-ICONS.Interest = ICONS.filled.Interest;
-ICONS.Chats = ICONS.filled.Chats;
-ICONS.Profile = ICONS.filled.Profile;
-ICONS.outlined = ICONS.outlined;
-
-export default function AppBar({
-  onLogout,
-  onSidebarLogout,
-  withSidebar = true,
-}) {
+// ── Main AppBar ───────────────────────────────────────────────────────────────
+export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
   const location = useLocation();
   const jwtData = getJwtData();
   const isLoggedIn = Boolean(jwtData);
   const { name, avatar, role } = getUserInfo();
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Auto-detect tabs if not passed
+  const navTabs = tabs ?? (role === "guardian" ? GUARDIAN_TABS : INDIVIDUAL_TABS);
 
-  // ── Read badge counts from shared SocketContext ───────────
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const socketCtx = useSocket();
   const interestCount = socketCtx?.interestCount || 0;
   const chatCount = socketCtx?.chatCount || 0;
   const guardianCount = socketCtx?.guardianCount || 0;
 
-  // ── Fetch initial counts via HTTP on mount ────────────────
+  const badgeMap = {
+    Interest: interestCount + (role === "guardian" ? guardianCount : 0),
+    Interests: interestCount + (role === "guardian" ? guardianCount : 0),
+    Chats: chatCount,
+  };
+  const totalBadge = (badgeMap.Interest || badgeMap.Interests || 0) + (badgeMap.Chats || 0);
+
+  // Fetch counts on mount
   useEffect(() => {
     if (!isLoggedIn || !socketCtx) return;
     const h = { Authorization: `Bearer ${localStorage.getItem("jwtToken")}` };
-
-    // Pending interests
     fetch(`${SERVER_URL}/interest/pending-count`, { headers: h })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) socketCtx.setInterestCount(d.data?.count || 0);
-      })
-      .catch(() => { });
-
-    // Unread chats
+      .then(r => r.json()).then(d => { if (d.success) socketCtx.setInterestCount(d.data?.count || 0); }).catch(() => { });
     fetch(`${SERVER_URL}/chat/conversation-users`, { headers: h })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success && Array.isArray(d.data)) {
-          socketCtx.setChatCount(
-            d.data.reduce((s, c) => s + (c.unread_count || 0), 0)
-          );
-        }
-      })
-      .catch(() => { });
-
-    // Guardian pending (only for guardian role)
+      .then(r => r.json()).then(d => {
+        if (d.success && Array.isArray(d.data))
+          socketCtx.setChatCount(d.data.reduce((s, c) => s + (c.unread_count || 0), 0));
+      }).catch(() => { });
     if (role === "guardian") {
       fetch(`${SERVER_URL}/guardian/pending-interests`, { headers: h })
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.success) socketCtx.setGuardianCount(d.data?.length || 0);
-        })
-        .catch(() => { });
+        .then(r => r.json()).then(d => { if (d.success) socketCtx.setGuardianCount(d.data?.length || 0); }).catch(() => { });
     }
   }, [isLoggedIn]);
 
-  // ── Clear badge when user visits that page ────────────────
+  // Clear badges + close sidebar on nav
   useEffect(() => {
     if (!socketCtx) return;
-    if (location.pathname === "/interest") socketCtx.setInterestCount(0);
+    if (["/interest", "/guardian/interests"].includes(location.pathname)) socketCtx.setInterestCount(0);
     if (location.pathname === "/chats") socketCtx.setChatCount(0);
     if (sidebarOpen) setSidebarOpen(false);
   }, [location.pathname]);
 
-  // ── Lock body scroll when sidebar open ───────────────────
   useEffect(() => {
-    document.body.style.overflow = withSidebar && sidebarOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [sidebarOpen, withSidebar]);
+    document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [sidebarOpen]);
 
-  const badgeMap = {
-    Interest: interestCount + (role === "guardian" ? guardianCount : 0),
-    Chats: chatCount,
-  };
-  const totalBadge = (badgeMap.Interest || 0) + (badgeMap.Chats || 0);
-
-  // ── Sidebar (White bg, no badge) ──────────────────────────
+  // ── Sidebar ───────────────────────────────────────────────────────────────
   function Sidebar() {
     return (
       <>
-        <div
-          className={`fixed inset-0 z-[99999] transition-opacity duration-200
-            ${sidebarOpen
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none"
-            }`}
-          style={{
-            backgroundColor: "rgba(0,0,0,0.07)",
-          }}
-          onClick={() => setSidebarOpen(false)}
-        />
-        <aside
-          className={`fixed top-0 right-0 h-full w-72 max-w-full z-[100000] shadow-lg
-            transition-transform duration-300 ease-in-out flex flex-col
-            ${sidebarOpen ? "translate-x-0" : "translate-x-full"}`}
-          style={{
-            background: "#fff",
-            borderLeft: "1px solid rgba(220,220,220,0.13)",
-          }}
-        >
+        <div className={`fixed inset-0 z-[99999] transition-opacity duration-200 ${sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+          style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
+          onClick={() => setSidebarOpen(false)} />
+
+        <aside className={`fixed top-0 right-0 h-full w-72 max-w-full z-[100000] shadow-2xl transition-transform duration-300 flex flex-col ${sidebarOpen ? "translate-x-0" : "translate-x-full"}`}
+          style={{ background: "var(--primary-foreground)", borderLeft: "1px solid var(--secondary)" }}>
+
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--secondary)" }}>
             <div className="flex items-center gap-3">
-              <AvatarOrInitial avatar={avatar} name={name} />
-              <span className="font-medium">{name}</span>
+              <AvatarOrInitial avatar={avatar} name={name} size={10} />
+              <div>
+                <p className="font-semibold text-sm leading-tight" style={{ color: "var(--primary)" }}>{name}</p>
+                <p className="text-xs capitalize leading-tight" style={{ color: "var(--primary)", opacity: 0.5 }}>{role}</p>
+              </div>
             </div>
-            <button
-              className="rounded-full bg-gray-100 p-2 ml-2"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <CloseIcon className="w-6 h-6 text-gray-700" />
+            <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "var(--secondary)" }}
+              onClick={() => setSidebarOpen(false)}>
+              <CloseIcon className="w-5 h-5" style={{ color: "var(--primary)" }} />
             </button>
           </div>
 
-          {/* Links */}
-          <nav className="flex-grow flex flex-col py-4">
-            {ALL_TABS.map((item) => {
-              const isActive = location.pathname === item.to;
+          {/* Nav */}
+          <nav className="flex-1 flex flex-col py-3 gap-1 px-3 overflow-y-auto">
+            {navTabs.map(tab => {
+              const active = isActive(tab, location.pathname);
+              const Icon = active ? tab.SolidIcon : tab.OutlineIcon;
               return (
-                <Link
-                  key={item.name}
-                  to={item.to}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-6 py-3 text-gray-700
-                    hover:bg-gray-50 transition rounded-lg
-                    ${isActive
-                      ? "bg-gray-50 font-semibold"
-                      : ""
-                    }`}
-                >
-                  <span className="relative">{isActive ? item.filledIcon : item.outlinedIcon}</span>
-                  <span>{item.name}</span>
+                <Link key={tab.name} to={tab.to} onClick={() => setSidebarOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all"
+                  style={{
+                    background: active ? "var(--primary)" : "transparent",
+                    color: active ? "var(--primary-foreground)" : "var(--primary)",
+                    fontWeight: active ? 600 : 400,
+                  }}>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{tab.name}</span>
+                  {badgeMap[tab.name] > 0 && (
+                    <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: active ? "rgba(255,255,255,0.25)" : "var(--primary)", color: active ? "var(--primary-foreground)" : "var(--primary-foreground)" }}>
+                      {badgeMap[tab.name]}
+                    </span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          <button
-            className="m-6 px-4 py-2 rounded bg-primary text-white font-medium shadow hover:bg-primary/90"
-            onClick={() => {
-              setSidebarOpen(false);
-              (onSidebarLogout || onLogout)?.();
-            }}
-          >
+          <button className="mx-4 mb-6 py-3 rounded-2xl font-semibold text-sm"
+            style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
+            onClick={() => { setSidebarOpen(false); (onSidebarLogout || onLogout)?.(); }}>
             Logout
           </button>
         </aside>
@@ -276,187 +205,121 @@ export default function AppBar({
 
   return (
     <>
-      {withSidebar && isLoggedIn && <Sidebar />}
+      {isLoggedIn && <Sidebar />}
 
-      {/* Top header */}
-      <header
-        className="fixed top-0 left-0 w-full bg-white border-b border-gray-100 shadow-sm
-        flex items-center justify-between h-[64px] px-4 z-[99997]"
-        style={{ minHeight: 64 }}
-      >
+      {/* ── Top header ── */}
+      <header className="fixed top-0 left-0 w-full border-b flex items-center justify-between h-16 px-4 z-[99997]"
+        style={{ background: "var(--primary-foreground)", borderColor: "var(--secondary)", minHeight: 64, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+
         {/* Logo */}
-        <Link
-          to="/"
-          className="flex items-center gap-2 h-full select-none shrink-0"
-        >
-          <img
-            src="https://marriage-sunnah-overseas.replit.app/logo.png"
-            alt="Logo"
-            className="h-10 w-auto"
-            draggable={false}
-            style={{ maxWidth: "146px" }}
-          />
-          <span
-            className="font-extrabold text-xl text-primary hidden sm:inline"
-            style={{ letterSpacing: "0.5px" }}
-          >
+        <Link to="/" className="flex items-center gap-2 h-full select-none shrink-0">
+          <img src="https://marriage-sunnah-overseas.replit.app/logo.png" alt="Logo"
+            className="h-9 w-auto" draggable={false} style={{ maxWidth: 140 }} />
+          <span className="font-bold text-base hidden sm:inline" style={{ color: "var(--primary)", letterSpacing: "0.3px" }}>
             Marriage Sunnah Overseas
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex flex-row ml-6 gap-2 flex-1">
-          {isLoggedIn ? (
-            ALL_TABS.map((item) => {
-              const isActive = location.pathname === item.to;
+        {isLoggedIn && (
+          <nav className="hidden md:flex flex-row ml-6 gap-1 flex-1">
+            {navTabs.map(tab => {
+              const active = isActive(tab, location.pathname);
+              const Icon = active ? tab.SolidIcon : tab.OutlineIcon;
               return (
-                <Link
-                  key={item.name}
-                  to={item.to}
-                  className={`relative flex flex-col items-center justify-center text-sm font-medium
-                    px-3 py-2 rounded-sm transition-colors
-                    ${isActive
-                      ? "bg-primary text-white"
-                      : "hover:bg-primary/10 text-gray-600"
-                    }`}
-                >
+                <Link key={tab.name} to={tab.to}
+                  className="relative flex flex-col items-center justify-center text-xs font-medium px-3 py-2 rounded-xl transition-all gap-0.5"
+                  style={{
+                    background: active ? "var(--primary)" : "transparent",
+                    color: active ? "var(--primary-foreground)" : "var(--primary)",
+                    opacity: active ? 1 : 0.6,
+                  }}>
                   <span className="relative">
-                    {isActive ? item.filledIcon : item.outlinedIcon}
-                    <Badge count={badgeMap[item.name]} />
+                    <Icon className="w-5 h-5" />
+                    <NotifBadge count={badgeMap[tab.name]} />
                   </span>
-                  <span className="text-xs mt-0.5">{item.name}</span>
+                  {tab.name}
                 </Link>
               );
-            })
-          ) : (
-            <div className="flex items-center gap-2 ml-auto">
-              <Link
-                to="/login"
-                className="px-4 py-2 rounded bg-primary text-white font-medium shadow hover:bg-primary/90"
-              >
-                Login / Sign up
-              </Link>
-            </div>
-          )}
-        </nav>
-
-        {/* Desktop user + logout */}
-        {isLoggedIn && (
-          <div className="hidden md:flex items-center gap-3 justify-end">
-            <span className="text-base font-medium text-gray-700 mr-2 hidden sm:inline">
-              Welcome, {name}
-            </span>
-            <button
-              className="flex items-center gap-2 p-1 px-2 rounded hover:bg-gray-50 border border-gray-200"
-              onClick={onLogout}
-            >
-              <AvatarOrInitial avatar={avatar} name={name} />
-              <span className="text-sm font-medium ml-1">Logout</span>
-            </button>
-          </div>
+            })}
+          </nav>
         )}
 
-        {/* Mobile hamburger with combined badge */}
-        {isLoggedIn && (
-          <div className="flex items-center ml-auto md:hidden">
-            <button
-              className="relative flex items-center justify-center rounded-full p-2 bg-transparent"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <MenuIcon className="w-7 h-7 text-gray-700" />
-              <Badge count={totalBadge} />
-            </button>
-          </div>
-        )}
-
-        {/* Mobile login button */}
+        {/* Desktop: not logged in */}
         {!isLoggedIn && (
-          <div className="flex md:hidden items-center ml-auto">
-            <Link
-              to="/login"
-              className="px-4 py-2 rounded bg-primary text-white font-medium shadow hover:bg-primary/90"
-            >
+          <div className="hidden md:flex ml-auto">
+            <Link to="/login" className="px-4 py-2 rounded-xl font-medium text-sm"
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
               Login / Sign up
+            </Link>
+          </div>
+        )}
+
+        {/* Desktop: user + logout */}
+        {isLoggedIn && (
+          <div className="hidden md:flex items-center gap-3 ml-2">
+            <div className="flex items-center gap-2 pr-3 border-r" style={{ borderColor: "var(--secondary)" }}>
+              <AvatarOrInitial avatar={avatar} name={name} size={8} />
+              <div>
+                <p className="text-sm font-semibold leading-tight" style={{ color: "var(--primary)" }}>{name}</p>
+                <p className="text-xs capitalize leading-tight" style={{ color: "var(--primary)", opacity: 0.5 }}>{role}</p>
+              </div>
+            </div>
+            <button onClick={onLogout}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-all"
+              style={{ borderColor: "var(--secondary)", color: "var(--primary)", background: "var(--secondary)" }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.25 3A2.25 2.25 0 005 5.25v2a.75.75 0 001.5 0v-2a.75.75 0 01.75-.75h6.5a.75.75 0 01.75.75v9.5a.75.75 0 01-.75.75H7.25a.75.75 0 01-.75-.75v-2a.75.75 0 00-1.5 0v2A2.25 2.25 0 007.25 17h6.5A2.25 2.25 0 0016 14.75v-9.5A2.25 2.25 0 0013.75 3h-6.5z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M10.22 12.53a.75.75 0 001.06 0l2-2a.75.75 0 000-1.06l-2-2a.75.75 0 10-1.06 1.06l.22.22H4.75a.75.75 0 000 1.5h5.69l-.22.22a.75.75 0 000 1.06z" clipRule="evenodd" />
+              </svg>
+              Logout
+            </button>
+          </div>
+        )}
+
+        {/* Mobile: hamburger */}
+        {isLoggedIn && (
+          <button className="relative md:hidden ml-auto p-2 rounded-xl" style={{ color: "var(--primary)" }}
+            onClick={() => setSidebarOpen(true)}>
+            <MenuIcon className="w-6 h-6" />
+            <NotifBadge count={totalBadge} />
+          </button>
+        )}
+
+        {/* Mobile: not logged in */}
+        {!isLoggedIn && (
+          <div className="md:hidden ml-auto">
+            <Link to="/login" className="px-3 py-2 rounded-xl text-sm font-medium"
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+              Login
             </Link>
           </div>
         )}
       </header>
 
       {/* Spacer */}
-      <div className="h-[64px] w-full" />
+      <div className="h-16 w-full" />
 
-      {/* Mobile bottom nav */}
+      {/* ── Mobile bottom nav ── */}
       {isLoggedIn && (
-        <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 shadow-inner flex w-full items-stretch h-16 z-[99997] px-0"
-          style={{
-            background: "rgba(255,255,255,0.81)",
-            backdropFilter: "blur(12px) saturate(1.3)",
-            WebkitBackdropFilter: "blur(12px) saturate(1.3)",
-            borderTop: "1px solid rgba(221,232,228,0.75)", // Optional soft border
-          }}
-        >
-          {ALL_TABS.map((item, idx) => {
-            const isActive = location.pathname === item.to;
-            const ICON_SIZE = 26;
-            const TEXT_SIZE = "0.93em";
-
-            const iconToRender = isActive ? item.filledIcon : item.outlinedIcon;
-
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 flex w-full items-stretch h-16 z-[99997] border-t"
+          style={{ background: "var(--primary)", borderColor: "var(--primary)" }}>
+          {navTabs.map(tab => {
+            const active = isActive(tab, location.pathname);
+            const Icon = active ? tab.SolidIcon : tab.OutlineIcon;
             return (
-              <Link
-                key={item.name}
-                to={item.to}
-                className={`
-                  relative flex flex-col items-center justify-center
-                  flex-1 min-w-0 h-full
-                  ${isActive
-                    ? "bg-primary text-white shadow-sm font-semibold"
-                    : "bg-primary text-white/60  "
-                  }
-                  transition
-                
-                `}
+              <Link key={tab.name} to={tab.to}
+                className="relative flex flex-col items-center justify-center flex-1 gap-0.5 transition-all"
                 style={{
-                  transition: "all 0.18s cubic-bezier(.4,0,.2,1)",
-                  // borderLeft: idx !== 0 ? "1px solid #eee" : undefined,
-                }}
-                tabIndex={0}
-                role="button"
-                aria-current={isActive ? "page" : undefined}
-              >
-                <span
-                  className="relative flex items-center justify-center"
-                  style={{
-                    width: ICON_SIZE,
-                    height: ICON_SIZE,
-                    fontSize: ICON_SIZE,
-                    color: isActive
-                      ? "bg-white"
-                      : "bg-white",
-                    transition: "color 0.17s",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {iconToRender}
-                  <Badge count={badgeMap[item.name]} />
+                  color: "var(--primary-foreground)",
+                  opacity: active ? 1 : 0.5,
+                  background: active ? "rgba(255,255,255,0.15)" : "transparent",
+                }}>
+                <span className="relative">
+                  <Icon className="w-6 h-6" />
+                  <NotifBadge count={badgeMap[tab.name]} />
                 </span>
-                <span
-                  className={
-                    isActive
-                      ? "text-active-foreground"
-                      : "text-inactive-foreground"
-                  }
-                  style={{
-                    fontSize: TEXT_SIZE,
-                    transition: "font-size 0.14s",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.name}
-                </span>
+                <span className="text-[10px] font-medium">{tab.name}</span>
               </Link>
             );
           })}

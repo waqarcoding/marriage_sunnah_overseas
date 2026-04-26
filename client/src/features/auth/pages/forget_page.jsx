@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Heart, Mail, KeyRound, Lock } from "lucide-react"
-import AuthApi from "../api/AuthService"
+import AuthApi from "../services/AuthService"
 import Input from "../../../components/ui/input"
 
 const STEPS = {

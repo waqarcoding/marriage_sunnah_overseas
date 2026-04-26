@@ -9,6 +9,7 @@ import { existsSync } from "fs";
 
 dotenv.config();
 
+// @ts-ignore
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -60,7 +61,11 @@ app.use(express.static(clientDist));
 
 app.get("/{*path}", (req, res) => {
   if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
-    return res.status(404).json({ error: "Not found" });
+    return res.status(404).json({
+      error: "Error 404",
+      path: req.path,
+      message: "The resource you are looking for could not be found. Have a wonderful day!"
+    });
   }
   res.sendFile(join(clientDist, "index.html"));
 });

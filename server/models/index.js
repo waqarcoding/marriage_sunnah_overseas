@@ -84,12 +84,35 @@ db.authenticateDatabase = async () => {
 
 // -------------------- SYNC (dev only) --------------------
 db.syncDatabase = async () => {
-  try {
-    await sequelize.sync({ alter: true });
-    console.log('✅ Models synced successfully');
-  } catch (error) {
-    console.error('❌ Sync error:', error);
+  // Sync each model individually so one failure doesn't block others
+  // Users table has too many keys to alter — skip it safely
+  const SKIP_TABLES = ['Users']; // tables with known alter issues
+
+  // @ts-ignore
+  const models = Object.values(db).filter(m => m?.prototype instanceof sequelize.Sequelize.Model || (m && m.tableName));
+
+  let synced = 0;
+  let skipped = 0;
+
+  for (const modelName of Object.keys(db)) {
+    const model = db[modelName];
+    if (!model || typeof model.sync !== 'function') continue;
+    if (SKIP_TABLES.includes(model.tableName || modelName)) {
+      console.log(`⏭️  Skipping sync for ${modelName} (known key limit issue)`);
+      skipped++;
+      continue;
+    }
+    try {
+      await model.sync({ alter: true });
+      console.log(`✅ Synced: ${modelName}`);
+      synced++;
+    } catch (err) {
+      console.warn(`⚠️  Sync skipped for ${modelName}: ${err}`);
+      skipped++;
+    }
   }
+
+  console.log(`✅ DB sync complete — ${synced} synced, ${skipped} skipped`);
 };
 
 export default db;

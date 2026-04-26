@@ -31,6 +31,10 @@ const loadGlobal = async () => {
                 nationalities: _parse(row.nationalities),
                 all_countries: _parse(row.all_countries),
                 mother_tongues: _parse(row.mother_tongues),
+                // ✅ constants fields
+                family_backgrounds: _parse(row.family_backgrounds),
+                about_me: _parse(row.about_me),
+                relationship_options: _parse(row.relationship_options),
             };
         }
     }
@@ -42,15 +46,17 @@ const loadAllCountries = async () => {
     const rows = await Option.findAll({
         attributes: ['country', 'flag', 'currency', 'nationalities', 'mother_tongues', 'cities', 'monthly_salary'],
     });
-    _countryCache.__all = rows.map(r => ({
-        country: r.country,
-        flag: r.flag,
-        currency: r.currency,
-        nationalities: _parse(r.nationalities),
-        mother_tongues: _parse(r.mother_tongues),
-        cities: _parse(r.cities),
-        monthly_salary: _parse(r.monthly_salary),
-    }));
+    _countryCache.__all = rows
+        .filter(r => r.country) // exclude global row (country IS NULL)
+        .map(r => ({
+            country: r.country,
+            flag: r.flag,
+            currency: r.currency,
+            nationalities: _parse(r.nationalities),
+            mother_tongues: _parse(r.mother_tongues),
+            cities: _parse(r.cities),
+            monthly_salary: _parse(r.monthly_salary),
+        }));
     return _countryCache.__all;
 };
 
@@ -127,13 +133,16 @@ export const getOptions = async (req, res) => {
 
         return res.json({
             success: true,
+            // ── App countries ──────────────────────────────────────────────
             countries: APP_COUNTRIES,
             country_flags: COUNTRY_FLAGS,
             country_to_currency: COUNTRY_TO_CURRENCY,
             country_data: COUNTRY_DATA,
+            // ── World data ─────────────────────────────────────────────────
             all_countries: global.all_countries,
             all_nationalities: global.nationalities,
             all_mother_tongues: global.mother_tongues,
+            // ── Global options ─────────────────────────────────────────────
             religions: global.religions,
             sects: global.sects,
             castes: global.castes,
@@ -146,6 +155,11 @@ export const getOptions = async (req, res) => {
             willing_to_relocate: global.willing_to_relocate,
             interests: global.interests,
             professions: global.professions,
+            // ✅ constants from DB
+            family_backgrounds: global.family_backgrounds,
+            about_me: global.about_me,
+            relationship_options: global.relationship_options,
+            // ── Saved preferences ──────────────────────────────────────────
             preferences: parsedPrefs,
         });
 
@@ -165,9 +179,7 @@ export const getCountryOptions = async (req, res) => {
         const countryName = req.params.country;
         const data = allCountries.find(c => c.country === countryName);
 
-        if (!data) {
-            return res.status(404).json({ success: false, message: `Country "${countryName}" not found.` });
-        }
+        if (!data) return res.status(404).json({ success: false, message: `Country "${countryName}" not found.` });
 
         const salaryMap = global?.monthly_salary || {};
         const monthly_salaries = salaryMap[data.currency] || salaryMap['USD'] || [];
@@ -210,24 +222,22 @@ export const getExplore = async (req, res) => {
             Dislike.findAll({ where: { user_id: currentUser.id }, attributes: ['target_user_id'], raw: true }),
         ]);
 
+        // (restoring last version)
         const excludeIds = [
             Number(currentUser.id),
             ...sentInterests.map(i => i.to_user),
             ...dislikesSent.map(d => d.target_user_id),
         ].filter(id => id != null);
 
-        console.log("getExplore debug -- Current User:", currentUser?.id);
-        console.log("getExplore debug -- Preferences:", prefs?.dataValues ?? prefs);
-        console.log("getExplore debug -- Query params:", req.query);
-        console.log("getExplore debug -- Exclude User IDs:", excludeIds);
-
         const profiles = await Profile.findAll({
+            where: {
+                individual_id: { [Op.notIn]: excludeIds },
+            },
             include: [{ model: User.unscoped(), as: 'individual', attributes: ['id', 'is_online', 'is_premium'], required: true }],
             order: [['created_at', 'DESC']],
             limit: 50,
         });
 
-        console.log("getExplore debug -- Profiles found:", profiles.length);
 
         return res.json({ success: true, profiles, applied_prefs: !!prefs });
 

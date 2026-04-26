@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Badge } from "../../../components/ui/badge";
 import { useLocation, useNavigate } from "react-router-dom";
-import ProfileService from "../api/ProfileService";
+import ProfileService from "../services/ProfileService";
 import ImageAvatar from "../../../components/ImageAvatar";
 
 function formatLastSeen(dateStr) {

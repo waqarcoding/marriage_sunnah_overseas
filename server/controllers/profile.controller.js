@@ -1,7 +1,9 @@
 import db from '../models/index.js';
 const { User, Profile, Guardian, Match, Message, Interest, Dislike, Preference } = db;
 import { Op } from 'sequelize';
+import { getUploadedUrl } from '../middlewares/upload.middleware.js';
 
+// ─── Create Profile ───────────────────────────────────────────────────────────
 export const createProfile = async (req, res) => {
   try {
     const { name, gender, age, city, nationality, guardianId } = req.body;
@@ -22,16 +24,13 @@ export const createProfile = async (req, res) => {
   }
 };
 
+// ─── Update Preferences ───────────────────────────────────────────────────────
 export const updatePrefs = async (req, res) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    if (!req.user?.id) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
-    if (!profile) {
-      return res.status(404).json({ success: false, message: 'Profile not found' });
-    }
+    if (!profile) return res.status(404).json({ success: false, message: 'Profile not found' });
 
     const b = req.body;
 
@@ -48,7 +47,7 @@ export const updatePrefs = async (req, res) => {
           const parsed = JSON.parse(v);
           return JSON.stringify(Array.isArray(parsed) ? parsed : [parsed]);
         } catch {
-          return JSON.stringify(v.split(',').map((s) => s.trim()).filter(Boolean));
+          return JSON.stringify(v.split(',').map(s => s.trim()).filter(Boolean));
         }
       }
       return JSON.stringify([]);
@@ -60,9 +59,7 @@ export const updatePrefs = async (req, res) => {
       pref_age_max: toInt(b.pref_age_max),
       pref_height_min_inches: toInt(b.pref_height_min_inches),
       pref_height_max_inches: toInt(b.pref_height_max_inches),
-      pref_willing_to_relocate: b.pref_willing_to_relocate === 'Yes' ? 1
-        : b.pref_willing_to_relocate === 'No' ? 0
-          : null,
+      pref_willing_to_relocate: b.pref_willing_to_relocate === 'Yes' ? 1 : b.pref_willing_to_relocate === 'No' ? 0 : null,
       pref_city: b.pref_city || null,
       pref_religion: b.pref_religion || null,
       pref_religious_practice_level: b.pref_religious_practice_level || null,
@@ -79,13 +76,14 @@ export const updatePrefs = async (req, res) => {
       pref_employment_type: toJson(b.pref_employment_type),
     };
 
-    let prefs = await Preference.findOne({ where: { individual_id: profile.id } });
+    // ✅ Fix: use individual_id from user not profile.id
+    let prefs = await Preference.findOne({ where: { individual_id: req.user.id } });
 
     if (prefs) {
       prefs.set(prefsData);
       await prefs.save();
     } else {
-      prefs = await Preference.create({ individual_id: profile.id, ...prefsData });
+      prefs = await Preference.create({ individual_id: req.user.id, ...prefsData });
     }
 
     await prefs.reload();
@@ -97,115 +95,120 @@ export const updatePrefs = async (req, res) => {
   }
 };
 
+// ─── Upload ID Card ───────────────────────────────────────────────────────────
 export const uploadIdCard = async (req, res) => {
   try {
     if (!req.files || !req.files.front_id || !req.files.back_id) {
-      return res.status(400).json({ success: false, message: 'Both front id and back id are required.' });
+      return res.status(400).json({ success: false, message: 'Both front and back ID images are required.' });
     }
+
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const frontFile = req.files.front_id[0];
     const backFile = req.files.back_id[0];
 
-    const userId = req.user?.id ?? null;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
+    // ✅ Use helper — works for both local disk and DO Spaces
+    const frontPath = getUploadedUrl(frontFile);
+    const backPath = getUploadedUrl(backFile);
 
-    const frontPath = `/uploads/identity/${frontFile.filename}`;
-    const backPath = `/uploads/identity/${backFile.filename}`;
+    // ✅ Save to User table (frontid_url / backid_url)
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    let profile = await Profile.findOne({ where: { userid: userId } });
-    if (!profile) {
-      return res.status(404).json({ success: false, message: 'Profile not found' });
-    }
+    user.frontid_url = frontPath;
+    user.backid_url = backPath;
+    await user.save();
 
-    profile.front_id = frontPath;
-    profile.back_id = backPath;
-    await profile.save();
+    console.log(`✅ ID uploaded — user ${userId}: front=${frontPath}, back=${backPath}`);
 
-    return res.json({ success: true, message: 'Files uploaded and paths saved', front_id: frontPath, back_id: backPath });
+    return res.json({
+      success: true,
+      message: 'ID uploaded successfully',
+      frontid_url: frontPath,
+      backid_url: backPath,
+    });
 
   } catch (err) {
     console.error('uploadIdCard error:', err);
-    return res.status(500).json({ success: false, message: err || 'Server error' });
+    return res.status(500).json({ success: false, message: 'Server error', error: err });
   }
 };
 
+// ─── Update Profile ───────────────────────────────────────────────────────────
 export const updateProfile = async (req, res) => {
   try {
     const {
-      name, gender, date_of_birth, age, marital_status, phone, country, city,
-      nationality, religion, sect, religious_practice_level, caste, mother_tongue,
-      height_inches, body_type, education, profession, employment_type, monthly_salary,
-      bio, family_background, interests, has_children, willing_to_relocate,
-      relationship, contact_hidden, is_guardian_required, guardian_name,
-      guardian_phone, guardian_email, guardian_relationship, is_profile_completed,
+      name, gender, date_of_birth, age, marital_status, phone,
+      country, city, nationality, religion, sect, religious_practice_level,
+      caste, mother_tongue, height_inches, body_type, education, profession,
+      employment_type, monthly_salary, bio, family_background, interests,
+      has_children, willing_to_relocate, relationship, contact_hidden,
+      is_guardian_required, is_profile_completed,
+      // ✅ new family fields
+      father_occupation, mother_occupation, brothers, sisters,
+      no_of_children,
     } = req.body;
 
-    console.log("Backend:" + req.body.interests);
-
-    let parsedInterests = interests;
+    // Parse interests
+    let parsedInterests = "[]";
     if (typeof interests === "string") {
       try {
         const parsed = JSON.parse(interests);
         parsedInterests = JSON.stringify(Array.isArray(parsed) ? parsed : [parsed]);
-      } catch (_) {
+      } catch {
         parsedInterests = JSON.stringify(interests.split(",").map(i => i.trim()).filter(Boolean));
       }
     } else if (Array.isArray(interests)) {
       parsedInterests = JSON.stringify(interests);
-    } else {
-      parsedInterests = "[]";
     }
 
-    if (!req.user?.id) {
-      return res.status(401).json({ success: false, message: "Unauthorized: no user ID" });
-    }
+    if (!req.user?.id) return res.status(401).json({ success: false, message: "Unauthorized" });
 
     const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
-    if (!profile) {
-      return res.status(404).json({ success: false, message: "Profile not found" });
-    }
+    if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
 
-    profile.name = name;
-    profile.gender = gender;
-    profile.date_of_birth = date_of_birth;
-    profile.age = age !== undefined ? age : null;
-    profile.marital_status = marital_status || null;
-    profile.country = country || null;
-    profile.city = city || null;
-    profile.nationality = nationality || null;
-    profile.education = education || null;
-    profile.profession = profession || null;
-    profile.religious_practice_level = religious_practice_level || null;
-    profile.family_background = family_background || null;
-    profile.bio = bio || null;
-    profile.interests = parsedInterests || "[]";
-    profile.relationship = relationship || null;
-    profile.phone = phone || null;
-    profile.religion = religion || null;
-    profile.sect = sect || null;
-    profile.height_inches = height_inches !== undefined ? height_inches : null;
-    profile.body_type = body_type || null;
-    profile.caste = caste || null;
-    profile.mother_tongue = mother_tongue || null;
-    profile.employment_type = employment_type || null;
-    profile.monthly_salary = monthly_salary || null;
-    profile.has_children = has_children !== undefined ? Number(has_children) : null;
-    profile.willing_to_relocate =
-      willing_to_relocate === "Yes" ? 1
-        : willing_to_relocate === "No" ? 0
-          : willing_to_relocate === undefined ? null
-            : willing_to_relocate;
-    profile.relationship = relationship;
-    profile.contact_hidden = contact_hidden !== undefined ? Number(contact_hidden) : profile.contact_hidden;
-    profile.is_guardian_required = is_guardian_required !== undefined ? Number(is_guardian_required) : null;
-    profile.is_profile_completed = is_profile_completed !== undefined ? Number(is_profile_completed) : null;
+    await profile.update({
+      name,
+      gender,
+      date_of_birth: date_of_birth || null,
+      age: age ?? null,
+      marital_status: marital_status || null,
+      country: country || null,
+      city: city || null,
+      nationality: nationality || null,
+      education: education || null,
+      profession: profession || null,
+      religious_practice_level: religious_practice_level || null,
+      family_background: family_background || null,
+      bio: bio || null,
+      interests: parsedInterests,
+      relationship: relationship || null,
+      phone: phone || null,
+      religion: religion || null,
+      sect: sect || null,
+      height_inches: height_inches ?? null,
+      body_type: body_type || null,
+      caste: caste || null,
+      mother_tongue: mother_tongue || null,
+      employment_type: employment_type || null,
+      monthly_salary: monthly_salary || null,
+      // ✅ new family fields
+      father_occupation: father_occupation || null,
+      mother_occupation: mother_occupation || "Housewife",
+      brothers: brothers ?? 0,
+      sisters: sisters ?? 0,
+      no_of_children: no_of_children ?? null,
+      // toggles
+      has_children: has_children != null ? Number(has_children) : null,
+      willing_to_relocate: willing_to_relocate === "Yes" ? 1 : willing_to_relocate === "No" ? 0 : null,
+      contact_hidden: contact_hidden != null ? Number(contact_hidden) : profile.contact_hidden,
+      is_guardian_required: is_guardian_required != null ? Number(is_guardian_required) : null,
+      is_profile_completed: is_profile_completed != null ? Number(is_profile_completed) : null,
+    });
 
-    await profile.save();
-    console.log("Profile Updated");
     await profile.reload();
-
+    console.log("Profile Updated ✅");
     return res.json({ success: true, profile });
 
   } catch (err) {
@@ -214,6 +217,7 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// ─── Update Guardian ──────────────────────────────────────────────────────────
 export const updateGuardian = async (req, res) => {
   try {
     const { guardian_name, guardian_phone, guardian_email, guardian_relationship } = req.body;
@@ -222,7 +226,6 @@ export const updateGuardian = async (req, res) => {
     if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
 
     await profile.update({ guardian_name, guardian_phone, guardian_email, guardian_relationship });
-
     res.json({ success: true, profile });
   } catch (err) {
     console.error(err);
@@ -230,11 +233,11 @@ export const updateGuardian = async (req, res) => {
   }
 };
 
-export const getCurrentUser = async (req, res) => { };
-
-export const getMyProfile = async (req, res) => {
+// ─── Get My Profile ───────────────────────────────────────────────────────────
+export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password_hash'] }, // ✅ never send password
       include: [
         { model: Profile, as: "profile" },
         { model: Guardian, as: "guardians" },
@@ -246,9 +249,9 @@ export const getMyProfile = async (req, res) => {
       ],
     });
 
-    if (!user) return res.status(404).json({ error: "Profile not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    const [likesSentCount, likesReceivedCount, matchesCount, dislikesSentCount, dislikesReceivedCount] = await Promise.all([
+    const [likesSent, likesReceived, matches, dislikesSent, dislikesReceived] = await Promise.all([
       Interest.count({ where: { from_user: req.user.id } }),
       Interest.count({ where: { to_user: req.user.id } }),
       Interest.count({ where: { is_mutual: true, [Op.or]: [{ from_user: req.user.id }, { to_user: req.user.id }] } }),
@@ -260,12 +263,12 @@ export const getMyProfile = async (req, res) => {
       success: true,
       ...user.toJSON(),
       counts: {
-        likes_sent: likesSentCount,
-        likes_received: likesReceivedCount,
-        matches: matchesCount,
-        dislikes_sent: dislikesSentCount,
-        dislikes_received: dislikesReceivedCount,
-      }
+        likes_sent: likesSent,
+        likes_received: likesReceived,
+        matches,
+        dislikes_sent: dislikesSent,
+        dislikes_received: dislikesReceived,
+      },
     });
   } catch (err) {
     console.error(err);
@@ -273,17 +276,49 @@ export const getMyProfile = async (req, res) => {
   }
 };
 
+export const uploadImage = async (req, res) => {
+  try {
+    // ✅ req.files['image'][0] — because we use upload.fields()
+    const file = req.files?.['image']?.[0];
+    if (!file) return res.status(400).json({ success: false, message: "No file uploaded" });
+
+    const imageUrl = getUploadedUrl(file);
+
+    const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
+    if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
+
+    let images = [];
+    try { images = JSON.parse(profile.images || "[]"); } catch { images = []; }
+    if (!Array.isArray(images)) images = [];
+    images = images.filter(Boolean);
+
+    const index = parseInt(req.body.index ?? images.length);
+
+    if (index < images.length) {
+      images[index] = imageUrl;
+    } else {
+      images.push(imageUrl);
+    }
+
+    await profile.update({ images: JSON.stringify(images) });
+
+    return res.json({ success: true, imageUrl, images });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: err });
+  }
+};
+
+// ─── Remaining controllers ────────────────────────────────────────────────────
+
 export const updateInterests = async (req, res) => {
   try {
     const { interests } = req.body;
-    const user = req.user;
-
-    const profile = await user.getProfile();
+    const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
-
-    profile.interests = interests;
+    profile.interests = Array.isArray(interests) ? JSON.stringify(interests) : interests;
     await profile.save();
-
     res.json({ success: true, profile });
   } catch (err) {
     console.error(err);
@@ -293,10 +328,8 @@ export const updateInterests = async (req, res) => {
 
 export const deleteProfile = async (req, res) => {
   try {
-    const user = req.user;
-    const profile = await user.getProfile();
+    const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
-
     await profile.destroy();
     res.json({ success: true, message: 'Profile deleted successfully' });
   } catch (err) {
@@ -308,14 +341,10 @@ export const deleteProfile = async (req, res) => {
 export const assignGuardian = async (req, res) => {
   try {
     const { guardianId } = req.body;
-    const user = req.user;
-
-    const profile = await user.getProfile();
+    const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
-
     profile.guardian_id = guardianId;
     await profile.save();
-
     res.json({ success: true, profile });
   } catch (err) {
     console.error(err);
@@ -323,89 +352,83 @@ export const assignGuardian = async (req, res) => {
   }
 };
 
-export const getVerifiedProfiles = async (req, res) => {
+export const getVerifiedUsers = async (req, res) => {
   try {
-    const user = req.user;
-
-    const profiles = await Profile.findAll({
-      where: { is_verified: true, individual_id: { [Op.ne]: user.id } },
-      include: [{ model: User, as: 'individual', attributes: ['id', 'email', 'role'] }],
+    const users = await User.findAll({
+      where: {
+        is_verified: true,
+        is_deleted: false,
+        id: { [Op.ne]: req.user.id },
+      },
+      attributes: { exclude: ['password_hash'] },
+      include: [{
+        model: Profile,
+        as: 'profile',
+        required: false,
+      }],
+      order: [['created_at', 'DESC']],
     });
 
-    res.json(profiles);
+    return res.json({ success: true, users });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('getVerifiedUsers error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
 
 export const updateLastSeen = async (req, res) => {
   try {
-    await Profile.update(
-      { last_seen: new Date() },
-      { where: { individual_id: req.user.id } }
-    );
+    await Profile.update({ last_seen: new Date() }, { where: { individual_id: req.user.id } });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: err });
   }
 };
 
-export const getAllProfiles = async (req, res) => {
+export const getAllUsers = async (req, res) => {
   try {
-    const user = req.user;
-
-    const profiles = await Profile.findAll({
-      where: { individual_id: { [Op.ne]: user.id } },
-      include: [{ model: User, as: 'individual', attributes: ['id', 'email', 'role'] }],
+    const users = await User.findAll({
+      where: {
+        id: { [Op.ne]: req.user.id },
+        is_deleted: false,
+      },
+      attributes: { exclude: ['password_hash'] },
+      include: [{
+        model: Profile,
+        as: 'profile',
+        required: false,
+      }],
+      order: [['created_at', 'DESC']],
     });
 
-    res.json(profiles);
+    return res.json({ success: true, users });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('getAllUsers error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
 
 export const getMyGuardians = async (req, res) => {
   try {
-    const user = req.user;
-    const guardians = await user.getGuardians();
-    res.json({ success: true, guardians });
+    const guardians = await Guardian.findAll({
+      where: { individual_id: req.user.id },
+      include: [{
+        model: User,
+        as: 'guardianUser',
+        attributes: { exclude: ['password_hash'] },
+      }],
+    });
+
+    return res.json({ success: true, guardians });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('getMyGuardians error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
 
-export const uploadImage = async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded" });
-
-    const imageUrl = `/uploads/profiles/${req.file.filename}`;
-
-    const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
-    if (!profile) return res.status(404).json({ success: false, message: "Profile not found" });
-
-    let images = [];
-    try { images = JSON.parse(profile.images || "[]"); } catch { images = []; }
-    if (!Array.isArray(images)) images = [];
-
-    images = images.filter(Boolean);
-
-    const index = parseInt(req.body.index);
-
-    if (index < images.length) {
-      images[index] = imageUrl;
-    } else {
-      images.push(imageUrl);
-    }
-
-    await profile.update({ images: JSON.stringify(images) });
-
-    res.json({ success: true, imageUrl, images });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: err });
-  }
+export default {
+  createProfile, updatePrefs, uploadIdCard, updateProfile,
+  updateGuardian, uploadImage, getCurrentUser,
+  updateInterests, deleteProfile, assignGuardian,
+  getVerifiedUsers, updateLastSeen, getAllUsers, getMyGuardians,
 };

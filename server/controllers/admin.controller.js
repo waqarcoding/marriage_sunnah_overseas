@@ -8,7 +8,12 @@ export const getPendingProfiles = async (req, res) => {
 
     const profiles = await Profile.findAll({
       where: { verified: false },
-      include: [{ model: User, as: 'user', attributes: ['id', 'email', 'role'] }],
+      include: [{
+        model: User,
+        as: 'user',
+
+      }],
+
     });
 
     res.json(profiles);
@@ -22,17 +27,18 @@ export const verifyProfile = async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
 
-    const { profileId } = req.params;
-    const profile = await Profile.findByPk(profileId);
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    const { userId } = req.params;
 
-    profile.verified = true;
-    await profile.save();
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    res.json({ success: true, profile });
+    await user.update({ is_verified: true });
+
+    return res.json({ success: true, message: 'User verified successfully', userId });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('verifyProfile error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
 
