@@ -4,7 +4,7 @@ import { authenticate } from '../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../middlewares/role.middleware.js';
 import { validateBody } from '../middlewares/validation.middleware.js';
 import upload from '../middlewares/upload.middleware.js';
-import videoupload from '../middlewares/uploadVideo.middleware.js';
+import videoupload from '../middlewares/uploadvideos.middleware.js';
 const router = express.Router();
 
 // Create / update profile

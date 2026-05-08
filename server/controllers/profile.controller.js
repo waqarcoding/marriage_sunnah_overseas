@@ -4,7 +4,7 @@ import { Op, Sequelize } from 'sequelize';
 import bcrypt from 'bcrypt';
 import { getUploadedUrl } from '../middlewares/upload.middleware.js';
 // @ts-ignore
-import { getVideoUrl } from '../middlewares/uploadVideo.middleware.js';
+import { getVideoUrl } from '../middlewares/uploadvideos.middleware.js';
 import { deductCredits, hasEnoughCredits } from '../utils/credits.js';
 // ─── Create Profile ───────────────────────────────────────────────────────────
 export const createProfile = async (req, res) => {
