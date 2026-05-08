@@ -91,7 +91,8 @@ function customTemplate({ title = "My App", content = "" } = {}) {
     });
 }
 
-module.exports = {
+// ES Module export
+export {
     defaultLayout,
     otpTemplate,
     customTemplate,
