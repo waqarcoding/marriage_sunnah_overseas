@@ -249,16 +249,19 @@ export default function Landing() {
                             Join thousands of families who have found their perfect match
                             through our halal matchmaking platform.
                         </p>
-                        <a href="/register">
-                            <Button
-                                variant="default"
-                                size="lg"
-                                className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
-                                data-testid="button-cta-register"
-                            >
-                                Register Now - It's Free
-                            </Button>
-                        </a>
+                        <Button
+                            variant="default"
+                            size="lg"
+                            className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
+                            data-testid="button-cta-register"
+                            onClick={() => {
+                                window.history.pushState({}, '', '/register');
+                                window.dispatchEvent(new PopStateEvent('popstate'));
+                            }}
+                        >
+                            Register Now - It's Free
+                        </Button>
+
 
                     </motion.div>
                 </div>

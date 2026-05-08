@@ -246,9 +246,15 @@ export default function Login({ onLogin }) {
                             Don't have an account?{" "}
                             <a
                                 href="/register"
+                                onClick={e => {
+                                    e.preventDefault();
+                                    window.history.pushState({}, '', '/register');
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                }}
                                 className="font-medium"
                                 style={{ color: "#1B4D3E" }}
                             >
+
                                 Register
                             </a>
                         </p>

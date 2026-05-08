@@ -172,8 +172,19 @@ export default function Register({ onRegister }) {
                                 </div>
                                 <p className="text-xs text-center text-slate-400 mt-2">
                                     Already have an account?{" "}
-                                    <a href="/login" className="font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Sign in</a>
+                                    <button
+                                        type="button"
+                                        className="font-medium"
+                                        style={{ color: "var(--primary, #1B4D3E)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                                        onClick={() => {
+                                            window.history.pushState({}, '', '/login');
+                                            window.dispatchEvent(new PopStateEvent('popstate'));
+                                        }}
+                                    >
+                                        Sign in
+                                    </button>
                                 </p>
+
                             </div>
                         )}
 
