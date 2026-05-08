@@ -1,13 +1,14 @@
 import 'dotenv/config';
 import db from '../models/index.js';
-const { sequelize, User, Profile, Match, Guardian, Interest, Message, Otp } = db;
+const { sequelize, User, Profile, Match, Guardian, Interest, Message, Otp, Refferal } = db;
 import bcrypt from 'bcrypt';
-import { sendMail } from '../mail/service.js';
+import { sendLoginOtpEmail, sendMail, sendOtpEmail, sendWelcomeEmail } from '../mail/service.js';
 import { otpTemplate } from '../mail/mailTemplates.js';
 import { Op } from 'sequelize';
 import jwt from 'jsonwebtoken';
 import { getUploadedUrl } from '../middlewares/upload.middleware.js';
 
+import { applyReferralReward } from './referral.controller.js';
 /**
  * Helper: Generate and store OTP for a user
  */
@@ -26,9 +27,26 @@ const createOtp = async (userId) => {
     otp: otpCode,
     expires_at: new Date(Date.now() + 10 * 60 * 1000)
   });
+  // ✅ Send OTP via email
+  try {
+    const user = await User.findByPk(userId, {
+      attributes: ['name', 'email']
+    });
+
+    if (user && user.email) {
+      await sendOtpEmail(user, otpCode, 10);
+      console.log(`📧 OTP email sent to ${user.email}`);
+    }
+  } catch (emailError) {
+    console.error('❌ Failed to send OTP email:', emailError);
+    // Don't throw - OTP is still created even if email fails
+  }
 
   return otpCode;
 };
+
+
+
 
 /**
  * Signup user
@@ -39,7 +57,7 @@ export const signup = async (req, res) => {
 
   const t = await sequelize.transaction();
   try {
-    const { name, email, mobile, password_hash, role, gender } = req.body;
+    const { name, email, mobile, password_hash, role, gender, referrerId } = req.body;
 
     const photoFile = req.files?.['image']?.[0] || null;
     const photoPath = photoFile ? getUploadedUrl(photoFile) : null;
@@ -58,13 +76,13 @@ export const signup = async (req, res) => {
     if (existingUser) {
       await t.rollback();
       if (existingUser.email === email)
-        return res.status(400).json({ success: false, message: "Email already exists" });
-      return res.status(400).json({ success: false, message: "Phone number already exists" });
+        return res.json({ success: false, message: "Email already exists" });
+      return res.json({ success: false, message: "Phone number already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password_hash, 10);
 
-    const user = await User.create({
+    const user = await User.create({ //new user
       name,
       email,
       mobile,
@@ -86,7 +104,7 @@ export const signup = async (req, res) => {
 
     const otpCode = await createOtp(user.id);
     console.log(`OTP for user ${user.id}: ${otpCode}`);
-
+    const newuserid = user.id;
     const token = jwt.sign(
       {
         id: user.id,
@@ -102,6 +120,24 @@ export const signup = async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    // Apply referral reward AFTER user creation is committed
+    let referralResult = null;
+    if (referrerId !== undefined && referrerId !== null && referrerId !== '' && !isNaN(Number(referrerId))) {
+      referralResult = await applyReferralReward(user.id, referrerId, 0, true);
+    }
+
+
+    // Send welcome email to the new user after successful signup
+    // Import sendWelcomeEmail at the top of this file:
+    // import { sendWelcomeEmail } from '../mail/service.js';
+
+    try {
+      await sendWelcomeEmail(user);
+    } catch (emailErr) {
+      console.error("Failed to send welcome email:", emailErr);
+      // Don't fail signup if email fails
+    }
+
     return res.status(201).json({
       success: true,
       message: "Signup successful",
@@ -109,6 +145,7 @@ export const signup = async (req, res) => {
       userid: user.id,
       photo: photoPath,
       user: { ...user.toJSON(), password_hash: undefined },
+      referral: referralResult
     });
 
   } catch (err) {
@@ -126,7 +163,7 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.json({ error: 'Email and password are required' });
     }
 
     const user = await User.findOne({
@@ -195,7 +232,7 @@ export const verifyOtp = async (req, res) => {
     });
 
     if (!record || record.expires_at < new Date()) {
-      return res.status(400).json({ error: 'Invalid or expired OTP' });
+      return res.json({ error: 'Invalid or expired OTP' });
     }
 
     const profile = await Profile.findOne({ where: { individual_id: userid } });
@@ -211,7 +248,7 @@ export const verifyOtp = async (req, res) => {
       });
     }
 
-    res.status(400).json({ error: 'User not found' });
+    res.json({ error: 'User not found' });
 
   } catch (err) {
     console.error(err);
@@ -230,7 +267,7 @@ export const sendOtpById = async (req, res) => {
 
     const user = await User.findByPk(req.user.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res.json({ success: false, message: "User not found" });
     }
 
     const otpCode = await createOtp(user.id);
@@ -255,12 +292,12 @@ export const sendOTPbyEmail = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res.json({ success: false, message: "Email is required" });
     }
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ success: false, message: "No account found with this email" });
+      return res.json({ success: false, message: "No account found with this email" });
     }
 
     const otpCode = await createOtp(user.id);
@@ -285,12 +322,12 @@ export const ressetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
     if (!email || !otp || !newPassword) {
-      return res.status(400).json({ success: false, message: "Email, OTP and new password are required" });
+      return res.json({ success: false, message: "Email, OTP and new password are required" });
     }
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ success: false, message: "No account found with this email" });
+      return res.json({ success: false, message: "No account found with this email" });
     }
 
     const otpRecord = await Otp.findOne({
@@ -299,11 +336,11 @@ export const ressetPassword = async (req, res) => {
     });
 
     if (!otpRecord) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+      return res.json({ success: false, message: "Invalid OTP" });
     }
 
     if (new Date() > new Date(otpRecord.expires_at)) {
-      return res.status(400).json({ success: false, message: "OTP has expired" });
+      return res.json({ success: false, message: "OTP has expired" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

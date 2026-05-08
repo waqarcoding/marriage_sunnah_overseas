@@ -10,8 +10,8 @@ class GuardianModel {
   final bool contactHidden;
   final bool isVerified;
 
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime created_at;
+  final DateTime updated_at;
 
   GuardianModel({
     required this.id,
@@ -22,8 +22,8 @@ class GuardianModel {
     this.relationship,
     required this.contactHidden,
     required this.isVerified,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.created_at,
+    required this.updated_at,
   });
 
   factory GuardianModel.fromJson(Map<String, dynamic> json) {
@@ -37,8 +37,8 @@ class GuardianModel {
       contactHidden:
           json['contact_hidden'] == 1 || json['contact_hidden'] == true,
       isVerified: json['is_verified'] == 1 || json['is_verified'] == true,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      created_at: DateTime.parse(json['created_at']),
+      updated_at: DateTime.parse(json['updated_at']),
     );
   }
 
@@ -52,8 +52,8 @@ class GuardianModel {
       'relationship': relationship,
       'contact_hidden': contactHidden,
       'is_verified': isVerified,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': created_at.toIso8601String(),
+      'updated_at': updated_at.toIso8601String(),
     };
   }
 }

@@ -2,15 +2,15 @@ class MatchModel {
   final int id;
   final int user1;
   final int user2;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime created_at;
+  final DateTime updated_at;
 
   MatchModel({
     required this.id,
     required this.user1,
     required this.user2,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.created_at,
+    required this.updated_at,
   });
 
   factory MatchModel.fromJson(Map<String, dynamic> json) {
@@ -18,8 +18,8 @@ class MatchModel {
       id: json['id'],
       user1: json['user1'],
       user2: json['user2'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      created_at: DateTime.parse(json['created_at']),
+      updated_at: DateTime.parse(json['updated_at']),
     );
   }
 
@@ -28,8 +28,8 @@ class MatchModel {
       'id': id,
       'user1': user1,
       'user2': user2,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': created_at.toIso8601String(),
+      'updated_at': updated_at.toIso8601String(),
     };
   }
 }

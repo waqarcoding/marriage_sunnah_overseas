@@ -1,5 +1,6 @@
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import * as jwtDecode from "jwt-decode";
+import AuthService from "../features/auth/services/AuthService";
 
 class Api {
     constructor(baseURL) {
@@ -9,6 +10,7 @@ class Api {
 
     // ---------------- Headers ----------------
     _getHeaders(isJson = true) {
+
         const headers = {};
         if (isJson) headers["Content-Type"] = "application/json";
 
@@ -37,42 +39,40 @@ class Api {
 
     // ---------------- Central handle request ----------------
     // Fix for Api.js handleRequest — guard against null response
-
     async handleRequest(promise, callbacks = {}) {
         const { onSuccess, onFailed } = callbacks;
         try {
             const res = await promise;
 
-            // ✅ Guard against null/undefined response
             if (!res) {
                 const err = new Error('No response from server');
-                if (onFailed) onFailed(err);
+                if (onFailed) onFailed({ message: err.message, data: null });
                 return null;
             }
 
-            if (res.success) {
-                if (onSuccess) onSuccess(res);
-            } else {
-                if (onFailed) onFailed(res);
-                toast.error(res.message || 'Request failed');
+            if (res.success === false) {
+                // Show the most relevant error message, preferring inner data.message if present
+                let errorMsg = res.message || res.error || 'Request failed';
+                if (res.error === 'server_error' && res.data && res.data.message) {
+                    errorMsg = res.data.message;
+                }
+                if (onFailed) onFailed({ message: errorMsg, data: res });
+                return null;
             }
+
+            if (onSuccess) onSuccess(res);
             return res;
+
         } catch (err) {
-            if (onFailed) onFailed(err);
-
-            if (err.data?.errors) {
-                Object.entries(err.data.errors).forEach(([field, msg]) => {
-                    toast.error(`${field}: ${msg}`);
-                });
-            } else {
-                toast.error(err.message || 'Network error');
+            // Prefer inner data.message for server_error as well
+            let errorMsg = err.message || 'Network error';
+            if (err.data && err.data.error === 'server_error' && err.data.message) {
+                errorMsg = err.data.message;
             }
-
-            console.error('API Error:', err.data || err.message);
-            return null; // ✅ return null instead of Promise.reject to prevent uncaught
+            if (onFailed) onFailed({ message: errorMsg, data: err.data || null });
+            return null;
         }
     }
-
     // ---------------- Unified fetch ----------------
     async _fetch(endpoint, options) {
         const res = await fetch(`${this.baseURL}${endpoint}`, options);
@@ -84,25 +84,36 @@ class Api {
             data = null;
         }
 
+        // Remove incorrect API SUCCESS/FAILED logs with success === "true"
+        // No logging should happen here; _fetch should only handle errors below
 
-        if (!res.ok) {
-            // ✅ Create error with full response data attached
-            const msg = (data && (data.error || data.message)) || res.statusText;
+
+
+        if (!res.ok || data?.success === false) {
+
+            // ✅ Extract error message from response
+            const msg = (data && (data.error || data.message || data.err || data.msg)) || res.statusText;
+            console.error("API Error:", msg);
+            toast(msg)
+
+
             const err = new Error(msg);
             // @ts-ignore
-            err.data = data;       // attach full JSON { errors, missingFields, etc }
+            err.data = data;       // attach full JSON
             // @ts-ignore
             err.status = res.status;
+            console.log("Backend Authentication Error:" + res.status)
+
+
             if (res.status === 401) this._handleTokenExpired();
+
             throw err;
         }
 
-        console.log("result:", data.message);
         this._pingLastSeen();
 
         return data;
     }
-
     // ---------------- HTTP METHODS with built-in handleRequest ----------------
     get(endpoint, callbacks) {
         console.log("API GET ENDPOINT:", `${this.baseURL}${endpoint}`);
@@ -186,28 +197,42 @@ class Api {
 
     // ---------------- Token expired ----------------
     _handleTokenExpired() {
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("authData");
-        toast.error("Session expired. Please log in again.");
-        window.location.href = "/login";
+        toast.error("Session expired. Please log in again.")
+        console.log("Session expired. Please log in again.")
+        AuthService.logout()
+
+
+
+        // ❌ remove hard reload
+        // window.location.href = "/login"
+
+        // ✅ soft navigation
+        setTimeout(() => {
+            window.history.pushState({}, "", "/login")
+            window.dispatchEvent(new PopStateEvent("popstate"))
+        }, 100)
     }
 
     // ---------------- JWT validation ----------------
     checkToken() {
-        const token = localStorage.getItem("jwtToken");
-        if (!token) return false;
+        const token = localStorage.getItem("jwtToken")
+        console.log("JWT TOKEN NOT FOUND")
+        if (!token) return false
 
         try {
             // @ts-ignore
-            const decoded = jwtDecode(token);
+            const decoded = jwtDecode(token)
+
             if (decoded.exp < Date.now() / 1000) {
-                this._handleTokenExpired();
-                return false;
+                this._handleTokenExpired()
+
+                return false
             }
-            return true;
+
+            return true
         } catch {
-            this._handleTokenExpired();
-            return false;
+            this._handleTokenExpired()
+            return false
         }
     }
 }

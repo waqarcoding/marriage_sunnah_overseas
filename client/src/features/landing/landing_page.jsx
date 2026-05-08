@@ -1,11 +1,11 @@
 
-import { Card, CardContent } from "../../components/card";
+import { Card, CardContent } from "../../ui/card";
 import * as React from "react";
 import { motion } from "framer-motion";
 import { Heart, Shield, Globe, Users, CheckCircle, Star } from "lucide-react";
-import { Button } from "../../components/button";
+import { Button } from "../../ui/button";
 
-import AppBar from "../../components/AppBar.jsx";
+import AppBar from "../../ui/app_bar.jsx";
 
 
 export default function Landing() {
@@ -21,7 +21,9 @@ export default function Landing() {
     return (
 
         <div className="min-h-screen flex flex-col">
-            <AppBar onLogout={() => { }} onSidebarLogout={() => { }} />
+            <
+                // @ts-ignore
+                AppBar onLogout={() => { }} onSidebarLogout={() => { }} />
 
 
             {/* Hero Section with Background Image */}
@@ -59,25 +61,31 @@ export default function Landing() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <a href="/register">
-                                <Button
-                                    variant="default"
-                                    size="lg"
-                                    className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
-                                    data-testid="button-start-journey"
-                                >
-                                    Start Your Journey
-                                </Button>
+                            <Button
+                                variant="default"
+                                size="lg"
+                                className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
+                                data-testid="button-start-journey"
+                                onClick={() => {
+                                    window.history.pushState({}, '', '/register');
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                }}
+                            >
+                                Start Your Journey
+                            </Button>
 
-                            </a>
                             <Button
                                 variant="outline"
                                 size="lg"
                                 className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/5 bg-white/10 backdrop-blur-sm"
-                                onClick={() => window.location.href = "/how"}
+                                onClick={() => {
+                                    window.history.pushState({}, '', '/how');
+                                    window.dispatchEvent(new PopStateEvent('popstate'));
+                                }}
                             >
                                 Learn How It Works
                             </Button>
+
                         </div>
                     </motion.div>
                 </div>

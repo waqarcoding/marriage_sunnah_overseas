@@ -1,8 +1,18 @@
 import Api from "../../../api/Api";
-import { fetchImageBlob } from "../../../components/ImageAvatar";
+
 
 // @ts-ignore
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
+const BASE_URL = import.meta.env.VITE_BASE_URL ?? "";
+
+// Local version — no CORS issues
+function fetchImageBlob(src) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(src);
+        img.onerror = () => reject("failed");
+        img.src = src;
+    });
+}
 
 class InterestService {
     constructor() {
@@ -33,17 +43,14 @@ class InterestService {
         return Api.get(endpoint);
     }
 
-    pendingCount() {
-        return Api.get(`${this.base}/pending-count`);
+    pendingInterestCount() {
+        return Api.get(`${this.base}/pending-interest-count`);
     }
 
-    // ⚡ Call this from your component after getallInterests resolves
-    // Pass the queryClient from useQueryClient() in your component
     prefetchAllImages(data, qc) {
         const { sent = [], received = [], matches = [] } = data ?? {};
         const allUrls = new Set();
 
-        // Extract images from a profile object
         const collectFromProfile = (profile) => {
             if (!profile?.images) return;
             try {
@@ -62,7 +69,6 @@ class InterestService {
             collectFromProfile(item.fromProfile);
         });
 
-        // ⚡ Fire all prefetches in parallel — silent background downloads
         allUrls.forEach(url => {
             qc.prefetchQuery({
                 queryKey: ["img", url],

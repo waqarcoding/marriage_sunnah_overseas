@@ -49,6 +49,6 @@ router.post('/dislike',
 
 // ── Get interests ─────────────────────────────────────────────────────────────
 router.get('/get-interests', authenticate, interestController.getInterests);
-router.get('/pending-count', authenticate, interestController.getPendingCount);
+router.get('/pending-interest-count', authenticate, interestController.getPendingCount);
 
 export default router;

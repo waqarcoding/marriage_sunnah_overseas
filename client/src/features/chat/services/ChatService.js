@@ -88,12 +88,37 @@ class ChatService {
         }
     }
 
+    // ✅ NEW: Get unread message count
+    async getUnreadCount() {
+        try {
+            const res = await Api._fetch(`${this.base}/unread-count`, {
+                method: "GET",
+                headers: Api._getHeaders(),
+            });
+            return res;
+        } catch (err) {
+            console.error("Failed to fetch unread count", err);
+            throw err;
+        }
+    }
+    async clearUnreadCount() {
+        try {
+            const res = await Api._fetch(`${this.base}/unread-count/clear`, {
+                method: "POST",
+                headers: Api._getHeaders(),
+            });
+            return res;
+        } catch (err) {
+            console.error("Failed to clear unread count", err);
+            throw err;
+        }
+    }
+
     deleteConversation(conversationId) {
         return Api._fetch(
             `${this.base}/conversation/${conversationId}`,
             { method: 'DELETE', headers: Api._getHeaders() }
         );
-
     }
 }
 

@@ -2,15 +2,15 @@ class DislikeModel {
   final int id;
   final int userId;
   final int targetUserId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime created_at;
+  final DateTime updated_at;
 
   DislikeModel({
     required this.id,
     required this.userId,
     required this.targetUserId,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.created_at,
+    required this.updated_at,
   });
 
   factory DislikeModel.fromJson(Map<String, dynamic> json) {
@@ -18,8 +18,8 @@ class DislikeModel {
       id: json['id'],
       userId: json['user_id'],
       targetUserId: json['target_user_id'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      created_at: DateTime.parse(json['created_at']),
+      updated_at: DateTime.parse(json['updated_at']),
     );
   }
 
@@ -28,8 +28,8 @@ class DislikeModel {
       'id': id,
       'user_id': userId,
       'target_user_id': targetUserId,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': created_at.toIso8601String(),
+      'updated_at': updated_at.toIso8601String(),
     };
   }
 }

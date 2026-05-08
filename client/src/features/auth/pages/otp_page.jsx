@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { toast, ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
+import toast from "react-hot-toast"
+import AppToaster from "../../../ui/toaster"
 import { Heart, Mail } from "lucide-react"
 import AuthApi from "../services/AuthService"
+
 
 export default function OtpPage({ onSuccess }) {
     const [otp, setOtp] = useState(["", "", "", "", "", ""])
@@ -100,7 +101,7 @@ export default function OtpPage({ onSuccess }) {
 
     return (
         <>
-            <ToastContainer position="top-right" autoClose={3000} />
+            <AppToaster></AppToaster>
             <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-5">
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 

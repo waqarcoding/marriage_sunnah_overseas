@@ -95,7 +95,7 @@ module.exports = (sequelize, DataTypes) => {
         country: {
             type: DataTypes.STRING(100),
             allowNull: true,
-            unique: true,
+            unique: 'options_country_unique',
             comment: 'NULL for global options row, country name for country rows',
         },
 
@@ -122,7 +122,7 @@ module.exports = (sequelize, DataTypes) => {
         interests: { type: DataTypes.TEXT, allowNull: true, comment: 'JSON array' },
         monthly_salary: { type: DataTypes.TEXT('long'), allowNull: true, comment: 'JSON object { PKR:[...], AED:[...], ... }' },
 
-        // ✅ New constants fields
+
         family_backgrounds: { type: DataTypes.TEXT('long'), allowNull: true, comment: 'JSON object {muslim:[...], other:[...]}' },
         about_me: { type: DataTypes.TEXT('long'), allowNull: true, comment: 'JSON object {muslim:{Doctor:[...], default:[]}, other:{...}}' },
         relationship_options: { type: DataTypes.TEXT, allowNull: true, comment: 'JSON object {muslim:[...], other:[...]}' },
@@ -133,6 +133,9 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true,
         createdAt: 'created_at',
         updatedAt: 'updated_at',
+        indexes: [
+            { unique: true, fields: ['country'], name: 'options_country_unique' },
+        ],
     });
 
     return Option;

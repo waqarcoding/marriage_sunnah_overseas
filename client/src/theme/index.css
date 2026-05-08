@@ -14,8 +14,9 @@
 
     /* Brand Colors */
     --primary: #1B4D3E;
-    --primary-foreground: #f5f0e8;
+    --background: #f0f5f3;
     --secondary: #f0f5f3;
+    --primary-foreground: #fef3c7;
     --secondary-foreground: #1B4D3E;
     --accent: #f5f0e8;
     --accent-foreground: #ffffff;
@@ -31,7 +32,7 @@
     /* Text color for inactive */
 
     /* Backgrounds & surfaces */
-    --background: #ffffff;
+
     --foreground: #6a7282;
     --card: color-mix(in oklab, var(--primary) 3%, transparent);
     ;

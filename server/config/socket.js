@@ -1,56 +1,89 @@
+// @ts-nocheck
 // config/socket.js
 
 import { Server } from 'socket.io';
+import db from '../models/index.js';
+import {
+    sendInterestReceivedEmail,
+    sendInterestAcceptedEmail,
+    sendGuardianApprovedEmail,
+    sendGuardianRejectedEmail,
+    sendMatchCreatedEmail,
+} from '../mail/service.js';
 
 let io;
 const onlineUsers = new Set();
 
+// ─────────────────────────────────────────────────────────
+// 🔔 NOTIFICATION HELPER (DB + SOCKET)
+// ─────────────────────────────────────────────────────────
+export const createNotification = async ({
+    userId,
+    type,
+    title,
+    message,
+    data = {},
+    sender_image = null,
+}) => {
+    try {
+        const notification = await db.Notification.create({
+            user_id: userId,
+            type,
+            title,
+            message,
+            data: { ...data, sender_image },
+        });
+
+        io.to(`user_${userId}`).emit('notification', {
+            ...notification.toJSON(),
+            sender_image,
+        });
+
+        return notification;
+    } catch (err) {
+        console.error('Notification error:', err);
+    }
+};
+
+// ─────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────
 export const initSocket = (server) => {
-    console.log('Connecting Socket...');
     io = new Server(server, {
         cors: {
             origin: process.env.CLIENT_URL || '*',
-            methods: ['GET', 'POST'],
             credentials: true,
         },
-        // ── Required for DigitalOcean App Platform ─────────────────────
-        transports: ['polling', 'websocket'],
-        allowEIO3: true,
-        pingTimeout: 60000,
-        pingInterval: 25000,
-        upgradeTimeout: 30000,
-        allowUpgrades: true,
     });
 
     io.on('connection', (socket) => {
         console.log('User connected:', socket.id);
-        console.log('Connected Socket:' + socket.id);
 
         socket.on('join', (userId) => {
             socket.join(`user_${userId}`);
             onlineUsers.add(String(userId));
-            console.log(`User ${userId} joined room: user_${userId}`);
             io.emit('user_online', userId);
         });
 
-        socket.on('typing', ({ to, from }) => io.to(`user_${to}`).emit('typing', { from }));
-        socket.on('stop_typing', ({ to, from }) => io.to(`user_${to}`).emit('stop_typing', { from }));
+        socket.on('typing', ({ to, from }) => {
+            io.to(`user_${to}`).emit('typing', { from });
+        });
 
-        socket.on('disconnect', (reason) => {
-            console.log(`User disconnected: ${socket.id}, reason: ${reason}`);
+        socket.on('stop_typing', ({ to, from }) => {
+            io.to(`user_${to}`).emit('stop_typing', { from });
+        });
+
+        socket.on('disconnect', () => {
+            console.log('User disconnected:', socket.id);
+
             for (const userId of onlineUsers) {
                 const rooms = io.sockets.adapter.sids.get(socket.id);
                 if (rooms && rooms.has(`user_${userId}`)) {
                     onlineUsers.delete(userId);
                     io.emit('user_offline', userId);
-                    console.log(`User ${userId} went offline`);
                     break;
                 }
             }
-        });
-
-        socket.on('error', (err) => {
-            console.error('Socket error:', err);
         });
     });
 
@@ -58,162 +91,314 @@ export const initSocket = (server) => {
 };
 
 export const getIO = () => {
-    if (!io) throw new Error('Socket.io not initialized');
+    if (!io) throw new Error('Socket not initialized');
     return io;
 };
 
-export const isUserOnline = (userId) => onlineUsers.has(String(userId));
+export const isUserOnline = (userId) =>
+    onlineUsers.has(String(userId));
 
-// ─────────────────────────────────────────────────────────────
-// 🔔 INTEREST EVENTS
-// ─────────────────────────────────────────────────────────────
-
-export const notifyInterestReceived = (toUserId, data) => {
-    getIO().to(`user_${toUserId}`).emit('interest_received', {
+// ─────────────────────────────────────────────────────────
+// 💌 INTEREST EVENTS
+// ─────────────────────────────────────────────────────────
+export const notifyInterestReceived = async (toUserId, data) => {
+    await createNotification({
+        userId: toUserId,
         type: 'interest_received',
-        interest_id: data.interest_id,
-        sender_id: data.sender_id,
-        sender_name: data.sender_name,
-        sender_avatar: data.sender_avatar,
-        sent_at: data.sent_at || new Date().toISOString(),
+        title: 'New Interest 💌',
+        message: `${data.sender_name} sent you an interest`,
+        data,
+        sender_image: data.sender_avatar_url || null,
     });
-    console.log(`💌 interest_received → user_${toUserId}`);
+
+    // ✅ Send email using new template with full user and profile data
+    try {
+        if (data.toUser && data.senderUser && data.toUserEmail) {
+            await sendInterestReceivedEmail(
+                data.toUser,           // Recipient User model
+                data.senderUser,       // Sender User model
+                data.senderProfile     // Sender Profile model
+            );
+        }
+    } catch (error) {
+        console.error('Error sending interest received email:', error);
+    }
 };
 
-export const notifyInterestAccepted = (toUserId, data) => {
-    getIO().to(`user_${toUserId}`).emit('interest_accepted', {
+export const notifyInterestAccepted = async (toUserId, data) => {
+    await createNotification({
+        userId: toUserId,
         type: 'interest_accepted',
-        interest_id: data.interest_id,
-        accepted_by_id: data.accepted_by_id,
-        accepted_by_name: data.accepted_by_name,
-        accepted_by_avatar: data.accepted_by_avatar,
-        accepted_at: new Date().toISOString(),
+        title: 'Interest Accepted ✅',
+        message: `${data.accepted_by_name} accepted your interest`,
+        data,
+        sender_image: data.accepted_by_avatar_url || null,
     });
-    console.log(`✅ interest_accepted → user_${toUserId}`);
+
+    // ✅ Send interest accepted email (waiting for guardian approval)
+    try {
+        if (data.senderUser && data.acceptedByUser && data.fromUserEmail) {
+            await sendInterestAcceptedEmail(
+                data.senderUser,        // Original sender User model
+                data.acceptedByUser,    // Person who accepted User model
+                data.acceptedByProfile  // Person who accepted Profile model
+            );
+        }
+    } catch (error) {
+        console.error('Error sending interest accepted email:', error);
+    }
 };
 
-export const notifyInterestDeclined = (toUserId, data) => {
-    getIO().to(`user_${toUserId}`).emit('interest_declined', {
+export const notifyInterestDeclined = async (toUserId, data) => {
+    await createNotification({
+        userId: toUserId,
         type: 'interest_declined',
-        interest_id: data.interest_id,
-        declined_by_id: data.declined_by_id,
-        declined_by_name: data.declined_by_name,
-        declined_at: new Date().toISOString(),
+        title: 'Interest Declined ❌',
+        message: 'Your interest was declined',
+        data,
+        sender_image: data.declined_by_avatar_url || null,
     });
-    console.log(`❌ interest_declined → user_${toUserId}`);
+    // No email for declined interests
 };
 
-export const notifyInterestCancelled = (toUserId, data) => {
-    getIO().to(`user_${toUserId}`).emit('interest_cancelled', {
+export const notifyInterestCancelled = async (toUserId, data) => {
+    await createNotification({
+        userId: toUserId,
         type: 'interest_cancelled',
-        interest_id: data.interest_id,
-        cancelled_by: data.cancelled_by,
-        cancelled_at: new Date().toISOString(),
+        title: 'Interest Cancelled 🚫',
+        message: 'An interest was cancelled',
+        data,
+        sender_image: data.cancelled_by_avatar_url || null,
     });
-    console.log(`🚫 interest_cancelled → user_${toUserId}`);
+    // No email for cancelled interests
 };
 
-export const notifyInterestCount = (toUserId, count) => {
-    getIO().to(`user_${toUserId}`).emit('interest_count', {
+// ─────────────────────────────────────────────────────────
+// 💞 MATCH - Both families approved! Chat unlocked!
+// ─────────────────────────────────────────────────────────
+export const notifyNewMatch = async (user1, user2, data) => {
+    // Notify user 1
+    await createNotification({
+        userId: user1,
+        type: 'new_match',
+        title: 'New Match 💞',
+        message: `You matched with ${data.user2_name}`,
+        data,
+        sender_image: data.user2_avatar_url || null,
+    });
+
+    // Notify user 2
+    await createNotification({
+        userId: user2,
+        type: 'new_match',
+        title: 'New Match 💞',
+        message: `You matched with ${data.user1_name}`,
+        data,
+        sender_image: data.user1_avatar_url || null,
+    });
+
+    // ✅ Send match created email to both users with full profiles
+    if (data.user1Model && data.user2Model && data.user1Profile && data.user2Profile) {
+        try {
+            await sendMatchCreatedEmail(
+                data.user1Model,    // User 1 User model
+                data.user2Model,    // User 2 User model
+                data.user1Profile,  // User 1 Profile model
+                data.user2Profile   // User 2 Profile model
+            );
+        } catch (error) {
+            console.error('❌ Error sending match created email:', error);
+        }
+    }
+};
+
+// ─────────────────────────────────────────────────────────
+// 🕌 GUARDIAN EVENTS
+// ─────────────────────────────────────────────────────────
+export const notifyGuardianAssigned = async (userId, data) => {
+    await createNotification({
+        userId,
+        type: 'guardian_assigned',
+        title: 'Guardian Assigned 🤝',
+        message: `${data.ward_name} assigned you`,
+        data,
+        sender_image: data.ward_avatar_url || null,
+    });
+
+    // Send basic email notification
+    if (data.guardianEmail) {
+        const { sendMail } = await import('../services/emailService.js');
+        await sendMail({
+            to: data.guardianEmail,
+            subject: 'Guardian Assigned - Marriage Sunna',
+            html: `
+                <h1>You've Been Assigned as Guardian 🤝</h1>
+                <p>Assalamu Alaikum,</p>
+                <p><strong>${data.ward_name}</strong> has assigned you as their guardian on Marriage Sunna.</p>
+                
+                <div class="info-box">
+                    <p>As a guardian, you can:</p>
+                    <p>• Review interests sent to ${data.ward_name}</p>
+                    <p>• Approve or decline matches</p>
+                    <p>• Help guide their marriage journey</p>
+                </div>
+
+                <a href="${process.env.CLIENT_URL}/guardian" class="button">View Guardian Dashboard</a>
+
+                <p>JazakAllah Khair for your support!</p>
+                <p><strong>The Marriage Sunna Team</strong></p>
+            `
+        });
+    }
+};
+
+export const notifyGuardianRemoved = async (userId, data) => {
+    await createNotification({
+        userId,
+        type: 'guardian_removed',
+        title: 'Guardian Removed 🗑️',
+        message: `${data.ward_name} removed you`,
+        data,
+        sender_image: data.ward_avatar_url || null,
+    });
+    // No email needed for removal
+};
+
+export const notifyWardAdded = async (userId, data) => {
+    await createNotification({
+        userId,
+        type: 'ward_added',
+        title: 'Added as Ward 👤',
+        message: `${data.guardian_name} added you`,
+        data,
+        sender_image: data.guardian_avatar_url || null,
+    });
+    // No email needed
+};
+
+export const notifyWardRemoved = async (userId, data) => {
+    await createNotification({
+        userId,
+        type: 'ward_removed',
+        title: 'Removed from Ward ❌',
+        message: `${data.guardian_name} removed you`,
+        data,
+        sender_image: data.guardian_avatar_url || null,
+    });
+    // No email needed
+};
+
+export const notifyGuardianApproved = async (userId, data) => {
+    await createNotification({
+        userId,
+        type: 'guardian_approved',
+        title: 'Guardian Approved 🕌',
+        message: `${data.ward_name ? data.ward_name + "'s guardian" : 'Guardian'} approved the interest`,
+        data,
+        sender_image: data.guardian_avatar_url || null,
+    });
+
+    // ✅ Send guardian approved email
+    if (data.wardUser && data.guardian_name && data.other_person_name) {
+        await sendGuardianApprovedEmail(
+            data.wardUser,           // Ward User model
+            data.guardian_name,      // Guardian name
+            data.other_person_name   // Other person's name
+        ).catch((exception) => {
+            console.error("Error sending guardian approved email:", exception);
+        });
+    } else {
+        console.log("sendGuardianApprovedEmail email send failed");
+    }
+};
+
+export const notifyGuardianRejected = async (userId, data) => {
+    await createNotification({
+        userId,
+        type: 'guardian_rejected',
+        title: 'Guardian Rejected ❌',
+        message: 'Guardian rejected the interest',
+        data,
+        sender_image: data.guardian_avatar_url || null,
+    });
+
+    // ✅ Send guardian rejected email
+    try {
+        if (data.wardUser && data.guardian_name && data.other_person_name) {
+            await sendGuardianRejectedEmail(
+                data.wardUser,           // Ward User model
+                data.guardian_name,      // Guardian name
+                data.other_person_name   // Other person's name
+            );
+        }
+    } catch (error) {
+        console.error("Error sending guardian rejected email:", error);
+    }
+};
+
+// ─────────────────────────────────────────────────────────
+// 💬 CHAT
+// ─────────────────────────────────────────────────────────
+export const notifyNewMessage = async (toUserId, message) => {
+    await createNotification({
+        userId: toUserId,
+        type: 'new_message',
+        title: `Message from ${message.sender_name}`,
+        message: message.body,
+        data: message,
+        sender_image: message.sender_avatar_url || null,
+    });
+
+    // Only send email if user is offline
+    if (!isUserOnline(toUserId) && message.toUserEmail) {
+        const { sendMail } = await import('../services/emailService.js');
+        await sendMail({
+            to: message.toUserEmail,
+            subject: `New Message from ${message.sender_name} - Marriage Sunna`,
+            html: `
+                <h1>New Message 💬</h1>
+                <p>Assalamu Alaikum,</p>
+                <p>You received a new message from <strong>${message.sender_name}</strong>:</p>
+                
+                <div class="info-box">
+                    <p style="font-style: italic;">"${message.body}"</p>
+                </div>
+
+                <a href="${process.env.CLIENT_URL}/messages" class="button">Reply Now</a>
+
+                <p><strong>The Marriage Sunna Team</strong></p>
+            `
+        });
+    }
+};
+
+// ─────────────────────────────────────────────────────────
+// 🔢 COUNTERS (NO DB)
+// ─────────────────────────────────────────────────────────
+export const notifyInterestCount = (userId, count) => {
+    io.to(`user_${userId}`).emit('interest_count', {
         type: 'interest_count',
         count: Number(count),
     });
-    console.log(`🔢 interest_count (${count}) → user_${toUserId}`);
 };
 
-export const notifyNewMatch = (userId1, userId2, matchData = {}) => {
-    const payload = {
-        type: 'new_match',
-        match_id: matchData.match_id || null,
-        matched_at: matchData.matched_at || new Date().toISOString(),
-    };
-
-    getIO().to(`user_${userId1}`).emit('new_match', {
-        ...payload,
-        matched_with_id: userId2,
-        matched_with_name: matchData.user2_name || '',
-        matched_with_avatar: matchData.user2_avatar || null,
-    });
-
-    getIO().to(`user_${userId2}`).emit('new_match', {
-        ...payload,
-        matched_with_id: userId1,
-        matched_with_name: matchData.user1_name || '',
-        matched_with_avatar: matchData.user1_avatar || null,
-    });
-
-    console.log(`💞 new_match → user_${userId1} & user_${userId2}`);
-};
-
-// ─────────────────────────────────────────────────────────────
-// 🕌 GUARDIAN EVENTS
-// ─────────────────────────────────────────────────────────────
-
-export const notifyGuardianAssigned = (guardianUserId, data) => {
-    getIO().to(`user_${guardianUserId}`).emit('guardian_assigned', {
-        type: 'guardian_assigned',
-        ward_id: data.ward_id,
-        ward_name: data.ward_name,
-        ward_avatar: data.ward_avatar,
-        assigned_at: new Date().toISOString(),
-    });
-    console.log(`🤝 guardian_assigned → user_${guardianUserId}`);
-};
-
-export const notifyGuardianRemoved = (guardianUserId, data) => {
-    getIO().to(`user_${guardianUserId}`).emit('guardian_removed', {
-        type: 'guardian_removed',
-        ward_id: data.ward_id,
-        ward_name: data.ward_name,
-        removed_at: new Date().toISOString(),
-    });
-    console.log(`🗑️ guardian_removed → user_${guardianUserId}`);
-};
-
-export const notifyGuardianPendingCount = (guardianUserId, count) => {
-    getIO().to(`user_${guardianUserId}`).emit('guardian_pending_count', {
+export const notifyGuardianPendingCount = (userId, count) => {
+    io.to(`user_${userId}`).emit('guardian_pending_count', {
         type: 'guardian_pending_count',
         count: Number(count),
     });
-    console.log(`🔢 guardian_pending_count (${count}) → user_${guardianUserId}`);
 };
 
-export const notifyGuardianApproved = (wardUserId, data) => {
-    getIO().to(`user_${wardUserId}`).emit('guardian_approved', {
-        type: 'guardian_approved',
-        interest_id: data.interest_id,
-        guardian_id: data.guardian_id,
-        guardian_avatar: data.guardian_avatar,
-        approved_for: data.approved_for,
-        approved_at: new Date().toISOString(),
+export const notifyChatCountUpdate = (userId, count) => {
+    io.to(`user_${userId}`).emit('chat_count_update', {
+        type: 'chat_count_update',
+        count: Number(count),
     });
-    console.log(`✅ guardian_approved → user_${wardUserId}`);
 };
 
-export const notifyGuardianRejected = (wardUserId, data) => {
-    getIO().to(`user_${wardUserId}`).emit('guardian_rejected', {
-        type: 'guardian_rejected',
-        interest_id: data.interest_id,
-        guardian_id: data.guardian_id,
-        guardian_avatar: data.guardian_avatar,
-        rejected_at: new Date().toISOString(),
+export const notifyCreditUpdate = (userId, credits) => {
+    io.to(`user_${userId}`).emit('credit_update', {
+        type: 'credit_update',
+        credits: Number(credits),
     });
-    console.log(`❌ guardian_rejected → user_${wardUserId}`);
-};
-
-// ─────────────────────────────────────────────────────────────
-// 💬 MESSAGE EVENTS
-// ─────────────────────────────────────────────────────────────
-
-export const notifyNewMessage = (toUserId, message) => {
-    getIO().to(`user_${toUserId}`).emit('new_message', {
-        type: 'new_message',
-        conversation_id: message.conversation_id,
-        sender_id: message.sender_id,
-        sender_name: message.sender_name,
-        sender_avatar: message.sender_avatar,
-        body: message.body,
-        created_at: message.created_at || new Date().toISOString(),
-    });
-    console.log(`📩 new_message → user_${toUserId}`);
 };

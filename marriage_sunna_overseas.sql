@@ -318,7 +318,7 @@ CREATE TABLE `Profiles` (
   `is_pro` tinyint(1) DEFAULT '0',
   `front_id` varchar(255) DEFAULT NULL,
   `back_id` varchar(255) DEFAULT NULL,
-  `isblurred_images` tinyint(1) NOT NULL DEFAULT '0',
+  `is_blurred_images` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   `guardian_id` bigint DEFAULT NULL
@@ -328,7 +328,7 @@ CREATE TABLE `Profiles` (
 -- Dumping data for table `Profiles`
 --
 
-INSERT INTO `Profiles` (`id`, `individual_id`, `name`, `gender`, `date_of_birth`, `age`, `marital_status`, `country`, `city`, `nationality`, `education`, `profession`, `religious_practice_level`, `family_background`, `bio`, `interests`, `relationship`, `contact_hidden`, `last_seen`, `images`, `is_guardian_required`, `phone`, `religion`, `sect`, `height_inches`, `body_type`, `caste`, `mother_tongue`, `employment_type`, `monthly_salary`, `has_children`, `willing_to_relocate`, `is_profile_completed`, `is_pro`, `front_id`, `back_id`, `isblurred_images`, `created_at`, `updated_at`, `guardian_id`) VALUES
+INSERT INTO `Profiles` (`id`, `individual_id`, `name`, `gender`, `date_of_birth`, `age`, `marital_status`, `country`, `city`, `nationality`, `education`, `profession`, `religious_practice_level`, `family_background`, `bio`, `interests`, `relationship`, `contact_hidden`, `last_seen`, `images`, `is_guardian_required`, `phone`, `religion`, `sect`, `height_inches`, `body_type`, `caste`, `mother_tongue`, `employment_type`, `monthly_salary`, `has_children`, `willing_to_relocate`, `is_profile_completed`, `is_pro`, `front_id`, `back_id`, `is_blurred_images`, `created_at`, `updated_at`, `guardian_id`) VALUES
 (2, 60, 'Waqar Ahmed', 'Male', '2026-04-18', NULL, 'Divorced', 'Pakistan', 'Bhimber', 'Pakistani', 'Bachelor\'s', 'Software Engineer', 'Very Religious', '', '', '[\"Reading\",\"Traveling\",\"Cooking\",\"Coding\"]', '', 0, '2026-04-21 22:05:20', '[\"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop\",\"/uploads/profiles/profile_60_1776468736595.jpeg\",\"/uploads/profiles/profile_60_1776469175863.jpeg\"]', 1, '+923028349225', 'Islam', 'Sunni', 68, 'Average', 'Mirza', 'Punjabi', 'Private', 'Less than PKR 100,000', 0, 1, 1, 0, NULL, NULL, 0, '2026-02-26 20:14:28', '2026-04-21 22:05:20', NULL),
 (49, 1, 'Aisha Khan', 'female', '1998-03-15', 26, 'single', 'United Kingdom', 'London', 'Pakistani', 'masters', 'Doctor', 'very_practicing', 'conservative', 'Assalamu Alaikum! I am a medical professional who loves cooking and reading Quran. Looking for a kind and practicing partner to build a beautiful family.', '[\"Cooking\",\"Quran\",\"Reading\",\"Travelling\",\"Volunteering\"]', 'single', 0, '2026-03-08 01:43:18', '[\"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop\"]', 1, '+447700100001', NULL, NULL, NULL, NULL, 'Arain', NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, 0, '2026-03-08 01:53:18', '2026-04-19 20:04:49', NULL),
 (50, 2, 'Fatima Ali', 'female', '1999-07-22', 25, 'single', 'United Kingdom', 'Manchester', 'British', 'bachelors', 'Teacher', 'practicing', 'moderate', 'Alhamdulillah for everything. I am a primary school teacher passionate about education and community work. Seeking a sincere and responsible husband.', '[\"Teaching\",\"Baking\",\"Gardening\",\"Reading\",\"Charity\"]', 'single', 0, '2026-03-10 02:03:58', '[\"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=600&fit=crop\",\"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=600&fit=crop\",\"/uploads/profiles/profile_2_1773020509186.jpg\"]', 1, '+447700100002', NULL, NULL, NULL, NULL, 'Butt', NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, 0, '2026-03-08 01:53:18', '2026-04-19 20:04:49', NULL),
@@ -415,7 +415,7 @@ CREATE TABLE `Users` (
   `is_suspended` tinyint(1) DEFAULT '0',
   `is_deleted` tinyint(1) DEFAULT '0',
   `is_verified` tinyint(1) DEFAULT '0',
-  `is_premium` tinyint(1) DEFAULT '0',
+  `is_pro` tinyint(1) DEFAULT '0',
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -424,7 +424,7 @@ CREATE TABLE `Users` (
 -- Dumping data for table `Users`
 --
 
-INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `avatar_url`, `is_online`, `is_suspended`, `is_deleted`, `is_verified`, `is_premium`, `created_at`, `updated_at`) VALUES
+INSERT INTO `Users` (`id`, `email`, `mobile`, `password_hash`, `role`, `avatar_url`, `is_online`, `is_suspended`, `is_deleted`, `is_verified`, `is_pro`, `created_at`, `updated_at`) VALUES
 (1, 'aisha.khan@gmail.com', '+447700100001', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', NULL, 1, 0, 0, 0, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
 (2, 'fatima.ali@gmail.com', '+447700100002', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', NULL, 0, 0, 0, 1, 0, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),
 (3, 'zara.mahmood@gmail.com', '+447700100003', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', NULL, 1, 0, 0, 1, 1, '2026-03-08 01:49:08', '2026-03-08 01:49:08'),

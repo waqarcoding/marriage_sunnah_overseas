@@ -25,8 +25,8 @@ class ProfileModel {
   final UserModel? user;
   final GuardianModel? guardian;
 
-  final String? createdAt;
-  final String? updatedAt;
+  final String? created_at;
+  final String? updated_at;
 
   ProfileModel({
     this.id,
@@ -49,8 +49,8 @@ class ProfileModel {
     this.interests,
     this.user,
     this.guardian,
-    this.createdAt,
-    this.updatedAt,
+    this.created_at,
+    this.updated_at,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -79,8 +79,8 @@ class ProfileModel {
           json['guardian'] != null
               ? GuardianModel.fromJson(json['guardian'])
               : null,
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      created_at: json['created_at'],
+      updated_at: json['updated_at'],
     );
   }
 
@@ -106,8 +106,8 @@ class ProfileModel {
       'interests': interests ?? [],
       'user': user?.toJson(),
       'guardian': guardian?.toJson(),
-      'created_at': createdAt,
-      'updated_at': updatedAt,
+      'created_at': created_at,
+      'updated_at': updated_at,
     };
   }
 }

@@ -4,7 +4,9 @@ import {
     getMessages,
     getConversationUsers,
     addConversationUser,
-    deleteConversation
+    deleteConversation,
+    getUnreadCount,  // ✅ Add this import
+    clearUnreadCount
 } from '../controllers/chat.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
 
@@ -19,10 +21,16 @@ router.get('/get-messages', authenticate, getMessages);
 // Get users for conversation (based on JWT)
 router.get('/conversation-users', authenticate, getConversationUsers);
 
+// Get unread message count
+router.get('/unread-count', authenticate, getUnreadCount);  // ✅ Add this route
+
 // Add a new conversation (send first message)
 router.post('/add-conversation', authenticate, addConversationUser);
 
 // Delete a conversation by id
 router.delete('/conversation/:id', authenticate, deleteConversation);
+router.post('/unread-count/clear', authenticate, clearUnreadCount);
+
+
 
 export default router;

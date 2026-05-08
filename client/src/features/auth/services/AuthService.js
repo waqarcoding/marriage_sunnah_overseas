@@ -1,5 +1,6 @@
 // src/features/auth/api/AuthApi.js
 import Api from "../../../api/Api";
+import GuardianService from "../../guardian/services/GuardianService";
 import ProfileService from "../../profile/services/ProfileService";
 
 class AuthApi {
@@ -12,27 +13,58 @@ class AuthApi {
     register(data, callbacks) {
         return Api.upload(`${this.base}/register`, data, {
             ...callbacks,
+
             onSuccess: (res) => {
+                console.log("✅ DEBUG: register success", res)
+
                 localStorage.setItem("isLoggedIn", "true")
                 localStorage.setItem("jwtToken", res.token)
                 localStorage.setItem("authData", JSON.stringify(res))
-                if (callbacks?.onSuccess) callbacks.onSuccess(res)
+
+                callbacks?.onSuccess?.(res)
             },
-            onFailed: callbacks?.onFailed,
+
+            onFailed: (err) => {
+                console.log("❌ DEBUG: register failed", err)
+
+                // normalize error (VERY IMPORTANT)
+                const message =
+                    err?.response?.data?.message ||
+                    err?.response?.data?.error ||
+                    err?.message ||
+                    "Registration failed"
+
+                callbacks?.onFailed?.({ message })
+            },
         })
     }
     // ---------------- Login ----------------
     login(data, callbacks) {
         return Api.post(`${this.base}/login`, data, {
             ...callbacks,
+
             onSuccess: (res) => {
-                localStorage.setItem("isLoggedIn", "true");
-                localStorage.setItem("authData", JSON.stringify(res));
-                localStorage.setItem("jwtToken", res.token);
-                if (callbacks?.onSuccess) callbacks.onSuccess(res);
+                console.log("🔍 DEBUG: login success", res)
+
+                localStorage.setItem("isLoggedIn", "true")
+                localStorage.setItem("authData", JSON.stringify(res))
+                localStorage.setItem("jwtToken", res.token)
+
+                callbacks?.onSuccess?.(res)
             },
-            onFailed: callbacks?.onFailed,
-        });
+
+            onFailed: (err) => {
+                console.log("❌ DEBUG: login failed", err)
+
+                // Normalize error message
+                const message =
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Login failed"
+
+                callbacks?.onFailed?.({ message })
+            },
+        })
     }
 
     // ---------------- Check Profile ----------------
@@ -47,13 +79,22 @@ class AuthApi {
                 const user = await ProfileService.getCurrentUser();
                 const isProfileCompleted = user?.profile?.is_profile_completed === 1;
                 const isVerified = user?.is_verified === true || user?.is_verified === 1;
+                const guardianData = await GuardianService.getMyGuardian();
+                console.log();
+                // ✅ Check for guardianUser instead of guardian
+                const isGuardianFound = guardianData.data != null ? true : false;
+
+
 
                 if (!isProfileCompleted) {
                     navigate("/profilesetup", { replace: true });
                 } else if (!isVerified) {
                     navigate("/verification", { replace: true });
-                } else {
-                    navigate("/explore", { replace: true });
+                } else if (!isGuardianFound) {
+                    navigate("/individual/show-pin", { replace: true });
+                }
+                else {
+                    navigate("/individual/explore", { replace: true });
                 }
 
                 return { isProfileCompleted, isVerified };
@@ -108,6 +149,7 @@ class AuthApi {
 
     // ---------------- Logout ----------------
     logout() {
+        console.log("LogOut");
         localStorage.removeItem("isLoggedIn");
         localStorage.removeItem("authData");
         localStorage.removeItem("jwtToken");
@@ -119,10 +161,28 @@ class AuthApi {
 
         return ProfileService.getCurrentUser();
     }
+    getUserById(id) {
+        return ProfileService.getUserById(id);
+    }
+    async isPro() {
+        try {
+            const user = await ProfileService.getCurrentUser();
+            return user?.is_pro || false;
+        } catch (err) {
+            console.error('Error getting pro status:', err);
+            return false;
+        }
+    }
+
 
     // ---------------- Check Login ----------------
     isLoggedIn() {
-        return localStorage.getItem("isLoggedIn") === "true";
+        const loggedIn = localStorage.getItem("isLoggedIn") === "true";
+
+        if (!loggedIn) {
+            this.logout();
+        }
+        return loggedIn;
     }
 
     // ---------------- Check OTP Verified ----------------
@@ -132,17 +192,70 @@ class AuthApi {
 
     // ---------------- Token Utilities ----------------
     getTokenData() {
+        // console.log("🔍 getTokenData START");
+
         try {
             const token = localStorage.getItem("jwtToken");
-            if (!token) return null;
-            return JSON.parse(atob(token.split(".")[1]));
-        } catch { return null; }
+            // console.log("🔍 Raw token from localStorage:", token);
+
+            if (!token) {
+                console.log("🔍 No token found");
+                return null;
+            }
+
+            const parts = token.split(".");
+            // console.log("🔍 Token parts:", parts.length);
+
+            if (parts.length !== 3) {
+                // console.error("🔍 Invalid JWT format");
+                return null;
+            }
+
+            // ✅ Convert base64url to base64 before decoding
+            let base64Payload = parts[1];
+
+            // Replace URL-safe characters
+            base64Payload = base64Payload.replace(/-/g, '+').replace(/_/g, '/');
+
+            // Add padding if needed
+            while (base64Payload.length % 4 !== 0) {
+                base64Payload += '=';
+            }
+
+            // console.log("🔍 Original payload:", parts[1]);
+            // console.log("🔍 Converted payload:", base64Payload);
+
+            const decoded = JSON.parse(atob(base64Payload));
+            //  console.log("🔍 Decoded token SUCCESS:", decoded);
+            //  console.log("🔍 ID from token:", decoded.id);
+
+            return decoded;
+        } catch (err) {
+            // console.error("🔍 ERROR in getTokenData:", err);
+            return null;
+        }
     }
 
-    getUserRole() { return this.getTokenData()?.role ?? null; }
-    getUserId() { return this.getTokenData()?.id ?? null; }
-    isGuardian() { return this.getUserRole() === "guardian"; }
-    isIndividual() { return this.getUserRole() === "individual"; }
+    getUserRole() {
+        const data = this.getTokenData();
+        //console.log("🔍 getUserRole data:", data);
+        return data?.role ?? null;
+    }
+
+    getUserId() {
+        const data = this.getTokenData();
+        //console.log("🔍 getUserId data:", data);
+        //console.log("🔍 getUserId returning:", data?.id);
+        return data?.id ?? null;
+    }
+
+    isGuardian() {
+        return this.getUserRole() === "guardian";
+    }
+
+    isIndividual() {
+        return this.getUserRole() === "individual";
+    }
 }
 
 export default new AuthApi();

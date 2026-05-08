@@ -5,13 +5,29 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Guardian extends Model {
     static associate(models) {
-      // Guardian belongs to both the individual user and the guardian user
-      Guardian.belongsTo(models.User, { foreignKey: 'individual_id', as: 'individual' });
-      Guardian.belongsTo(models.User, { foreignKey: 'guardian_id', as: 'guardian' });
+      // FIX: added onDelete CASCADE so when a User row is deleted, all
+      // Guardian rows where they are the individual OR the guardian are removed
 
-      // ✅ Guardian → Profile via individual_id (to get ward's profile)
-      Guardian.belongsTo(models.Profile, { foreignKey: 'individual_id', targetKey: 'individual_id', as: 'individualProfile' });
+      Guardian.belongsTo(models.User, {
+        foreignKey: 'guardian_id',
+        as: 'guardianUser', // ✅ Changed from 'guardian' to avoid conflict
+        onDelete: 'CASCADE',
+      });
 
+      // Association with the individual/ward (User)
+      Guardian.belongsTo(models.User, {
+        foreignKey: 'individual_id',
+        as: 'individual',
+        onDelete: 'CASCADE',
+      });
+
+      // Association with individual's profile
+      Guardian.belongsTo(models.Profile, {
+        foreignKey: 'individual_id',
+        targetKey: 'individual_id',
+        as: 'individualProfile',
+        onDelete: 'CASCADE',
+      });
 
     }
   }
@@ -32,12 +48,20 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Guardian',
     tableName: 'Guardians',
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    created_at: 'created_at',
+    updated_at: 'updated_at',
+
+    // FIX: stable index names prevent duplicate index creation on repeated sync()
+    // Previously these were unnamed and Sequelize would add guardians_individual_id_guardian_id_unique_2,
+    // guardians_individual_id_2, guardians_guardian_id_2, etc. on every restart
     indexes: [
-      { unique: true, fields: ['individual_id', 'guardian_id'] },
-      { fields: ['individual_id'] },
-      { fields: ['guardian_id'] },
+      {
+        unique: true,
+        fields: ['individual_id', 'guardian_id'],
+        name: 'guardians_individual_guardian_unique',
+      },
+      { fields: ['individual_id'], name: 'guardians_individual_id_idx' },
+      { fields: ['guardian_id'], name: 'guardians_guardian_id_idx' },
     ],
   });
 

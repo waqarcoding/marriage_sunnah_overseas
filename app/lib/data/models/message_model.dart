@@ -6,8 +6,8 @@ class MessageModel {
   final int? interestId;
   final bool isSeen;
 
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime created_at;
+  final DateTime updated_at;
 
   MessageModel({
     required this.id,
@@ -16,8 +16,8 @@ class MessageModel {
     required this.message,
     this.interestId,
     required this.isSeen,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.created_at,
+    required this.updated_at,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -28,8 +28,8 @@ class MessageModel {
       message: json['message'],
       interestId: json['interest_id'],
       isSeen: json['is_seen'] == 1 || json['is_seen'] == true,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      created_at: DateTime.parse(json['created_at']),
+      updated_at: DateTime.parse(json['updated_at']),
     );
   }
 
@@ -41,8 +41,8 @@ class MessageModel {
       'message': message,
       'interest_id': interestId,
       'is_seen': isSeen,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': created_at.toIso8601String(),
+      'updated_at': updated_at.toIso8601String(),
     };
   }
 }

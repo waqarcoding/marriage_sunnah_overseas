@@ -15,8 +15,8 @@ class UserModel {
   final bool? isDeleted;
   final bool? isVerified;
   final bool? isPremium;
-  final String? createdAt;
-  final String? updatedAt;
+  final String? created_at;
+  final String? updated_at;
 
   // Nested relations
   final ProfileModel? profile;
@@ -38,8 +38,8 @@ class UserModel {
     this.isDeleted,
     this.isVerified,
     this.isPremium,
-    this.createdAt,
-    this.updatedAt,
+    this.created_at,
+    this.updated_at,
     this.profile,
     this.managedProfiles,
     this.guardians,
@@ -60,9 +60,9 @@ class UserModel {
       isSuspended: json['is_suspended'] == 1,
       isDeleted: json['is_deleted'] == 1,
       isVerified: json['is_verified'] == 1,
-      isPremium: json['is_premium'] == 1,
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      isPremium: json['is_pro'] == 1,
+      created_at: json['created_at'],
+      updated_at: json['updated_at'],
 
       // Nested relations
       profile:
@@ -119,9 +119,9 @@ class UserModel {
       'is_suspended': isSuspended,
       'is_deleted': isDeleted,
       'is_verified': isVerified,
-      'is_premium': isPremium,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
+      'is_pro': isPremium,
+      'created_at': created_at,
+      'updated_at': updated_at,
       'profile': profile?.toJson(),
       'managedProfiles': managedProfiles?.map((x) => x.toJson()).toList() ?? [],
       'guardians': guardians?.map((x) => x.toJson()).toList() ?? [],

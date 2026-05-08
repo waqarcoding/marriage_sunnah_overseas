@@ -7,8 +7,8 @@ class InterestModel {
   final int fromUserId;
   final int toUserId;
   final bool? isMutual;
-  final String? createdAt;
-  final String? updatedAt;
+  final String? created_at;
+  final String? updated_at;
 
   // Nested relations
   final UserModel? fromUser;
@@ -21,8 +21,8 @@ class InterestModel {
     required this.fromUserId,
     required this.toUserId,
     this.isMutual,
-    this.createdAt,
-    this.updatedAt,
+    this.created_at,
+    this.updated_at,
     this.fromUser,
     this.toUser,
   });
@@ -35,8 +35,8 @@ class InterestModel {
       fromUserId: json['from_user'],
       toUserId: json['to_user'],
       isMutual: json['is_mutual'] == 1,
-      createdAt: json['created_at'],
-      updatedAt: json['updated_at'],
+      created_at: json['created_at'],
+      updated_at: json['updated_at'],
       fromUser:
           json['fromUser'] != null
               ? UserModel.fromJson(json['fromUser'])
@@ -54,8 +54,8 @@ class InterestModel {
       'from_user': fromUserId,
       'to_user': toUserId,
       'is_mutual': isMutual,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
+      'created_at': created_at,
+      'updated_at': updated_at,
       'fromUser': fromUser?.toJson(),
       'toUser': toUser?.toJson(),
     };

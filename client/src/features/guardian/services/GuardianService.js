@@ -8,18 +8,26 @@ class GuardianService {
 
     // ── Individual (Ward) methods ─────────────────────────────────────────────
 
-    // Search users to add as guardian
-    searchGuardians(query, callbacks) {
+    // Generate PIN for guardian linking
+    generatePin(callbacks) {
         return Api.handleRequest(
-            Api.get(`${this.base}/search?q=${encodeURIComponent(query)}`),
+            Api.post(`${this.base}/generate-pin`),
             callbacks
         );
     }
 
-    // Assign a guardian to myself
-    assignGuardian(data, callbacks) {
+    // Get my current PIN
+    getMyPin(callbacks) {
         return Api.handleRequest(
-            Api.post(`${this.base}/assign`, data),
+            Api.get(`${this.base}/my-pin`),
+            callbacks
+        );
+    }
+
+    // Search users to add as guardian
+    searchGuardians(query, callbacks) {
+        return Api.handleRequest(
+            Api.get(`${this.base}/search?q=${encodeURIComponent(query)}`),
             callbacks
         );
     }
@@ -33,14 +41,36 @@ class GuardianService {
     }
 
     // Remove my guardian
-    removeGuardian(data = {}, callbacks) {
+    async removeGuardian(callbacks) {
+        try {
+            const res = await Api.delete(`${this.base}/remove`);
+            if (res.success && callbacks?.onSuccess) {
+                callbacks.onSuccess(res);
+            } else if (!res.success && callbacks?.onFailed) {
+                callbacks.onFailed(res);
+            }
+        } catch (error) {
+            if (callbacks?.onFailed) callbacks.onFailed(error);
+        }
+    }
+
+    // ── Guardian methods ──────────────────────────────────────────────────────
+
+    // Verify PIN and preview ward details (before linking)
+    verifyPin(data, callbacks) {
         return Api.handleRequest(
-            Api.post(`${this.base}/remove`, data),
+            Api.post(`${this.base}/verify-pin`, data),
             callbacks
         );
     }
 
-    // ── Guardian methods ──────────────────────────────────────────────────────
+    // Link guardian to ward using PIN
+    linkWithPin(data, callbacks) {
+        return Api.handleRequest(
+            Api.post(`${this.base}/link-with-pin`, data),
+            callbacks
+        );
+    }
 
     // Search users to add as ward
     searchWards(query, callbacks) {

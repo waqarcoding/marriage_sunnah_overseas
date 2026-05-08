@@ -47,12 +47,8 @@ const getS3Storage = async () => {
     return _s3Storage;
 };
 
-const isSpaces = () => !!(
-    process.env.DO_SPACES_KEY &&
-    process.env.DO_SPACES_SECRET &&
-    process.env.DO_SPACES_BUCKET &&
-    process.env.DO_SPACES_ENDPOINT
-);
+// ── Storage selector: always local in development ─────────────────────────────
+const useSpaces = () => true;
 
 const imageFilter = (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
@@ -71,8 +67,8 @@ const imageFilter = (req, file, cb) => {
 const upload = {
     fields: (fields = []) => async (req, res, next) => {
         try {
-            const storage = isSpaces() ? await getS3Storage() : localStorage;
-            console.log(`📦 ${isSpaces() ? "DO Spaces" : "Local disk"}`);
+            const storage = useSpaces() ? await getS3Storage() : localStorage;
+            console.log(`📦 ${useSpaces() ? "DO Spaces" : "Local disk"}`);
             multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
                 .fields(fields)(req, res, next);
         } catch (err) {
@@ -85,7 +81,7 @@ const upload = {
 // Get URL from single file
 export const getUploadedUrl = (file) => {
     if (!file) return null;
-    if (isSpaces()) {
+    if (useSpaces()) {
         const cdn = process.env.DO_SPACES_CDN_URL;
         return cdn ? `${cdn}/${file.key}` : file.location;
     }

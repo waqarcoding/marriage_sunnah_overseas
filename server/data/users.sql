@@ -4,7 +4,7 @@
 -- ============================================================
 
   -- ─── USERS ───────────────────────────────────────────────────
-INSERT INTO`Users`(`id`, `email`, `mobile`, `password_hash`, `role`, `is_online`, `is_suspended`, `is_deleted`, `is_verified`, `is_premium`, `created_at`, `updated_at`) VALUES
+INSERT INTO`Users`(`id`, `email`, `mobile`, `password_hash`, `role`, `is_online`, `is_suspended`, `is_deleted`, `is_verified`, `is_pro`, `created_at`, `updated_at`) VALUES
 
 --FEMALES(1 - 20)
   (1, 'aisha.khan@gmail.com', '+447700100001', '$2b$10$LkRWeIF/f/dnEev8hAgSpubNG4usEfD24lISlZbc7JkBXu2w8w/E2', 'individual', 1, 0, 0, 1, 1, NOW(), NOW()),

@@ -1,158 +1,292 @@
-// src/socket/SocketContext.jsx
-// Single shared socket instance for the entire app
-// Provides: socket, badge counts, and setters
+// @ts-nocheck
+// src/sockets/SocketContext.jsx
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
-// @ts-ignore
-const SERVER_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL?.replace('/api', '');
+const SERVER_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BASE_URL?.replace('/api', '') ||
+  'http://localhost:5000';
 
 const SocketContext = createContext(null);
 
-export function SocketProvider({ userId, children }) {
-  const connectedRef = useRef(false);
+let _socket = null;
+let _userId = null;
+let _badgeSetters = null;
 
-  // ✅ socket as STATE — so consumers re-render when socket is ready
-  const [socket, setSocket] = useState(null);
+// ─────────────────────────────────────────
+// DESTROY
+// ─────────────────────────────────────────
+function destroySocket() {
+  if (_socket) {
+    _socket.removeAllListeners();
+    _socket.disconnect();
+    _socket = null;
+    _userId = null;
+    _badgeSetters = null;
+  }
+}
+
+// ─────────────────────────────────────────
+// CREATE SOCKET
+// ─────────────────────────────────────────
+function createSocket(userId, setters) {
+  if (_socket && String(_userId) === String(userId)) return _socket;
+
+  destroySocket();
+
+  _userId = userId;
+  _badgeSetters = setters;
+
+  const s = io(SERVER_URL, {
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    auth: { token: localStorage.getItem('jwtToken') },
+  });
+
+  // ─────────────────────────────────────────
+  // CONNECT
+  // ─────────────────────────────────────────
+  s.on('connect', () => {
+    console.log('🔌 Connected:', s.id);
+    s.emit('join', userId);
+  });
+
+  s.on('disconnect', (reason) => {
+    console.log('🔌 Disconnected:', reason);
+  });
+
+  s.on('connect_error', (err) => {
+    console.warn('🔌 Error:', err.message);
+  });
+
+  // ─────────────────────────────────────────
+  // 🔔 MAIN NOTIFICATION HANDLER (NEW)
+  // ─────────────────────────────────────────
+  s.on('notification', (n) => {
+    console.log('🔔 Notification:', n);
+
+    const { type, message, data } = n;
+
+    // 🎯 Smart UI behavior per type
+    switch (type) {
+      case 'interest_received':
+        _badgeSetters?.setInterestCount((prev) => prev + 1);
+        toast(`💌 ${message}`);
+        break;
+
+      case 'interest_accepted':
+        toast.success(message);
+        break;
+
+      case 'interest_declined':
+        toast.error(message);
+        break;
+
+      case 'interest_cancelled':
+        toast(message);
+        break;
+
+      case 'guardian_new_interest':
+        _badgeSetters?.setGuardianCount((prev) => prev + 1);
+        toast(`🕌 ${message}`);
+        break;
+
+      case 'new_match':
+        toast.success(`💞 ${message}`);
+        break;
+
+      case 'new_message':
+        _badgeSetters?.setChatCount((prev) => prev + 1);
+        toast(`📨 ${message}`);
+        break;
+
+      case 'guardian_approved':
+        toast.success(message);
+        _badgeSetters?.setGuardianCount((prev) => Math.max(0, prev - 1));
+        break;
+
+      case 'guardian_rejected':
+        toast.error(message);
+        break;
+
+      case 'guardian_assigned':
+      case 'guardian_removed':
+      case 'ward_added':
+      case 'ward_removed':
+        toast(message);
+        break;
+
+      default:
+        console.log('Unhandled notification type:', type);
+    }
+  });
+
+  // ─────────────────────────────────────────
+  // 🔢 COUNTERS (REAL-TIME)
+  // ─────────────────────────────────────────
+  s.on('interest_count', ({ count }) => {
+    _badgeSetters?.setInterestCount(Number(count));
+  });
+
+  s.on('guardian_pending_count', ({ count }) => {
+    _badgeSetters?.setGuardianCount(Number(count));
+  });
+
+  s.on('chat_count_update', ({ count }) => {
+    _badgeSetters?.setChatCount(Number(count));
+  });
+
+  s.on('credit_update', ({ credits }) => {
+    _badgeSetters?.setCredits(Number(credits));
+  });
+
+  // ─────────────────────────────────────────
+  // 💬 CHAT REAL-TIME (no DB)
+  // ─────────────────────────────────────────
+  s.on('typing', ({ from }) => {
+    console.log('✍️ typing from:', from);
+  });
+
+  s.on('stop_typing', ({ from }) => {
+    console.log('✋ stop typing from:', from);
+  });
+
+  // ─────────────────────────────────────────
+  // 🟢 ONLINE STATUS
+  // ─────────────────────────────────────────
+  s.on('user_online', (userId) => {
+    console.log('🟢 User online:', userId);
+  });
+
+  s.on('user_offline', (userId) => {
+    console.log('⚫ User offline:', userId);
+  });
+
+  _socket = s;
+  return s;
+}
+
+// ─────────────────────────────────────────
+// PROVIDER
+// ─────────────────────────────────────────
+export function SocketProvider({ userId, children }) {
   const [interestCount, setInterestCount] = useState(0);
   const [chatCount, setChatCount] = useState(0);
   const [guardianCount, setGuardianCount] = useState(0);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
+  const [credits, setCredits] = useState(0);
+
   const [connected, setConnected] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [socketInst, setSocketInst] = useState(null);
+  const isMountedRef = useRef(true); // ✅ Track mount status
+
+  const settersRef = useRef(null);
+  settersRef.current = {
+    setInterestCount,
+    setChatCount,
+    setGuardianCount,
+    setCredits,
+  };
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (!userId) return;
-    if (connectedRef.current) return; // prevent StrictMode double-connect
-    connectedRef.current = true;
 
-    const s = io(SERVER_URL, {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      auth: { token: localStorage.getItem('jwtToken') },
-    });
+    const proxy = {
+      setInterestCount: (...a) => {
+        if (isMountedRef.current) settersRef.current?.setInterestCount(...a);
+      },
+      setChatCount: (...a) => {
+        if (isMountedRef.current) settersRef.current?.setChatCount(...a);
+      },
+      setGuardianCount: (...a) => {
+        if (isMountedRef.current) settersRef.current?.setGuardianCount(...a);
+      },
+      setCredits: (...a) => {
+        if (isMountedRef.current) settersRef.current?.setCredits(...a);
+      },
+    };
 
-    s.on('connect', () => {
-      console.log('🔌 Socket connected:', s.id);
-      s.emit('join', userId);
-    });
+    const s = createSocket(userId, proxy);
 
-    s.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
-    });
+    if (isMountedRef.current) {
+      setSocketInst(s);
+    }
 
-    s.on('connect_error', (err) => {
-      console.warn('🔌 Socket connection error:', err.message);
-    });
+    const onConnect = () => {
+      if (isMountedRef.current) setConnected(true);
+    };
 
-    // ── Badge count events ────────────────────────────────
-    // Server pushes exact count after any interest action
-    s.on('interest_count', ({ count }) => {
-      setInterestCount(Number(count));
-    });
+    const onDisconnect = () => {
+      if (isMountedRef.current) setConnected(false);
+    };
 
-    // Increment interest badge immediately on new interest
-    s.on('interest_received', () => {
-      setInterestCount(prev => prev + 1);
-    });
+    s.on('connect', onConnect);
+    s.on('disconnect', onDisconnect);
 
-
-    // Guardian badge count
-    s.on('guardian_pending_count', ({ count }) => {
-      setGuardianCount(Number(count));
-    });
-
-    // ── Toast notification events ─────────────────────────
-
-    // 💌 New interest received
-    s.on('interest_received', (data) => {
-      if (window.location.pathname === '/interest') return;
-      toast(`💌 ${data.sender_name || 'Someone'} sent you an interest`, { duration: 5000 });
-    });
-
-    // ✅ Interest accepted
-    s.on('interest_accepted', (data) => {
-      toast.success(`${data.accepted_by_name || 'Someone'} accepted your interest ✅`, { duration: 5000 });
-    });
-
-    // ❌ Interest declined
-    s.on('interest_declined', (data) => {
-      toast.error(`${data.declined_by_name || 'Someone'} declined your interest`, { duration: 4000 });
-    });
-
-    // 🚫 Interest cancelled
-    s.on('interest_cancelled', () => {
-      toast(`🚫 An interest was cancelled`, { duration: 3000 });
-    });
-
-    // 💞 New match
-    s.on('new_match', (data) => {
-      toast.success(`💞 You matched with ${data.matched_with_name || 'someone'}! 🎉`, { duration: 6000 });
-    });
-
-    // 📩 New message toast
-    s.on('new_message', (data) => {
-      setChatCount(prev => prev + 1);
-      if (window.location.pathname === '/chats') return;
-      const preview = (data.body || '').slice(0, 40);
-      toast(`📩 ${data.sender_name || 'Message'}: ${preview}`, { duration: 4000 });
-    });
-
-    // 🕌 Guardian approved
-    s.on('guardian_approved', (data) => {
-      toast.success(`🕌 ${data.guardian_name || 'Your guardian'} approved your interest`, { duration: 5000 });
-    });
-
-    // 🕌 Guardian rejected
-    s.on('guardian_rejected', (data) => {
-      toast.error(`🕌 ${data.guardian_name || 'Your guardian'} rejected your interest`, { duration: 5000 });
-    });
-
-    // 🤝 Guardian assigned (received by guardian role)
-    s.on('guardian_assigned', (data) => {
-      toast(`🤝 ${data.ward_name || 'Someone'} assigned you as their guardian`, { duration: 5000 });
-    });
-
-    // 🗑️ Guardian removed (received by guardian role)
-    s.on('guardian_removed', (data) => {
-      toast(`🗑️ ${data.ward_name || 'Someone'} removed you as guardian`, { duration: 4000 });
-    });
-
-    // --- Message/Chat events for ChatPage.jsx (200-215) ---
-    // These events are handled in ChatPage (private instance), not globally here
-
-    s.on("messages_seen", () => { });
-    s.on("typing", () => { });
-    s.on("stop_typing", () => { });
-    // --- End new message/typing event wiring for chat pages ---
-
-    // ✅ Set socket into STATE so consumers get the real socket instance
-    setSocket(s);
+    if (s.connected && isMountedRef.current) {
+      setConnected(true);
+    }
 
     return () => {
-      connectedRef.current = false;
-      s.disconnect();
-      setSocket(null);
+      s.off('connect', onConnect);
+      s.off('disconnect', onDisconnect);
     };
   }, [userId]);
 
+  useEffect(() => {
+    if (!userId && _socket) {
+      // ✅ Defer cleanup to avoid DOM issues
+      const timer = setTimeout(() => {
+        destroySocket();
+        if (isMountedRef.current) {
+          setSocketInst(null);
+          setConnected(false);
+        }
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }
+  }, [userId]);
+
+  // ✅ Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      // Don't destroy socket on unmount - keep it alive for app
+    };
+  }, []);
+
   return (
-    <SocketContext.Provider value={{
-      socket,
-      interestCount, setInterestCount,
-      chatCount, setChatCount,
-      guardianCount, setGuardianCount,
-    }}>
+    <SocketContext.Provider
+      value={{
+        socket: socketInst,
+        connected,
+
+        interestCount,
+        setInterestCount,
+
+        chatCount,
+        setChatCount,
+
+        guardianCount,
+        setGuardianCount,
+
+        credits,
+        setCredits,
+      }}
+    >
       {children}
     </SocketContext.Provider>
   );
 }
 
+// ─────────────────────────────────────────
+// HOOK
+// ─────────────────────────────────────────
 export function useSocket() {
   return useContext(SocketContext);
 }

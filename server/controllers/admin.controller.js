@@ -30,7 +30,7 @@ export const verifyProfile = async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.json({ error: 'User not found' });
 
     await user.update({ is_verified: true });
 
@@ -48,7 +48,7 @@ export const suspendUser = async (req, res) => {
 
     const { userId } = req.params;
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.json({ error: 'User not found' });
 
     user.is_suspended = true;
     await user.save();
@@ -72,7 +72,7 @@ export const unsuspendUser = async (req, res) => {
 
     const { userId } = req.params;
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.json({ error: 'User not found' });
 
     user.is_suspended = false;
     await user.save();
@@ -90,7 +90,7 @@ export const deleteUser = async (req, res) => {
 
     const { userId } = req.params;
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.json({ error: 'User not found' });
 
     const profile = await user.getProfile();
     if (profile) await profile.destroy();
@@ -122,7 +122,7 @@ export const getUserDetails = async (req, res) => {
       ],
     });
 
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.json({ error: 'User not found' });
 
     res.json(user);
   } catch (err) {
@@ -177,7 +177,7 @@ export const getPendingCount = async (req, res) => {
     });
 
     if (!user || !user.profile) {
-      return res.status(404).json({ error: 'Profile not found' });
+      return res.json({ error: 'Profile not found' });
     }
 
     const count = await Interest.count({

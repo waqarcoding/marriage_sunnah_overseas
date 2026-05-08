@@ -1,234 +1,87 @@
 'use strict';
 const { Model } = require('sequelize');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TypeScript type declarations
-// ─────────────────────────────────────────────────────────────────────────────
-/**
- * @typedef {Object} InterestAttributes
- * @property {number}  id
- * @property {string}  status                   - 'pending' | 'accepted' | 'declined'
- * @property {number}  from_user
- * @property {number}  from_guardian
- * @property {string}  from_guardian_status      - 'pending' | 'accepted' | 'declined'
- * @property {number}  to_user
- * @property {number}  to_guardian
- * @property {string}  to_guardian_status        - 'pending' | 'accepted' | 'declined'
- * @property {boolean} both_guardians_approved
- * @property {boolean} both_users_approved
- * @property {boolean} is_super_like
- * @property {boolean} is_mutual
- * @property {Date}    created_at
- * @property {Date}    updated_at
- */
-
 module.exports = (sequelize, DataTypes) => {
   class Interest extends Model {
 
-    // ── Declare instance fields for TypeScript/IDE support ─────────────────
-    // Fields for IDE/TS only (declaration, not JS/TS-initialization):
-    // @ts-ignore
-    id; status; from_user; from_guardian; from_guardian_status;
-    // @ts-ignore
-    to_user; to_guardian; to_guardian_status;
-    // @ts-ignore
-    both_guardians_approved; both_users_approved;
-    // @ts-ignore
-    is_super_like; is_mutual; created_at; updated_at;
+    // ✅ REMOVED class field declarations — they shadow Sequelize's dataValues
+    // proxy and cause interest.from_user to return undefined.
+    // Use interest.from_user directly after this fix.
 
     static associate(models) {
-      // User Interactions: Interests associations for users (from_user/to_user)
-      Interest.belongsTo(models.User, { foreignKey: 'from_user', as: 'fromUser' });
-      Interest.belongsTo(models.User, { foreignKey: 'to_user', as: 'toUser' });
-
+      Interest.belongsTo(models.User, { foreignKey: 'from_user', as: 'fromUser', onDelete: 'CASCADE' });
+      Interest.belongsTo(models.User, { foreignKey: 'to_user', as: 'toUser', onDelete: 'CASCADE' });
       Interest.belongsTo(models.Profile, { foreignKey: 'from_user', targetKey: 'individual_id', as: 'fromProfile' });
       Interest.belongsTo(models.Profile, { foreignKey: 'to_user', targetKey: 'individual_id', as: 'toProfile' });
-
-      Interest.hasMany(models.Message, { foreignKey: 'interest_id', as: 'messages' });
-      Interest.hasOne(models.Match, { foreignKey: 'interest_id', as: 'match' });
-
-      // ── Guardian associations ──────────────────────────────────────────
-      Interest.belongsTo(models.Guardian, { foreignKey: 'from_guardian', as: 'fromGuardian' });
-      Interest.belongsTo(models.Guardian, { foreignKey: 'to_guardian', as: 'toGuardian' });
+      Interest.hasMany(models.Message, { foreignKey: 'interest_id', as: 'messages', onDelete: 'CASCADE', hooks: true });
+      Interest.hasOne(models.Match, { foreignKey: 'interest_id', as: 'match', onDelete: 'CASCADE', hooks: true });
+      Interest.belongsTo(models.Guardian, { foreignKey: 'from_guardian', as: 'fromGuardian', onDelete: 'SET NULL' });
+      Interest.belongsTo(models.Guardian, { foreignKey: 'to_guardian', as: 'toGuardian', onDelete: 'SET NULL' });
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Instance Magic Methods
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Instance helpers ──────────────────────────────────────────────────────
 
-    // ── Get from_guardian data ───────────────────────────────────────────
-    async getFromGuardian() {
+    async getFromGuardianRow() {
       const { Guardian } = sequelize.models;
-      return await Guardian.findOne({
-        where: { individual_id: this.from_user },
-        attributes: [
-          'id', 'individual_id', 'guardian_id', 'contact_hidden',
-          'guardian_name', 'guardian_phone', 'guardian_email',
-          'guardian_relationship', 'guardian_image',
-          'created_at', 'updated_at',
-        ],
-      });
+      const fromUserId = this.getDataValue('from_user');
+      return await Guardian.findOne({ where: { individual_id: fromUserId } });
     }
 
-    // ── Get to_guardian data ─────────────────────────────────────────────
-    async getToGuardian() {
+    async getToGuardianRow() {
       const { Guardian } = sequelize.models;
-      return await Guardian.findOne({
-        where: { individual_id: this.to_user },
-        attributes: [
-          'id', 'individual_id', 'guardian_id', 'contact_hidden',
-          'guardian_name', 'guardian_phone', 'guardian_email',
-          'guardian_relationship', 'guardian_image',
-          'created_at', 'updated_at',
-        ],
-      });
+      const toUserId = this.getDataValue('to_user');
+      return await Guardian.findOne({ where: { individual_id: toUserId } });
     }
 
-    // ── Get both guardians at once ───────────────────────────────────────
     async getBothGuardians() {
       const [fromGuardian, toGuardian] = await Promise.all([
-        this.getFromGuardian(),
-        this.getToGuardian(),
+        this.getFromGuardianRow(),
+        this.getToGuardianRow(),
       ]);
       return { fromGuardian, toGuardian };
     }
 
-    // ── Check if contact is hidden for from_user ─────────────────────────
-    async isFromContactHidden() {
-      const g = await this.getFromGuardian();
-      return g?.contact_hidden === 1 || g?.contact_hidden === true;
-    }
-
-    // ── Check if contact is hidden for to_user ───────────────────────────
-    async isToContactHidden() {
-      const g = await this.getToGuardian();
-      return g?.contact_hidden === 1 || g?.contact_hidden === true;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Computed Getters (no await needed)
-    // ─────────────────────────────────────────────────────────────────────
-
-    // ── Both guardians approved? ─────────────────────────────────────────
+    // ── Computed getters ──────────────────────────────────────────────────────
     get areBothGuardiansApproved() {
-      return this.from_guardian_status === 'accepted' &&
-        this.to_guardian_status === 'accepted';
+      // Checks if both guardians have approved the interest
+      return this.getDataValue('from_guardian_status') === 'accepted' &&
+        this.getDataValue('to_guardian_status') === 'accepted';
     }
-
-    // ── Both users approved? ─────────────────────────────────────────────
     get areBothUsersApproved() {
-      return this.both_users_approved === true;
+      // Checks if both users have approved the interest
+      return this.getDataValue('both_users_approved') === true;
     }
-
-    // ── Fully approved (users + guardians)? ─────────────────────────────
     get isFullyApproved() {
+      // An interest is fully approved if both users and both guardians approved
       return this.areBothUsersApproved && this.areBothGuardiansApproved;
     }
-
-    // ── Is pending? ──────────────────────────────────────────────────────
     get isPending() {
-      return this.status === 'pending';
+      // Checks if the interest status is 'pending'
+      return this.getDataValue('status') === 'pending';
     }
-
-    // ── Is accepted? ─────────────────────────────────────────────────────
     get isAccepted() {
-      return this.status === 'accepted';
+      // Checks if the interest status is 'accepted'
+      return this.getDataValue('status') === 'accepted';
     }
-
-    // ── Is declined? ─────────────────────────────────────────────────────
     get isDeclined() {
-      return this.status === 'declined';
+      // Checks if the interest status is 'declined'
+      return this.getDataValue('status') === 'declined';
     }
 
-
-    // Fetch interests sent by the user that are still pending
+    // ── Static helpers ────────────────────────────────────────────────────────
     static async getInterestsSent(userId) {
-      const { Profile } = (sequelize && sequelize.models) ? sequelize.models : {};
-      if (!Profile) return [];
-      const results = await Interest.findAll({
-        where: {
-          from_user: userId,
-          status: 'pending'
-        },
-        include: [
-          { model: Profile, as: 'toProfile' }
-        ]
-      });
-      return results || [];
-    }
-
-    // Fetch interests received by the user that are still pending
-    static async getInterestsReceived(userId) {
-      const { Profile } = (sequelize && sequelize.models) ? sequelize.models : {};
-      if (!Profile) return [];
-      const results = await Interest.findAll({
-        where: {
-          to_user: userId,
-          status: 'pending'
-        },
-        include: [
-          { model: Profile, as: 'fromProfile' }
-        ]
-      });
-      return results || [];
-    }
-
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Static Magic Methods
-    // ─────────────────────────────────────────────────────────────────────
-
-    // ── Find all interests with both guardians included ──────────────────
-    static async findWithGuardians(where = {}) {
-      const { Guardian } = sequelize.models;
-      const guardianAttrs = [
-        'id', 'individual_id', 'guardian_id', 'contact_hidden',
-        'guardian_name', 'guardian_phone', 'guardian_email',
-        'guardian_relationship', 'guardian_image',
-      ];
+      const { Profile } = sequelize.models;
       return await Interest.findAll({
-        where,
-        include: [
-          { model: Guardian, as: 'fromGuardian', attributes: guardianAttrs.filter(attr => attr !== 'guardian_image') },
-          { model: Guardian, as: 'toGuardian', attributes: guardianAttrs.filter(attr => attr !== 'guardian_image') },
-
-        ],
+        where: { from_user: userId, status: 'pending' },
+        include: [{ model: Profile, as: 'toProfile' }],
       });
     }
 
-    // ── Find one interest with both guardians included ───────────────────
-    static async findOneWithGuardians(where = {}) {
-      const { Guardian } = sequelize.models;
-      const guardianAttrs = [
-        'id', 'individual_id', 'guardian_id', 'contact_hidden',
-        'guardian_name', 'guardian_phone', 'guardian_email',
-        'guardian_relationship', 'guardian_image',
-      ];
-      return await Interest.findOne({
-        where,
-        include: [
-          { model: Guardian, as: 'fromGuardian', attributes: guardianAttrs },
-          { model: Guardian, as: 'toGuardian', attributes: guardianAttrs },
-        ],
-      });
-    }
-
-    // ── Find all pending interests for a user ────────────────────────────
-    static async findPendingForUser(userId) {
-      return await Interest.findWithGuardians({
-        to_user: userId,
-        status: 'pending',
-      });
-    }
-
-    // ── Find all accepted interests for a user ───────────────────────────
-    static async findAcceptedForUser(userId) {
-      return await Interest.findWithGuardians({
-        [sequelize.Sequelize.Op.or]: [
-          { from_user: userId },
-          { to_user: userId },
-        ],
-        status: 'accepted',
+    static async getInterestsReceived(userId) {
+      const { Profile } = sequelize.models;
+      return await Interest.findAll({
+        where: { to_user: userId, status: 'pending' },
+        include: [{ model: Profile, as: 'fromProfile' }],
       });
     }
   }
@@ -236,45 +89,40 @@ module.exports = (sequelize, DataTypes) => {
   Interest.init(
     {
       id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
-      status: {
-        type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: false,
-        defaultValue: 'pending',
-      },
+      status: { type: DataTypes.ENUM('pending', 'accepted', 'declined'), allowNull: false, defaultValue: 'pending' },
+
       from_user: { type: DataTypes.BIGINT, allowNull: false },
       from_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
-      from_guardian_status: {
-        type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: true,
-        defaultValue: 'pending',
-      },
+      from_guardian_status: { type: DataTypes.ENUM('pending', 'accepted', 'declined'), allowNull: true, defaultValue: 'pending' },
+
       to_user: { type: DataTypes.BIGINT, allowNull: false },
       to_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
-      to_guardian_status: {
-        type: DataTypes.ENUM('pending', 'accepted', 'declined'),
-        allowNull: true,
-        defaultValue: 'pending',
-      },
+      to_guardian_status: { type: DataTypes.ENUM('pending', 'accepted', 'declined'), allowNull: true, defaultValue: 'pending' },
+
       both_guardians_approved: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       both_users_approved: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       is_super_like: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       is_mutual: { type: DataTypes.BOOLEAN, defaultValue: false },
+      is_seen: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
     },
     {
       sequelize,
       modelName: 'Interest',
       tableName: 'Interests',
-
       timestamps: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       indexes: [
-        { fields: ['from_user'] },
-        { fields: ['to_user'] },
-        { fields: ['from_guardian'] }, // ← needed for FK to Guardians
-        { fields: ['to_guardian'] },   // ← needed for FK to Guardians
+        { fields: ['from_user'], name: 'interests_from_user_idx' },
+        { fields: ['to_user'], name: 'interests_to_user_idx' },
+        { fields: ['from_guardian'], name: 'interests_from_guardian_idx' },
+        { fields: ['to_guardian'], name: 'interests_to_guardian_idx' },
       ],
     }
   );
+
   return Interest;
 };

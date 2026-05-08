@@ -1,7 +1,7 @@
 'use strict';
 
 import db from '../models/index.js';
-const { User, Profile, Interest, Dislike, Preference, Option } = db;
+const { User, Profile, Interest, Dislike, Preference, Option, Guardian } = db;
 import { Op } from 'sequelize';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ export const getCountryOptions = async (req, res) => {
         const countryName = req.params.country;
         const data = allCountries.find(c => c.country === countryName);
 
-        if (!data) return res.status(404).json({ success: false, message: `Country "${countryName}" not found.` });
+        if (!data) return res.json({ success: false, message: `Country "${countryName}" not found.` });
 
         const salaryMap = global?.monthly_salary || {};
         const monthly_salaries = salaryMap[data.currency] || salaryMap['USD'] || [];
@@ -207,52 +207,172 @@ export const getCountryOptions = async (req, res) => {
 export const getExplore = async (req, res) => {
     try {
         const currentUser = await User.findByPk(req.user.id);
-        if (!currentUser) return res.status(404).json({ error: 'User not found' });
+        if (!currentUser) return res.json({ error: 'User not found' });
 
-        const prefs = await Preference.findOne({ where: { individual_id: currentUser.id } });
+        const currentProfile = await Profile.findOne({
+            where: { individual_id: currentUser.id }
+        });
+        if (!currentProfile) {
+            return res.json({ error: 'Profile not found' });
+        }
 
-        const parseQuery = (key) => {
-            const q = req.query[key];
-            if (q) return Array.isArray(q) ? q : q.split(',').map(s => s.trim()).filter(Boolean);
-            return null;
-        };
+        const prefs = await Preference.findOne({
+            where: { individual_id: currentUser.id }
+        });
 
-        const [sentInterests, dislikesSent] = await Promise.all([
-            Interest.findAll({ where: { from_user: currentUser.id }, attributes: ['to_user'], raw: true }),
-            Dislike.findAll({ where: { user_id: currentUser.id }, attributes: ['target_user_id'], raw: true }),
-        ]);
+        // Get exclusions
+        const sentInterests = await Interest.findAll({
+            where: { from_user: currentUser.id },
+            attributes: ['to_user'],
+            raw: true
+        });
 
-        // (restoring last version)
+        const receivedInterests = await Interest.findAll({
+            where: { to_user: currentUser.id },
+            attributes: ['from_user'],
+            raw: true
+        });
+
+        const dislikesSent = await Dislike.findAll({
+            where: { user_id: currentUser.id },
+            attributes: ['target_user_id'],
+            raw: true
+        });
+
         const excludeIds = [
             Number(currentUser.id),
             ...sentInterests.map(i => i.to_user),
             ...dislikesSent.map(d => d.target_user_id),
+            ...receivedInterests.map(i => i.from_user),
         ].filter(id => id != null);
 
-        const profiles = await Profile.findAll({
-            where: {
-                individual_id: { [Op.notIn]: excludeIds },
-            },
-            include: [{ model: User.unscoped(), as: 'individual', attributes: ['id', 'is_online', 'is_premium'], required: true }],
+        // ✅ Build base where clause
+        const baseWhere = {
+            individual_id: { [Op.notIn]: excludeIds }
+        };
+
+        // ✅ Gender filter - opposite gender only
+        if (currentProfile.gender) {
+            baseWhere.gender = currentProfile.gender === 'male' ? 'female' : 'male';
+        }
+
+        // ✅ Get all profiles (with and without pref matches)
+        const allProfiles = await Profile.findAll({
+            where: baseWhere,
+            include: [
+                {
+                    model: User.unscoped(),
+                    as: 'user',
+
+                    required: true
+                },
+                {
+                    model: Guardian,
+                    as: 'asIndividual', // ✅ This is the correct alias - checks if profile HAS a guardian
+                    required: true, // ✅ Only profiles WITH guardians
+                    attributes: ['id', 'guardian_id']
+                }
+            ],
             order: [['created_at', 'DESC']],
-            limit: 50,
+            limit: 100,
         });
 
+        // ✅ Apply preference matching
+        const profilesWithMatchFlag = allProfiles.map(profile => {
+            const profileData = profile.toJSON();
 
-        return res.json({ success: true, profiles, applied_prefs: !!prefs });
+            // No prefs set = show all
+            if (!prefs) {
+                return { ...profileData, noPrefsMatch: false };
+            }
+
+            let matches = true;
+
+            // ✅ Age range
+            if (prefs.pref_age_min && profile.age < prefs.pref_age_min) matches = false;
+            if (prefs.pref_age_max && profile.age > prefs.pref_age_max) matches = false;
+
+            // ✅ Height range (in inches)
+            if (prefs.pref_height_min_inches && profile.height_inches < prefs.pref_height_min_inches) matches = false;
+            if (prefs.pref_height_max_inches && profile.height_inches > prefs.pref_height_max_inches) matches = false;
+
+            // ✅ City
+            if (prefs.pref_city && profile.city !== prefs.pref_city) matches = false;
+
+            // ✅ Religion
+            if (prefs.pref_religion && profile.religion !== prefs.pref_religion) matches = false;
+
+            // ✅ Religious practice level
+            if (prefs.pref_religious_practice_level && profile.religious_practice_level !== prefs.pref_religious_practice_level) matches = false;
+
+            // ✅ Education
+            if (prefs.pref_education && profile.education !== prefs.pref_education) matches = false;
+
+            // ✅ Monthly salary
+            if (prefs.pref_monthly_salary && profile.monthly_salary < prefs.pref_monthly_salary) matches = false;
+
+            // ✅ Has children
+            if (prefs.pref_has_children !== null && profile.has_children !== prefs.pref_has_children) matches = false;
+
+            // ✅ Willing to relocate
+            if (prefs.pref_willing_to_relocate !== null && profile.willing_to_relocate !== prefs.pref_willing_to_relocate) matches = false;
+
+            // ✅ JSON array fields
+            const checkJsonArray = (prefField, profileField) => {
+                if (!prefField) return true;
+                try {
+                    const prefArray = typeof prefField === 'string' ? JSON.parse(prefField) : prefField;
+                    if (!Array.isArray(prefArray) || prefArray.length === 0) return true;
+                    return prefArray.includes(profileField);
+                } catch {
+                    return true;
+                }
+            };
+
+            if (!checkJsonArray(prefs.pref_marital_status, profile.marital_status)) matches = false;
+            if (!checkJsonArray(prefs.pref_nationality, profile.nationality)) matches = false;
+            if (!checkJsonArray(prefs.pref_country, profile.country)) matches = false;
+            if (!checkJsonArray(prefs.pref_sect, profile.sect)) matches = false;
+            if (!checkJsonArray(prefs.pref_body_type, profile.body_type)) matches = false;
+            if (!checkJsonArray(prefs.pref_caste, profile.caste)) matches = false;
+            if (!checkJsonArray(prefs.pref_mother_tongue, profile.mother_tongue)) matches = false;
+            if (!checkJsonArray(prefs.pref_employment_type, profile.employment_type)) matches = false;
+
+            return {
+                ...profileData,
+                noPrefsMatch: !matches
+            };
+        });
+
+        // ✅ Sort: matching profiles first, then non-matching
+        const sortedProfiles = profilesWithMatchFlag.sort((a, b) => {
+            if (a.noPrefsMatch === b.noPrefsMatch) return 0;
+            return a.noPrefsMatch ? 1 : -1;
+        });
+
+        // Limit to 50
+        const finalProfiles = sortedProfiles.slice(0, 50);
+
+
+        return res.json({
+            success: true,
+            profiles: finalProfiles,
+            applied_prefs: !!prefs
+        });
 
     } catch (err) {
         console.error('getExplore error:', err);
-        return res.status(500).json({ error: 'Server error' });
+        return res.status(500).json({ error: 'Server error', message: err });
     }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /explore/save-preferences
 // ─────────────────────────────────────────────────────────────────────────────
 export const savePreferences = async (req, res) => {
     try {
-        const individualId = req.user.id;
+        const userId = req.user.id; // User ID from JWT (e.g., 102)
+
+
         const {
             pref_gender, pref_age_min, pref_age_max,
             pref_height_min_inches, pref_height_max_inches,
@@ -262,6 +382,7 @@ export const savePreferences = async (req, res) => {
             pref_caste, pref_mother_tongue, pref_education,
             pref_employment_type, pref_monthly_salary,
             pref_body_type, pref_willing_to_relocate,
+            pref_profession,
         } = req.body;
 
         const payload = {
@@ -288,20 +409,40 @@ export const savePreferences = async (req, res) => {
             pref_employment_type: toJsonPref(pref_employment_type),
         };
 
+
+        // ✅ Use userId directly
         const [preference, created] = await Preference.findOrCreate({
-            where: { individual_id: individualId },
-            defaults: { individual_id: individualId, ...payload },
+            where: { individual_id: userId },
+            defaults: { individual_id: userId, ...payload },
         });
 
-        if (!created) await preference.update(payload);
+        if (!created) {
+            console.log('📝 Updating existing preference');
+            await preference.update(payload);
+        } else {
+            console.log('✨ Created new preference');
+        }
 
-        return res.json({ success: true, message: 'Preferences saved successfully', created, preference });
+
+        return res.json({
+            success: true,
+            message: 'Preferences saved successfully',
+            data: {
+                created,
+                preference: preference.toJSON()
+            }
+        });
 
     } catch (err) {
-        console.error('savePreferences error:', err);
-        return res.status(500).json({ error: 'Server error' });
+
+        return res.status(500).json({
+            success: false,
+            error: 'Server error',
+            message: err,
+        });
     }
 };
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /explore/get-preferences
@@ -337,7 +478,7 @@ export const getPreferences = async (req, res) => {
 export const updateOption = async (req, res) => {
     try {
         const { country, field, value } = req.body;
-        if (!field || value === undefined) return res.status(400).json({ error: 'field and value required' });
+        if (!field || value === undefined) return res.json({ error: 'field and value required' });
         const where = country ? { country } : {};
         const update = { [field]: JSON.stringify(value) };
         await Option.update(update, { where });

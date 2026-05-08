@@ -58,7 +58,7 @@ files.forEach(file => {
     const attr = attributes[key];
 
     // skip timestamps (handled by DB style)
-    if (key === 'id' || key === 'createdAt' || key === 'updatedAt') return;
+    if (key === 'id' || key === 'created_at' || key === 'updated_at') return;
 
     let type;
     let skipField = false;

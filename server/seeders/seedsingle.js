@@ -104,8 +104,8 @@ module.exports = {
         id: matchId++,
         user1: maleProfileId,
         user2: femaleProfileId,
-        createdAt: now,
-        updatedAt: now
+        created_at: now,
+        updated_at: now
       });
 
       // Interests table
@@ -115,8 +115,8 @@ module.exports = {
         guardian_approved: 0,
         from_user: maleProfileId,
         to_user: femaleProfileId,
-        createdAt: now,
-        updatedAt: now
+        created_at: now,
+        updated_at: now
       });
 
       interests.push({
@@ -125,8 +125,8 @@ module.exports = {
         guardian_approved: 0,
         from_user: femaleProfileId,
         to_user: maleProfileId,
-        createdAt: now,
-        updatedAt: now
+        created_at: now,
+        updated_at: now
       });
     }
 

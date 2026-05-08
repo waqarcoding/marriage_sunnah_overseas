@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { toast, ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
+import toast from "react-hot-toast"
+import AppToaster from "../../../ui/toaster"
 import { Heart, User, Pencil, Shield, ChevronLeft } from "lucide-react"
 import AuthApi from "../services/AuthService"
-import Input from "../../../components/ui/input"
-import Select from "../../../components/ui/select_option"
-
+import Input from "../../../ui/input"
+import Select from "../../../ui/select_option"
+import { useSearchParams } from "react-router-dom";
 export default function Register({ onRegister }) {
     const [step, setStep] = useState("role")
     const [role, setRole] = useState("")
@@ -21,7 +21,10 @@ export default function Register({ onRegister }) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams();
 
+    const referrerId = searchParams.get("id");
+    console.log("Incoming ID:", referrerId);
     const handleRoleSelect = (selectedRole) => {
         setRole(selectedRole)
         setStep("form")
@@ -66,13 +69,14 @@ export default function Register({ onRegister }) {
         formData.append("password_hash", password)
         formData.append("role", role)
         formData.append("gender", gender)
+        formData.append("referrerId", referrerId)
         formData.append("image", profilePhoto)  // ← actual file object
 
         AuthApi.register(formData, {
             onSuccess: () => {
                 localStorage.setItem("rememberedEmail", email)
                 onRegister?.()
-                toast.success("Registration successful!")
+
                 navigate("/otp", { replace: true })
             },
             onFailed: (err) => {
@@ -85,7 +89,7 @@ export default function Register({ onRegister }) {
 
     return (
         <>
-            <ToastContainer position="top-right" autoClose={3000} />
+            <AppToaster></AppToaster>
             <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-10">
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 

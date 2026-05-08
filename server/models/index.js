@@ -86,8 +86,8 @@ db.authenticateDatabase = async () => {
 db.syncDatabase = async () => {
   // Sync each model individually so one failure doesn't block others
   // Users table has too many keys to alter — skip it safely
-  const SKIP_TABLES = ['Users']; // tables with known alter issues
-
+  //const SKIP_TABLES = ['Users']; // tables with known alter issues
+  const SKIP_TABLES = [''];
   // @ts-ignore
   const models = Object.values(db).filter(m => m?.prototype instanceof sequelize.Sequelize.Model || (m && m.tableName));
 
@@ -103,7 +103,7 @@ db.syncDatabase = async () => {
       continue;
     }
     try {
-      await model.sync({ alter: true });
+      await model.sync({ alter: false });
       console.log(`✅ Synced: ${modelName}`);
       synced++;
     } catch (err) {

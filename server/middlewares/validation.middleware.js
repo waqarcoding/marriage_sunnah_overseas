@@ -23,7 +23,7 @@ export const validateBody = (schema) => (req, res, next) => {
       .filter(d => d.type === 'any.required')
       .map(d => d.context.key);
 
-    return res.status(400).json({
+    return res.json({
       success: false,
       message: 'Joi Validation failed',
       errors,          // { name: 'is required', email: 'must be a valid email' }

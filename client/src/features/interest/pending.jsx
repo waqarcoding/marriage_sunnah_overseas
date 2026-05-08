@@ -55,8 +55,8 @@ export default function PendingApprovalsRows() {
 
     return (
         <div className="space-y-6 p-4">
-            <Toaster position="top-right" reverseOrder={false} />
-            <div class="h-10"></div>
+
+
             <h1 className="text-3xl font-bold text-gray-800 mb-4">Pending Interest Requests</h1>
             <p className="text-gray-600 mb-6">
                 Review interest requests. Guardian approval is required before accepting or declining.
