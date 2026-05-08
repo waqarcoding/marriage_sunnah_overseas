@@ -1,6 +1,6 @@
-import 'dotenv/config'; // load .env
+require('dotenv').config(); // load .env
 
-export default {
+module.exports = {
   development: {
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -23,12 +23,8 @@ export default {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
-    dialect: 'mysql',
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    }
+    dialect: 'mysql'
   }
 };
+
+
