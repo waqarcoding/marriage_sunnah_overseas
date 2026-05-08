@@ -111,59 +111,32 @@ app.post('/api/admin/trigger-expired-check', async (req, res) => {
   }
 });
 
-/* ---------------- SERVE REACT BUILD (Only in local/monolith deployment) ---------------- */
-// ✅ FIXED: Only serve client in non-production or when CLIENT_STATIC is true
-const shouldServeClient = process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'development';
+/* ---------------- SERVE REACT BUILD ---------------- */
+const clientDist = join(__dirname, "../client/dist");
+console.log(`📁 __dirname: ${__dirname}`);
+console.log(`📁 clientDist: ${clientDist}`);
+console.log(`📁 exists: ${existsSync(clientDist)}`);
 
-if (shouldServeClient) {
-  const clientDist = join(__dirname, "../client/dist");
-  console.log(`📁 __dirname: ${__dirname}`);
-  console.log(`📁 clientDist: ${clientDist}`);
-  console.log(`📁 exists: ${existsSync(clientDist)}`);
+app.use(express.static(clientDist));
 
-  if (existsSync(clientDist)) {
-    app.use(express.static(clientDist));
-
-    app.use((req, res, next) => {
-      if (req.headers.host === "marriagesunnaoverseas.com") {
-        return res.redirect(301, "https://www.marriagesunnaoverseas.com" + req.url);
-      }
-      next();
-    });
-
-    // Catch-all for SPA routing
-    app.use((req, res, next) => {
-      if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
-        return res.status(404).json({
-          error: "Error 404",
-          path: req.path,
-          message: "The resource/route you are looking for could not be found. Have a wonderful day!"
-        });
-      }
-      res.sendFile(join(clientDist, "index.html"));
-    });
-  } else {
-    console.log('⚠️  Client dist folder not found, skipping client serving');
+app.use((req, res, next) => {
+  if (req.headers.host === "marriagesunnaoverseas.com") {
+    return res.redirect(301, "https://www.marriagesunnaoverseas.com" + req.url);
   }
-} else {
-  console.log('🚫 Production API-only mode: Not serving client files');
+  next();
+});
 
-  // Handle 404 for API routes only
-  app.use((req, res, next) => {
-    if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
-      return res.status(404).json({
-        error: "Error 404",
-        path: req.path,
-        message: "The resource/route you are looking for could not be found. Have a wonderful day!"
-      });
-    }
-    // For non-API routes, just return a message (client is served separately)
-    res.status(404).json({
-      error: "API Server",
-      message: "This is the API server. The client is served separately."
+// ✅ FIXED: Use middleware instead of route for catch-all
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+    return res.status(404).json({
+      error: "Error 404",
+      path: req.path,
+      message: "The resource/route you are looking for could not be found. Have a wonderful day!"
     });
-  });
-}
+  }
+  res.sendFile(join(clientDist, "index.html"));
+});
 
 /* ---------------- ERROR HANDLER ---------------- */
 app.use(errorMiddleware);
@@ -209,24 +182,10 @@ const startServer = async () => {
 
     // @ts-ignore
     server.listen(PORT, "0.0.0.0", () => {
-      const isProduction = process.env.NODE_ENV === 'production';
-      const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
-
       console.log(`✅ Server running on port ${PORT}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 Base URL: ${baseUrl}`);
-      console.log(`📡 Webhook endpoint: ${baseUrl}/api/subscription/webhook`);
-      console.log(`🏥 Health check: ${baseUrl}/api/health`);
+      console.log(`📡 Webhook endpoint: http://localhost:${PORT}/api/subscription/webhook`);
       console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email service: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
-      console.log(`🎯 Serving mode: ${shouldServeClient ? 'Monolith (API + Client)' : 'API Only'}`);
-
-      if (isProduction) {
-        console.log(`\n⚠️  PRODUCTION MODE - Remember to:`);
-        console.log(`   1. Configure Stripe webhook in dashboard: ${baseUrl}/api/subscription/webhook`);
-        console.log(`   2. Use production Stripe keys`);
-        console.log(`   3. Verify CORS settings for: ${process.env.CLIENT_URL}`);
-      }
     });
 
   } catch (err) {
