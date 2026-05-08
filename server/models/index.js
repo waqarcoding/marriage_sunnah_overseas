@@ -2,17 +2,14 @@ import { Sequelize, DataTypes } from 'sequelize';
 import { readdirSync } from 'fs';
 import { join, dirname, basename as pathBasename } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { createRequire } from 'module';
 import process from 'process';
+import configFile from '../config/config.js';  // ✅ ES module import
 
 // @ts-ignore
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const basename = pathBasename(__filename);
 
-// @ts-ignore
-const require = createRequire(import.meta.url);
-const configFile = require('../config/config.js');
 const env = process.env.NODE_ENV || 'development';
 const config = configFile[env];
 const db = {};
