@@ -40,8 +40,30 @@ import {
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-/* ---------------- CORS (Must be first) ---------------- */
-app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
+/* ---------------- CORS Configuration ---------------- */
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://marriagesunnaoverseas.com',
+  'https://www.marriagesunnaoverseas.com'
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 /* ---------------- DEBUG: Log all requests ---------------- */
 app.use((req, res, next) => {
@@ -62,8 +84,8 @@ app.use('/subscription/webhook',
 );
 
 /* ---------------- MIDDLEWARE (After webhook route) ---------------- */
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 /* ---------------- STATIC UPLOADS ---------------- */
 app.use("/uploads", express.static("uploads"));
@@ -95,8 +117,18 @@ app.use('/notifications', notificationRoutes);
 app.use('/referrals', referralRoutes);
 
 /* ---------------- HEALTH CHECK ---------------- */
-app.get("/api/health", (req, res) => res.json({ status: "ok" }));
-app.get("/health", (req, res) => res.json({ status: "ok" }));
+app.get("/api/health", (req, res) => res.json({
+  status: "ok",
+  timestamp: new Date().toISOString(),
+  uptime: process.uptime(),
+  environment: process.env.NODE_ENV
+}));
+app.get("/health", (req, res) => res.json({
+  status: "ok",
+  timestamp: new Date().toISOString(),
+  uptime: process.uptime(),
+  environment: process.env.NODE_ENV
+}));
 
 /* ✅ ADMIN ENDPOINTS - Manual Cron Triggers (for testing/debugging) ---------------- */
 app.post('/api/admin/trigger-expiry-check', async (req, res) => {
@@ -196,11 +228,19 @@ const startServer = async () => {
       console.log("🚫 Production mode: skipping DB sync");
     }
 
-    // ✅ Initialize Socket.IO
-    initSocket(server);
+    // ✅ Initialize Socket.IO with proper error handling
+    try {
+      initSocket(server);
+      console.log('✅ Socket.IO initialized successfully');
+    } catch (socketError) {
+      // socketError is 'unknown' type, so cast or safely access message
+      const msg = socketError instanceof Error ? socketError.message : String(socketError);
+      console.error('⚠️  Socket.IO initialization failed:', msg);
+      console.log('   Server will continue without real-time features');
+    }
 
-    // ✅ Initialize Cron Jobs (skip in test environment)
-    if (process.env.NODE_ENV !== 'development') {
+    // ✅ Initialize Cron Jobs (skip in test/development environment)
+    if (process.env.NODE_ENV === 'production') {
       console.log('\n⏰ Initializing cron jobs...');
       scheduleExpiryNotifications();
       scheduleExpiredSubscriptionChecker();
@@ -211,7 +251,10 @@ const startServer = async () => {
       console.log('      POST /api/admin/trigger-expiry-check');
       console.log('      POST /api/admin/trigger-expired-check\n');
     } else {
-      console.log('🚫 Test mode: Skipping cron job initialization');
+      console.log('🚫 Development mode: Skipping cron job initialization');
+      console.log('   Use manual triggers for testing:');
+      console.log('   POST /api/admin/trigger-expiry-check');
+      console.log('   POST /api/admin/trigger-expired-check\n');
     }
 
     // @ts-ignore
@@ -228,7 +271,9 @@ const startServer = async () => {
       console.log(`🏥 Health: ${baseUrl}/api/health`);
       console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
+      console.log(`💬 WebSocket: ${process.env.SOCKET_ENABLED !== 'false' ? 'Enabled ✓' : 'Disabled ✗'}`);
       console.log(`🎯 Mode: ${shouldServeClient ? 'Monolith (API + Client)' : 'API Only'}`);
+      console.log(`🔐 CORS: ${allowedOrigins.length} origins allowed`);
       console.log('='.repeat(70) + '\n');
     });
 
@@ -237,5 +282,22 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('⚠️  SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\n⚠️  SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+    process.exit(0);
+  });
+});
 
 startServer();

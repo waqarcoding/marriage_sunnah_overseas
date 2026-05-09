@@ -8,11 +8,12 @@
 // --------------------------------------------------
 
 export default function AuroraBackground({ children }) {
-    // Color definitions with opacity - STATIC (no animation for faster load)
-    const primaryGlow = { color: '#039E74', opacity: 0.1 };
-    const secondaryGlow = { color: '#fef3c7', opacity: 0.1 };
-    const tertiaryGlow = { color: '#1B4D3E', opacity: 0.1 };
-    const overlayTint = { color: '#fef3c7', opacity: 0.1 };
+    // Islamic theme background color definitions with opacity (inspired by rich greens, gold, and subtle creams)
+    // Islamic background color palette (do not change variable names)
+    const primaryGlow = { color: '#239672', opacity: 0.14 };     // Subtle rich green, aurora vibe
+    const secondaryGlow = { color: '#f7e5b2', opacity: 0.09 };   // Warm cream gold
+    const tertiaryGlow = { color: '#dde9da', opacity: 0.11 };    // Misty light green sand
+    const overlayTint = { color: '#d6c893', opacity: 0.13 };     // Soft muted gold green frost
 
     return (
         <div className="relative w-full h-full" style={{ background: "linear-gradient(135deg, #e8f5f1 0%, #f0f9f6 50%, #fafffe 100%)" }}>

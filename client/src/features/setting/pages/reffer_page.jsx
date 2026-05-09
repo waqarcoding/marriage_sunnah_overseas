@@ -90,8 +90,9 @@ function ReferralPage() {
 
             // Set referral link
             // @ts-ignore
-            const baseurl = import.meta.env.VITE_API_URL;
+            const baseurl = import.meta.env.VITE_API_URL.replace(/\/api$/, "");
             const link = `${baseurl}/register?id=${user.id}`;
+
             console.log('🔗 Referral link:', link);
             setReferralLink(link);
 

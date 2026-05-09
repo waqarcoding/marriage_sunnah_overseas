@@ -409,7 +409,8 @@ export default function VerificationPage({ onSubmit, onSkip }) {
         const loadProfile = async () => {
             try {
                 const res = await ProfileService.getCurrentUser();
-                const data = res;
+
+                const data = res.profile.name;
 
 
 

@@ -314,12 +314,12 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
             const result = await ExploreService.savePreferences(payload);
 
             console.log('✅ Save successful:', result);
-
+            // onApply(payload);
             // ✅ Show success and close
             setShowSuccess(true);
             setTimeout(() => {
                 setShowSuccess(false);
-                onApply(payload);
+
                 onClose();
             }, 2000);
 

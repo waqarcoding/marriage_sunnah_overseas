@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import {
     ChevronRight, ChevronLeft, Shield, Bell,
     Lock, Trash2, Crown, X, LogOut, Clock,
-    User, ImageOff, Phone, Mail, Info,
+    User, ImageOff, Phone, Mail, Info, BadgeCheck
 } from "lucide-react";
 import AuthService from "../../auth/services/AuthService";
 import ProfileService from "../../profile/services/ProfileService";
@@ -318,9 +318,15 @@ export default function SettingsPage() {
                                 onClick={() => navigate("/individual/subscription-detail")}
                             />
                         )}
+                        {tokenData?.role !== "guardian" && (
+                            <NavRow
+                                icon={BadgeCheck}
 
-                        <NavRow icon={Lock} label="Change Password" sublabel="Update your account password"
-                            onClick={() => navigate("/change-password")} />
+                                label="Get Verified Badge"
+                                sublabel="Apply for account verification"
+                                onClick={() => navigate("/individual/verfication")}
+                            />
+                        )}
 
                         {tokenData?.role !== "guardian" && (
                             <NavRow
@@ -330,6 +336,10 @@ export default function SettingsPage() {
                                 onClick={() => navigate("/individual/referral")}
                             />
                         )}
+                        <NavRow icon={Lock} label="Change Password" sublabel="Update your account password"
+                            onClick={() => navigate("/change-password")} />
+
+
 
                     </SectionCard>
 
@@ -362,7 +372,9 @@ export default function SettingsPage() {
                                 <ToggleRow
                                     icon={ImageOff} iconBg="#faf5ff" iconColor="#7c3aed"
                                     label="Blur profile photos"
-                                    sublabel="Only Pro members can view your full photos"
+                                    sublabel="Others will see your photos as blurred"
+
+
                                     value={settings.is_blurred_images}
                                     onChange={val => handleToggle("is_blurred_images", val)}
                                 />

@@ -222,6 +222,12 @@ function IndividualLayout() {
           <ConditionalContent path="/individual/subscription">
             <SubscriptionPage />
           </ConditionalContent>
+          <ConditionalContent path="/individual/verification">
+            <ProtectedRoute>
+              <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
+            </ProtectedRoute>
+          </ConditionalContent>
+
         </div>
       </div>
     </AuroraBackground>
@@ -294,7 +300,7 @@ const router = createBrowserRouter([
   { path: '/subscription/success', element: <ProtectedRoute><SubscriptionSuccess /></ProtectedRoute> },
 
   { path: '/profilesetup', element: <ProtectedRoute><CompleteProfile /></ProtectedRoute> },
-  { path: '/verification', element: <ProtectedRoute><VerificationPage onSubmit={() => { }} onSkip={() => { }} /></ProtectedRoute> },
+
 
   {
     path: '/guardian/*',
