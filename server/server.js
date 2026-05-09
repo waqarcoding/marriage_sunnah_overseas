@@ -43,9 +43,20 @@ const PORT = process.env.PORT || 8080;
 /* ---------------- CORS (Must be first) ---------------- */
 app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
 
+/* ---------------- DEBUG: Log all requests ---------------- */
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.path}`);
+  next();
+});
+
 /* ---------------- CRITICAL: Webhook route BEFORE bodyParser ---------------- */
 // This route needs raw body for Stripe signature verification
 app.use('/api/subscription/webhook',
+  express.raw({ type: 'application/json' }),
+  subscriptionRoutes
+);
+// Handle without /api prefix (for ingress stripping)
+app.use('/subscription/webhook',
   express.raw({ type: 'application/json' }),
   subscriptionRoutes
 );
@@ -57,7 +68,7 @@ app.use(express.urlencoded({ extended: true }));
 /* ---------------- STATIC UPLOADS ---------------- */
 app.use("/uploads", express.static("uploads"));
 
-/* ---------------- API ROUTES ---------------- */
+/* ---------------- API ROUTES (with /api prefix) ---------------- */
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/match", matchRoutes);
@@ -69,6 +80,19 @@ app.use("/api/guardian", guardianRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/referrals', referralRoutes);
+
+/* ---------------- API ROUTES (without /api prefix - for ingress stripping) ---------------- */
+app.use("/auth", authRoutes);
+app.use("/profile", profileRoutes);
+app.use("/match", matchRoutes);
+app.use("/chat", chatRoutes);
+app.use("/admin", adminRoutes);
+app.use("/explore", exploreRoutes);
+app.use("/interest", interestRoutes);
+app.use("/guardian", guardianRoutes);
+app.use('/subscription', subscriptionRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/referrals', referralRoutes);
 
 /* ---------------- HEALTH CHECK ---------------- */
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
@@ -111,34 +135,49 @@ app.post('/api/admin/trigger-expired-check', async (req, res) => {
   }
 });
 
-/* ---------------- SERVE REACT BUILD ---------------- */
-const clientDist = join(__dirname, "../client/dist");
-console.log(`📁 __dirname: ${__dirname}`);
-console.log(`📁 clientDist: ${clientDist}`);
-console.log(`📁 exists: ${existsSync(clientDist)}`);
+/* ---------------- SERVE REACT BUILD (Only in local/monolith deployment) ---------------- */
+const shouldServeClient = process.env.SERVE_CLIENT === 'true';
 
-app.use(express.static(clientDist));
+if (shouldServeClient) {
+  const clientDist = join(__dirname, "../client/dist");
+  console.log(`📁 Attempting to serve client from: ${clientDist}`);
 
-app.use((req, res, next) => {
-  if (req.headers.host === "marriagesunnaoverseas.com") {
-    return res.redirect(301, "https://www.marriagesunnaoverseas.com" + req.url);
-  }
-  next();
-});
+  if (existsSync(clientDist)) {
+    console.log('✅ Client dist folder found, serving static files');
+    app.use(express.static(clientDist));
 
-// ✅ FIXED: Use middleware instead of route for catch-all
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
-    return res.status(404).json({
-      error: "Error 404",
-      path: req.path,
-      message: "The resource/route you are looking for could not be found. Have a wonderful day!"
+    app.use((req, res, next) => {
+      if (req.headers.host === "marriagesunnaoverseas.com") {
+        return res.redirect(301, "https://www.marriagesunnaoverseas.com" + req.url);
+      }
+      next();
     });
+
+    // Catch-all for SPA routing
+    app.use((req, res, next) => {
+      if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
+        return next();
+      }
+      res.sendFile(join(clientDist, "index.html"));
+    });
+  } else {
+    console.log('⚠️  Client dist folder not found at:', clientDist);
   }
-  res.sendFile(join(clientDist, "index.html"));
+} else {
+  console.log('🚫 API-only mode: Not serving client files');
+}
+
+/* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: "Route not found",
+    path: req.path,
+    method: req.method,
+    message: "The endpoint you are looking for does not exist."
+  });
 });
 
-/* ---------------- ERROR HANDLER ---------------- */
+/* ---------------- ERROR HANDLER (Must be last) ---------------- */
 app.use(errorMiddleware);
 
 /* ---------------- HTTP SERVER ---------------- */
@@ -163,13 +202,8 @@ const startServer = async () => {
     // ✅ Initialize Cron Jobs (skip in test environment)
     if (process.env.NODE_ENV !== 'test') {
       console.log('\n⏰ Initializing cron jobs...');
-
-      // Schedule expiry notifications (daily at 9:00 AM)
       scheduleExpiryNotifications();
-
-      // Schedule expired subscription checker (every hour)
       scheduleExpiredSubscriptionChecker();
-
       console.log('✅ Cron jobs initialized successfully');
       console.log('   📧 Expiry notifications: Daily at 9:00 AM');
       console.log('   🔍 Expired checker: Every hour');
@@ -182,10 +216,20 @@ const startServer = async () => {
 
     // @ts-ignore
     server.listen(PORT, "0.0.0.0", () => {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+      console.log('\n' + '='.repeat(70));
       console.log(`✅ Server running on port ${PORT}`);
-      console.log(`📡 Webhook endpoint: http://localhost:${PORT}/api/subscription/webhook`);
-      console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'Not set'}`);
-      console.log(`📧 Email service: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 Base URL: ${baseUrl}`);
+      console.log('='.repeat(70));
+      console.log(`📡 Webhook: ${baseUrl}/api/subscription/webhook`);
+      console.log(`🏥 Health: ${baseUrl}/api/health`);
+      console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
+      console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
+      console.log(`🎯 Mode: ${shouldServeClient ? 'Monolith (API + Client)' : 'API Only'}`);
+      console.log('='.repeat(70) + '\n');
     });
 
   } catch (err) {
