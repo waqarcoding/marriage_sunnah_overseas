@@ -62,7 +62,11 @@ export default function Login({ onLogin }) {
 
 
 
-            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-5">
+            <section
+                className="min-h-screen px-4 py-5"
+                style={{ display: "flex", flexDirection: "column", height: "100%" }}
+            >
+
                 <AppToaster></AppToaster>
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 

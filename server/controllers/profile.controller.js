@@ -546,19 +546,7 @@ export const deleteAccount = async (req, res) => {
   }
 };
 
-export const assignGuardian = async (req, res) => {
-  try {
-    const { guardianId } = req.body;
-    const profile = await Profile.findOne({ where: { individual_id: req.user.id } });
-    if (!profile) return res.json({ error: 'Profile not found' });
-    profile.guardian_id = guardianId;
-    await profile.save();
-    res.json({ success: true, profile });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
+
 
 export const getVerifiedUsers = async (req, res) => {
   try {
@@ -1186,7 +1174,7 @@ export const changePassword = async (req, res) => {
 export default {
   createProfile, updatePrefs, uploadIdCard, updateProfile,
   updateGuardian, uploadImage, getCurrentUser,
-  updateInterests, deleteAccount, assignGuardian,
+  updateInterests, deleteAccount,
   getVerifiedUsers, updateLastSeen, getAllUsers, getMyGuardians, deleteVideo, deleteImage, getContactRevealStats, checkContactRevealStatus, revealContact
 };
 

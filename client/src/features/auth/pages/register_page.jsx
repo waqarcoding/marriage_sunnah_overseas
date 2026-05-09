@@ -90,7 +90,11 @@ export default function Register({ onRegister }) {
     return (
         <>
             <AppToaster></AppToaster>
-            <section className="min-h-screen flex items-center justify-center bg-[#f0f5f3] px-4 py-10">
+            <section
+                className="min-h-screen px-4 py-10"
+                style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center", alignItems: "center", background: "#f0f5f3" }}
+            >
+
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 
                     {/* ── Left panel ── */}
