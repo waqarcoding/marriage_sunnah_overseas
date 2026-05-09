@@ -36,6 +36,47 @@ function calcMatch(a, b) {
     return total > 0 ? Math.round((score / total) * 100) : null;
 }
 
+// ── Skeleton Loader ───────────────────────────────────────────────────────────
+function ProfileSkeleton() {
+    return (
+        <div className="min-h-screen" style={{ background: "#f5f5f3", marginBottom: "32px" }}>
+            {/* Header Skeleton */}
+            <div className="sticky top-0 z-20 border-b"
+                style={{ background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", borderColor: "#f0f0ed" }}>
+                <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto">
+                    <div className="w-10 h-10 rounded-full animate-pulse"
+                        style={{ background: "linear-gradient(135deg, rgba(27,77,62,0.05) 0%, rgba(27,77,62,0.12) 100%)" }} />
+                    <div className="h-4 w-32 rounded-full animate-pulse"
+                        style={{ background: "linear-gradient(135deg, rgba(27,77,62,0.05) 0%, rgba(27,77,62,0.12) 100%)" }} />
+                    <div className="w-10" />
+                </div>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+                {/* Media Skeleton */}
+                <div className="relative w-full overflow-hidden rounded-b-3xl animate-pulse"
+                    style={{ aspectRatio: "3/4", maxHeight: "600px", background: "linear-gradient(135deg, rgba(27,77,62,0.03) 0%, rgba(27,77,62,0.1) 100%)" }} />
+
+                {/* Info Section Skeleton */}
+                <div className="p-5 space-y-4">
+                    <div className="space-y-2">
+                        <div className="h-7 w-48 rounded-lg animate-pulse"
+                            style={{ background: "linear-gradient(135deg, rgba(27,77,62,0.05) 0%, rgba(27,77,62,0.12) 100%)" }} />
+                        <div className="h-4 w-32 rounded-lg animate-pulse"
+                            style={{ background: "linear-gradient(135deg, rgba(27,77,62,0.03) 0%, rgba(27,77,62,0.08) 100%)" }} />
+                    </div>
+                    <div className="flex gap-3">
+                        <div className="flex-1 h-12 rounded-xl animate-pulse"
+                            style={{ background: "linear-gradient(135deg, rgba(27,77,62,0.05) 0%, rgba(27,77,62,0.12) 100%)" }} />
+                        <div className="flex-1 h-12 rounded-xl animate-pulse"
+                            style={{ background: "linear-gradient(135deg, rgba(27,77,62,0.05) 0%, rgba(27,77,62,0.12) 100%)" }} />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ProfileDetailPage({ onLike }) {
     const location = useLocation();
     const navigate = useNavigate();
@@ -54,12 +95,18 @@ export default function ProfileDetailPage({ onLike }) {
     const [compatibilityPair, setCompatibilityPair] = useState(null);
 
     useEffect(() => {
+        // ✅ Early exit if no profile data
+        if (!profile) {
+            setLoading(false);
+            return;
+        }
+
         const fetchAllData = async () => {
             try {
                 setLoading(true);
 
-                // Fetch current user + role + pro status in parallel
-                const [profileRes, proRes,] = await Promise.all([
+                // ✅ Only fetch current user data (not target profile - we already have it)
+                const [profileRes, proRes] = await Promise.all([
                     ProfileService.getCurrentUser().catch(() => null),
                     AuthService.isPro().catch(() => false),
                 ]);
@@ -71,29 +118,20 @@ export default function ProfileDetailPage({ onLike }) {
 
                 // ── GUARDIAN MODE ─────────────────────────────────────────────
                 if (userRole === "guardian" && Array.isArray(p?.individuals) && p.individuals.length > 0) {
-                    console.log("👨‍👧 Guardian mode");
-
-                    // Normalize IDs
                     const receiverId = receiver?.individual_id || receiver?.id;
                     const senderId = sender?.individual_id || sender?.id;
                     const profileId = profile?.individual_id || profile?.id;
 
-                    // Which parties are my wards?
                     const myWardIds = p.individuals.map(ind => String(ind.individual_id));
 
                     const isSenderMyWard = !!(senderId && myWardIds.includes(String(senderId)));
                     const isReceiverMyWard = !!(receiverId && myWardIds.includes(String(receiverId)));
                     const isProfileMyWard = !!(profileId && myWardIds.includes(String(profileId)));
 
-                    console.log("🔍 Ward check:", { isSenderMyWard, isReceiverMyWard, isProfileMyWard });
-                    console.log("🔍 IDs:", { senderId, receiverId, profileId });
-                    console.log("🔍 My ward IDs:", myWardIds);
-
                     let myWardProfile = null;
                     let otherPersonProfile = null;
 
                     if (isSenderMyWard && isReceiverMyWard) {
-                        // Both are my wards — the viewed profile is "my ward", the other is opponent
                         if (String(profileId) === String(senderId)) {
                             myWardProfile = sender;
                             otherPersonProfile = receiver;
@@ -101,31 +139,21 @@ export default function ProfileDetailPage({ onLike }) {
                             myWardProfile = receiver;
                             otherPersonProfile = sender;
                         }
-                        console.log("⚠️ Both wards:", myWardProfile?.name, "vs", otherPersonProfile?.name);
-
                     } else if (isSenderMyWard) {
                         myWardProfile = sender;
                         otherPersonProfile = receiver || profile;
-                        console.log("✅ Sender is ward:", sender?.name, "vs", otherPersonProfile?.name);
-
                     } else if (isReceiverMyWard) {
                         myWardProfile = receiver;
                         otherPersonProfile = sender || profile;
-                        console.log("✅ Receiver is ward:", receiver?.name, "vs", otherPersonProfile?.name);
-
                     } else if (isProfileMyWard) {
-                        // The viewed profile itself is my ward
                         myWardProfile = profile;
                         if (senderId && String(senderId) !== String(profileId)) {
                             otherPersonProfile = sender;
                         } else if (receiverId && String(receiverId) !== String(profileId)) {
                             otherPersonProfile = receiver;
                         }
-                        console.log("✅ Viewed profile is ward:", profile?.name, "vs", otherPersonProfile?.name);
-
                     } else {
-                        // None matched — fetch first ward from API
-                        console.log("⚠️ No ward matched, fetching first ward");
+                        // ✅ Only fetch ward if absolutely necessary
                         const firstWard = p.individuals[0];
                         try {
                             const wardRes = await AuthService.getUserById(firstWard.individual_id);
@@ -133,37 +161,30 @@ export default function ProfileDetailPage({ onLike }) {
                         } catch {
                             myWardProfile = null;
                         }
-                        // Other = viewed profile (if different from ward)
                         otherPersonProfile =
                             String(profile?.individual_id) !== String(myWardProfile?.individual_id)
                                 ? profile
                                 : (sender || receiver || null);
-                        console.log("⚠️ Fallback ward:", myWardProfile?.name, "vs", otherPersonProfile?.name);
                     }
 
-                    // ✅ Safety: ensure they are not the same person
+                    // ✅ Safety check
                     if (
                         myWardProfile && otherPersonProfile &&
                         String(myWardProfile.individual_id) === String(otherPersonProfile.individual_id)
                     ) {
-                        console.log("❌ Same person — finding correct opponent");
                         const candidates = [sender, receiver, profile].filter(Boolean);
                         otherPersonProfile = candidates.find(
                             c => String(c.individual_id) !== String(myWardProfile.individual_id)
                         ) || null;
                     }
 
-                    console.log("✅ Final pairing:");
-                    console.log("   My ward:     ", myWardProfile?.name, myWardProfile?.individual_id);
-                    console.log("   Other person:", otherPersonProfile?.name, otherPersonProfile?.individual_id);
-
                     setMyProfile(myWardProfile);
                     setCompatibilityPair({ myWard: myWardProfile, otherPerson: otherPersonProfile });
 
                 } else {
                     // ── INDIVIDUAL MODE ───────────────────────────────────────
-                    console.log("👤 Individual mode");
                     setMyProfile(p || null);
+                    // ✅ Use profile from location.state - no additional fetch needed
                     setCompatibilityPair({ myWard: p, otherPerson: profile });
                 }
 
@@ -178,32 +199,12 @@ export default function ProfileDetailPage({ onLike }) {
         };
 
         fetchAllData();
-    }, [
-        profile?.individual_id,
-        receiver?.individual_id,
-        sender?.individual_id,
-    ]);
+    }, [profile?.individual_id, receiver?.individual_id, sender?.individual_id]);
 
-    // ── Loading ───────────────────────────────────────────────────────────────
+    // ── Loading with Skeleton ─────────────────────────────────────────────────
     if (loading || myProfile === undefined || currentUserRole === undefined || isPro === undefined) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#f5f5f3" }}>
-                <div style={{ position: "relative", width: 64, height: 64, marginBottom: 24 }}>
-                    <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "4px solid rgba(27,77,62,0.1)" }} />
-                    <div style={{
-                        position: "absolute", inset: 0, borderRadius: "50%",
-                        border: "4px solid transparent",
-                        borderTopColor: "var(--primary,#1B4D3E)",
-                        borderRightColor: "var(--primary,#1B4D3E)",
-                        animation: "spin 0.8s linear infinite",
-                    }} />
-                </div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: "#9ca3af" }}>Loading profile...</p>
-                <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-            </div>
-        );
+        return <ProfileSkeleton />;
     }
-
 
     if (!profile) {
         return (
@@ -226,11 +227,6 @@ export default function ProfileDetailPage({ onLike }) {
     const matchPct = compatibilityPair
         ? calcMatch(compatibilityPair.myWard, compatibilityPair.otherPerson)
         : null;
-
-    console.log("🎯 Match %:", matchPct, {
-        ward: compatibilityPair?.myWard?.name,
-        other: compatibilityPair?.otherPerson?.name,
-    });
 
     const p = {
         name: profile.name || "Anonymous",
@@ -270,15 +266,11 @@ export default function ProfileDetailPage({ onLike }) {
         });
     };
 
-
-
     const handleLike = () => {
-
         if (p.individual_id) {
             ExploreService.sendInterest(p.individual_id, true);
         }
-    }
-        ;
+    };
 
     return (
         <>
@@ -293,8 +285,6 @@ export default function ProfileDetailPage({ onLike }) {
             </AnimatePresence>
 
             <div className="min-h-screen" style={{ background: "#f5f5f3", marginBottom: "32px" }}>
-
-
                 {/* Header */}
                 <div className="sticky top-0 z-20 border-b"
                     style={{ background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", borderColor: "#f0f0ed" }}>
@@ -327,7 +317,6 @@ export default function ProfileDetailPage({ onLike }) {
                         onStartChat={handleStartChat}
                         onLike={handleLike}
                         userId={p?.individual_id}
-
                     />
 
                     {/* 3 — Compatibility match section */}
@@ -340,8 +329,6 @@ export default function ProfileDetailPage({ onLike }) {
                     />
                 </div>
             </div>
-
-            <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
         </>
     );
 }

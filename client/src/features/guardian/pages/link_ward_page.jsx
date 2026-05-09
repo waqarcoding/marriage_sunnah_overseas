@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import GuardianService from '../services/GuardianService';
 import ChatService from '../../chat/services/ChatService';
 import { useSocket } from '../../../sockets/SocketContext';
+import PageHeader from '../../../ui/page_header';
 
 
 
@@ -193,34 +194,16 @@ export default function LinkWithPinPage() {
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             {/* ── Header ── */}
-            <div className="px-5 pt-5 pb-2">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <h1 className="text-[26px] font-extrabold tracking-tight text-gray-900 leading-tight mb-1"
-                            style={{ letterSpacing: '-0.03em' }}>
-                            My Wards
-                        </h1>
-                        <p className="text-sm text-gray-400 font-medium">
-                            {view === 'linked' && !showAddNew
-                                ? `Managing ${wards.length} ward${wards.length !== 1 ? 's' : ''}`
-                                : 'Connect with your ward using their PIN'}
-                        </p>
-                    </div>
-                    {view === 'linked' && !showAddNew && !fetchingWards && (
-                        <button
-                            onClick={() => setShowAddNew(true)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold transition active:scale-95"
-                            style={{
-                                background: 'var(--primary)',
-                                color: 'var(--primary-foreground, #fef3c7)',
-                            }}
-                        >
-                            <UserPlus size={15} />
-                            Add
-                        </button>
-                    )}
-                </div>
-            </div>
+            <IslamicPageHeader
+                title="Guardian"
+                subtitle="Protecting and guiding with wisdom and care"
+            />
+
+            {/* ── Header ── */}
+            < PageHeader
+                title="Guardian"
+                subtitle="Protecting and guiding with wisdom and care"
+            />
 
             <div className="w-full max-w-[600px] mx-auto px-4 pb-6">
                 {/* ── Loading ── */}

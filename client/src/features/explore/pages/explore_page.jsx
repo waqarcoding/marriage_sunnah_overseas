@@ -14,7 +14,7 @@ import AuthService from "../../auth/services/AuthService";
 
 const isOnline = (d) => d && (Date.now() - new Date(d)) / 1000 < 3600;
 
-const FILTER_CHIPS = ["All", "Pakistan", "UAE", "UK", "USA", "Saudi Arabia", "Qatar", "Verified", "Premium", "Online"];
+const FILTER_CHIPS = ["All", "Online", "Premium", "Verified", "UAE", "UK", "USA", "Saudi Arabia", "Qatar", "Pakistan",];
 
 // ── Filter bar ────────────────────────────────────────────────────────────────
 function FilterBar({ active, onToggle, onSettings, search, onSearch }) {

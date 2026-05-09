@@ -14,6 +14,7 @@ import MessageInput from "../components/message_input";
 import { useSocket } from "../../../sockets/SocketContext";
 import ExploreService from "../../explore/services/ExploreService";
 import AuthService from "../../auth/services/AuthService";
+import PageHeader from "../../../ui/page_header";
 
 function getSenderId() {
     try {
@@ -256,26 +257,11 @@ export default function ChatPage() {
                     borderRight: "0.5px solid rgba(27,77,62,0.08)",
 
                 }}>
-                    <div style={{ padding: "20px 20px 8px" }}>
-                        <h1 style={{
-                            margin: "0 0 3px",
-                            fontSize: 26,
-                            fontWeight: 800,
-                            color: "#111827",
-                            letterSpacing: "-0.03em",
-                            lineHeight: 1.2,
-                        }}>
-                            Chats
-                        </h1>
-                        <p style={{
-                            margin: 0,
-                            fontSize: 14,
-                            fontWeight: 500,
-                            color: "#9ca3af",
-                        }}>
-                            Your active conversations
-                        </p>
-                    </div>
+                    <PageHeader
+                        title="Chats"
+                        subtitle="Your halal conversations and connections" icon={undefined}
+                    />
+
 
                     {loadingConvs ? (
                         <ConversationSkeleton count={6} />

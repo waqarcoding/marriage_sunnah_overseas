@@ -1,7 +1,7 @@
 // @ts-nocheck
-import React, { useEffect } from 'react'; // ✅ Add React import
+import React, { useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Navigate, useNavigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SocketProvider } from './sockets/SocketContext.jsx';
@@ -42,7 +42,14 @@ import AuthService from './features/auth/services/AuthService.js';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: Infinity, gcTime: 1000 * 60 * 30, retry: 1 },
+    queries: {
+      staleTime: 1000 * 60 * 10,      // ✅ 10 minutes instead of Infinity
+      gcTime: 1000 * 60 * 30,
+      retry: 1,
+      refetchOnWindowFocus: false,    // ✅ Don't refetch on tab focus
+      refetchOnMount: false,          // ✅ Don't refetch when component mounts
+      refetchOnReconnect: false,      // ✅ Don't refetch on reconnect
+    },
   },
 });
 
@@ -148,7 +155,19 @@ function ProtectedRoute({ children, requireRole = null }) {
 
 function LoginWrapper() {
   const navigate = useNavigate();
-  return <Login onLogin={() => navigate('/otp', { replace: true })} />; // ✅ Add replace: true
+  return <Login onLogin={() => navigate('/otp', { replace: true })} />;
+}
+
+// ── Helper Component to Keep Components Mounted ──────────────────────────────
+function ConditionalContent({ path, children }) {
+  const location = useLocation();
+  const isActive = location.pathname === path || location.pathname.startsWith(path + '/');
+
+  return (
+    <div style={{ display: isActive ? 'flex' : 'none', flexDirection: 'column', flex: 1, overflow: 'auto' }}>
+      {children}
+    </div>
+  );
 }
 
 // ── Layouts ───────────────────────────────────────────────────────────────────
@@ -156,7 +175,7 @@ function IndividualLayout() {
   const navigate = useNavigate();
   const handleLogout = () => {
     logout();
-    navigate('/', { replace: true }); // ✅ Add replace: true
+    navigate('/', { replace: true });
   };
 
   return (
@@ -164,9 +183,45 @@ function IndividualLayout() {
       <div className="flex flex-col h-screen" style={{ background: "transparent" }}>
         <AppBar tabs={INDIVIDUAL_TABS} onLogout={handleLogout} onSidebarLogout={handleLogout} />
         <div className="flex flex-1 min-h-0 pb-16 md:pb-0">
-          <div className="flex-1 flex flex-col overflow-auto">
-            <Outlet />
-          </div>
+          <ConditionalContent path="/individual/explore">
+            <ExplorePage onProfileClick={() => { }} />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/match">
+            <Match onProfileClick={() => { }} />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/interest">
+            <Interest />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/chats">
+            <Chat />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/chat">
+            <Chat />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/notifications">
+            <Notifications />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/profile">
+            <ProfileDetailPage />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/myprofile">
+            <MyProfile onLogout={() => { logout(); }} />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/settings">
+            <SettingsPage />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/referral">
+            <ReferralPage />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/show-pin">
+            <ShowPinPage />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/subscription-detail">
+            <SubscriptionDetailPage />
+          </ConditionalContent>
+          <ConditionalContent path="/individual/subscription">
+            <SubscriptionPage />
+          </ConditionalContent>
         </div>
       </div>
     </AuroraBackground>
@@ -177,7 +232,7 @@ function GuardianLayout() {
   const navigate = useNavigate();
   const handleLogout = () => {
     logout();
-    navigate('/', { replace: true }); // ✅ Add replace: true
+    navigate('/', { replace: true });
   };
 
   return (
@@ -185,9 +240,36 @@ function GuardianLayout() {
       <div className="flex flex-col h-screen" style={{ background: "transparent" }}>
         <AppBar tabs={GUARDIAN_TABS} onLogout={handleLogout} onSidebarLogout={handleLogout} />
         <div className="flex flex-1 min-h-0 pb-16 md:pb-0">
-          <div className="flex-1 flex flex-col overflow-auto">
-            <Outlet />
-          </div>
+          <ConditionalContent path="/guardian">
+            <GuardianDashboard />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/add-ward">
+            <LinkWithPin />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/myprofile">
+            <MyProfile onLogout={() => { logout(); }} />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/chats">
+            <Chat />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/chat">
+            <Chat />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/notifications">
+            <Notifications />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/settings">
+            <SettingsPage />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/referral">
+            <ReferralPage />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/subscription-detail">
+            <SubscriptionDetailPage />
+          </ConditionalContent>
+          <ConditionalContent path="/guardian/profile">
+            <ProfileDetailPage />
+          </ConditionalContent>
         </div>
       </div>
     </AuroraBackground>
@@ -215,48 +297,20 @@ const router = createBrowserRouter([
   { path: '/verification', element: <ProtectedRoute><VerificationPage onSubmit={() => { }} onSkip={() => { }} /></ProtectedRoute> },
 
   {
-    path: '/guardian',
+    path: '/guardian/*',
     element: <ProtectedRoute requireRole="guardian"><GuardianLayout /></ProtectedRoute>,
     errorElement: <ErrorBoundaryFallback />,
-    children: [
-      { index: true, element: <GuardianDashboard /> },
-      { path: 'add-ward', element: <LinkWithPin /> },
-      { path: 'myprofile', element: <MyProfile onLogout={() => { logout(); }} /> },
-      { path: 'chats', element: <Chat /> },
-      { path: 'chat/:receiverId', element: <Chat /> },
-      { path: 'notifications', element: <Notifications /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'referral', element: <ReferralPage /> },
-      { path: 'subscription-detail', element: <SubscriptionDetailPage /> },
-      { path: 'profile', element: <ProfileDetailPage /> },
-    ],
   },
 
   {
-    path: '/individual',
+    path: '/individual/*',
     element: <ProtectedRoute requireRole="individual"><IndividualLayout /></ProtectedRoute>,
     errorElement: <ErrorBoundaryFallback />,
-    children: [
-      { index: true, element: <Navigate to="/individual/explore" replace /> },
-      { path: 'explore', element: <ExplorePage onProfileClick={() => { }} /> },
-      { path: 'match', element: <Match onProfileClick={() => { }} /> },
-      { path: 'interest', element: <Interest /> },
-      { path: 'chats', element: <Chat /> },
-      { path: 'chat/:receiverId', element: <Chat /> },
-      { path: 'notifications', element: <Notifications /> },
-      { path: 'profile', element: <ProfileDetailPage /> },
-      { path: 'myprofile', element: <MyProfile onLogout={() => { logout(); }} /> },
-      { path: 'settings', element: <SettingsPage /> },
-      { path: 'referral', element: <ReferralPage /> },
-      { path: 'show-pin', element: <ShowPinPage /> },
-      { path: 'subscription-detail', element: <SubscriptionDetailPage /> },
-    ],
   },
 ]);
 
 // ── Root app ──────────────────────────────────────────────────────────────────
 function AppRoot() {
-
   const user = AuthService.getTokenData();
   const userId = user?.id ?? null;
 
@@ -268,9 +322,8 @@ function AppRoot() {
   );
 }
 
-// ✅ Removed React.StrictMode to prevent double-rendering issues
 createRoot(document.getElementById('root')).render(
   <QueryClientProvider client={queryClient}>
     <AppRoot />
   </QueryClientProvider>
-); 
+);

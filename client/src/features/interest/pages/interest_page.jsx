@@ -11,6 +11,7 @@ import ProfileCard from "../components/interest_item";
 import PremiumBanner from "../components/premium_banner";
 import AuthService from "../../auth/services/AuthService";
 import { useSocket } from "../../../sockets/SocketContext";
+import PageHeader from "../../../ui/page_header";
 
 
 
@@ -522,16 +523,11 @@ export default function InterestPage() {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            {/* ── Page Header ── */}
-            <div className="px-5 pt-5 pb-1">
-                <h1 className="text-[26px] font-extrabold tracking-tight text-gray-900 leading-tight mb-1"
-                    style={{ letterSpacing: "-0.03em" }}>
-                    Interests
-                </h1>
-                <p className="text-sm text-gray-400 font-medium">
-                    People who want to connect with you
-                </p>
-            </div>
+            <PageHeader
+                title="Interests"
+                subtitle="Souls seeking halal connection with you"
+            />
+
 
             {/* ── Two-Tab Switcher (sticky) ── */}
             <div

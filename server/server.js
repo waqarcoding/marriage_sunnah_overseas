@@ -200,7 +200,7 @@ const startServer = async () => {
     initSocket(server);
 
     // ✅ Initialize Cron Jobs (skip in test environment)
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== 'development') {
       console.log('\n⏰ Initializing cron jobs...');
       scheduleExpiryNotifications();
       scheduleExpiredSubscriptionChecker();

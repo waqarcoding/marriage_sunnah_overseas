@@ -1,11 +1,12 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, X, Star, MapPin, ChevronUp, ChevronDown, Info, Verified } from "lucide-react";
+import { Heart, X, Star, MapPin, MessageCircle, Info, Verified } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ImageAvatar from "../../../ui/image";
 import ProfileService from "../../profile/services/ProfileService";
 import AuthService from "../../auth/services/AuthService";
+import IslamicChatDialog from "./islamic_chat_dialogue";
 
 function parseImages(profile) {
     try {
@@ -116,6 +117,10 @@ function ActionBtn({ onClick, children, variant = "secondary", size = "md" }) {
         super: {
             background: "#faf5ff",
             border: "0.5px solid rgba(168,85,247,0.2)"
+        },
+        message: {
+            background: "#ffffff",
+            border: "0.5px solid rgba(27,77,62,0.14)"
         }
     };
 
@@ -142,12 +147,11 @@ function ActionBtn({ onClick, children, variant = "secondary", size = "md" }) {
 
 export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
     const [photoIdx, setPhotoIdx] = useState(0);
-    const [expanded, setExpanded] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
     const [isShowLastSeen, setIsShowLastSeen] = useState(false);
-
     const [isPro, setIsPro] = useState(false);
     const [iamPro, setiamPro] = useState(false);
+    const [showChatDialog, setShowChatDialog] = useState(false); // Chat dialog state
     const navigate = useNavigate();
 
     const photos = parseImages(profile);
@@ -165,323 +169,259 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
         );
     };
 
-
     useEffect(() => {
         const fetchData = async () => {
             try {
-
                 const res = await AuthService.getUserById(profile.individual_id);
-
                 setIsPro(res?.is_pro);
                 const isipro = await AuthService.isPro();
                 setiamPro(isipro);
-
-
                 setIsShowLastSeen(res.profile.is_show_last_seen);
-
                 setIsVerified(res?.is_verified);
-
             } catch (err) {
-
-
-            } finally {
-
+                console.error(err);
             }
         }
         fetchData()
     }, [])
-
 
     const gotoProfile = (e) => {
         e.stopPropagation();
         navigate("/individual/profile", { state: { profile } });
     };
 
+    // Handle chat button click
+    const handleChatClick = () => {
+        setShowChatDialog(true);
+    };
+
+    // Handle confirm chat
+    const handleConfirmChat = () => {
+        setShowChatDialog(false);
+        if (profile.individual_id) {
+            navigate(`/individual/chats?receiver_id=${profile.individual_id}`, {
+                state: {
+                    receiver: {
+                        id: profile.individual_id,
+                        name: profile.name,
+                        avatar: photos[0]
+                    }
+                }
+            });
+        }
+    };
+
+    // Converts height in inches to a string in feet and inches (e.g., "5' 7\"")
+    function formatHeight(heightInches) {
+        if (!heightInches || typeof heightInches !== "number") return "";
+        const feet = Math.floor(heightInches / 12);
+        const inches = heightInches % 12;
+        return `${feet}' ${inches}"`;
+    }
+
     return (
-        <div style={{
-            position: "relative",
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            borderRadius: "24px",
-            overflow: "hidden",
-            background: "#ffffff",
-            boxShadow: "0 2px 16px rgba(27,77,62,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-            border: "0.5px solid rgba(27,77,62,0.06)"
-        }}>
-            {/* ── Photo area — 65% ── */}
-            <div
-                style={{
-                    position: "relative",
-                    height: "65%",
-                    flexShrink: 0,
-                    cursor: "pointer",
-                    background: "#f5f5f5"
-                }}
-                onClick={handlePhotoTap}
-            >
-                <PhotoDots total={photos.length} current={photoIdx} />
+        <>
+            {/* Islamic Chat Dialog */}
+            <IslamicChatDialog
+                isOpen={showChatDialog}
+                onClose={() => setShowChatDialog(false)}
+                onConfirm={handleConfirmChat}
+                profileName={profile.name}
+            />
 
-                <ImageAvatar
-                    images={photos.length ? [photos[photoIdx]] : []}
-                    gender={profile.gender}
-                    alt={profile.name}
-                    isBlurred={profile.is_blurred_images}
-                    viewerIsPro={iamPro}
+            <div style={{
+                position: "relative",
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: "24px",
+                overflow: "hidden",
+                background: "#ffffff",
+                boxShadow: "0 2px 16px rgba(27,77,62,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+                border: "0.5px solid rgba(27,77,62,0.06)"
+            }}>
+                {/* ── Photo area — 70% ── */}
+                <div
+                    style={{
+                        position: "relative",
+                        height: "70%",
+                        flexShrink: 0,
+                        cursor: "pointer",
+                        background: "#f5f5f5"
+                    }}
+                    onClick={handlePhotoTap}
+                >
+                    <PhotoDots total={photos.length} current={photoIdx} />
 
-                    className="w-full h-full object-cover"
-                />
+                    <ImageAvatar
+                        images={photos.length ? [photos[photoIdx]] : []}
+                        gender={profile.gender}
+                        alt={profile.name}
+                        isBlurred={profile.is_blurred_images}
+                        viewerIsPro={iamPro}
+                        className="w-full h-full object-cover"
+                    />
 
+                    {/* Status badges */}
+                    <div style={{
+                        position: "absolute",
+                        top: "10px",
+                        left: "10px",
+                        right: "10px",
+                        zIndex: 10,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        pointerEvents: "none"
+                    }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            {isPro ? (
+                                <div style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    padding: "4px 10px",
+                                    borderRadius: "10px",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                    background: "rgba(234,179,8,0.95)",
+                                    color: "#854d0e",
+                                    backdropFilter: "blur(10px)",
+                                    letterSpacing: "0.02em"
+                                }}>
+                                    <Star style={{ width: "12px", height: "12px", fill: "#854d0e" }} />
+                                    Premium
+                                </div>
+                            ) : null}
 
-                {/* Status badges */}
-                <div style={{
-                    position: "absolute",
-                    top: "10px",
-                    left: "10px",
-                    right: "10px",
-                    zIndex: 10,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    pointerEvents: "none"
-                }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        {isPro ? (
+                            {isVerified && (
+                                <div style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    padding: "4px 10px",
+                                    borderRadius: "10px",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                    background: "rgba(59,130,246,0.95)",
+                                    color: "#ffffff",
+                                    backdropFilter: "blur(10px)",
+                                    letterSpacing: "0.02em"
+                                }}>
+                                    <Verified style={{ width: "12px", height: "12px", fill: "#ffffff" }} />
+                                    Verified
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Gradient overlay + name */}
+                    <div style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 10,
+                        padding: "52px 18px 16px",
+                        background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.24) 50%, transparent 100%)"
+                    }}>
+                        <h2 style={{
+                            margin: 0,
+                            fontSize: "22px",
+                            fontWeight: "500",
+                            color: "#ffffff",
+                            letterSpacing: "-0.015em",
+                            lineHeight: "1.2"
+                        }}>
+                            {profile.name}{profile.age ? `, ${profile.age}` : ""}
+                        </h2>
+                        {location && (
                             <div style={{
-                                display: "inline-flex",
+                                display: "flex",
                                 alignItems: "center",
-                                gap: "4px",
-                                padding: "4px 10px",
-                                borderRadius: "10px",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                                background: "rgba(234,179,8,0.95)",
-                                color: "#854d0e",
-                                backdropFilter: "blur(10px)",
-                                letterSpacing: "0.02em"
+                                gap: "5px",
+                                marginTop: "6px"
                             }}>
-                                <Star style={{ width: "12px", height: "12px", fill: "#854d0e" }} />
-                                Premium
-                            </div>
-                        ) : null}
-
-                        {isVerified && (
-                            <div style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                padding: "4px 10px",
-                                borderRadius: "10px",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                                background: "rgba(59,130,246,0.95)",
-                                color: "#ffffff",
-                                backdropFilter: "blur(10px)",
-                                letterSpacing: "0.02em"
-                            }}>
-                                <Verified style={{ width: "12px", height: "12px", fill: "#ffffff" }} />
-                                Verified
+                                <MapPin style={{ width: "13px", height: "13px", color: "rgba(255,255,255,0.75)" }} />
+                                <span style={{
+                                    fontSize: "13px",
+                                    color: "rgba(255,255,255,0.85)",
+                                    fontWeight: "400"
+                                }}>
+                                    {location}
+                                </span>
+                                {(typeof isShowLastSeen === "undefined" || !!isShowLastSeen) && profile.last_seen && (
+                                    <span style={{
+                                        fontSize: "13px",
+                                        color: "rgba(255,255,255,0.55)",
+                                        fontWeight: "400"
+                                    }}>
+                                        · {formatLastSeen(profile.last_seen)}
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
-                    {/*
-                
-                
-                    {isShowLastSeen && (
-                        <div style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            padding: "4px 10px",
-                            borderRadius: "10px",
-                            fontSize: "11px",
-                            fontWeight: "600",
-                            background: "rgba(16,185,129,0.95)",
-                            color: "#ffffff",
-                            backdropFilter: "blur(10px)",
-                            letterSpacing: "0.01em"
-                        }}>
-                            <span style={{
-                                width: "6px",
-                                height: "6px",
-                                borderRadius: "50%",
-                                background: "#ffffff",
-                                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
-                            }} />
-                            Online
-                        </div>
-                    )}
-                */}
-
                 </div>
 
-                {/* Gradient overlay + name */}
+                {/* ── Info panel — remaining 30% ── */}
                 <div style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 10,
-                    padding: "52px 18px 16px",
-                    background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.24) 50%, transparent 100%)"
+                    flex: 1,
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    background: "#ffffff"
                 }}>
-                    <h2 style={{
-                        margin: 0,
-                        fontSize: "22px",
-                        fontWeight: "500",
-                        color: "#ffffff",
-                        letterSpacing: "-0.015em",
-                        lineHeight: "1.2"
+                    {/* Pill tags */}
+                    <div style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "6px",
+                        padding: "14px 16px 10px"
                     }}>
-                        {profile.name}{profile.age ? `, ${profile.age}` : ""}
-                    </h2>
-                    {location && (
-                        <div style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
-                            marginTop: "6px"
-                        }}>
-                            <MapPin style={{ width: "13px", height: "13px", color: "rgba(255,255,255,0.75)" }} />
-                            <span style={{
-                                fontSize: "13px",
-                                color: "rgba(255,255,255,0.85)",
-                                fontWeight: "400"
-                            }}>
-                                {location}
-                            </span>
-                            {(typeof isShowLastSeen === "undefined" || !!isShowLastSeen) && profile.last_seen && (
-                                <span style={{
-                                    fontSize: "13px",
-                                    color: "rgba(255,255,255,0.55)",
-                                    fontWeight: "400"
-                                }}>
-                                    · {formatLastSeen(profile.last_seen)}
-                                </span>
-                            )}
+                        {profile.profession && <Pill>{profile.profession}</Pill>}
+                        {profile.height_inches && <Pill>{formatHeight(profile.height_inches)}</Pill>}
+                        {profile.marital_status && <Pill>{profile.marital_status}</Pill>}
+                        {profile.religious_practice_level && <Pill>{profile.religious_practice_level}</Pill>}
+                        {profile.nationality && <Pill>{profile.nationality}</Pill>}
+                        {profile.education && <Pill>{profile.education}</Pill>}
+                    </div>
 
-                        </div>
-                    )}
+                    {/* Action bar */}
+                    <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "14px 16px"
+                    }}>
+                        {/* Pass */}
+                        <ActionBtn onClick={onPass} variant="danger">
+                            <X style={{ width: "22px", height: "22px", color: "#ef4444" }} />
+                        </ActionBtn>
+
+                        {/* Info */}
+                        <ActionBtn onClick={gotoProfile}>
+                            <Info style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
+                        </ActionBtn>
+
+                        {/* Like — primary large */}
+                        <ActionBtn onClick={onLike} variant="primary" size="lg">
+                            <Heart style={{ width: "28px", height: "28px", color: "#ffffff", fill: "#ffffff" }} />
+                        </ActionBtn>
+
+                        {/* Message - NEW */}
+                        <ActionBtn onClick={handleChatClick} variant="message">
+                            <MessageCircle style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
+                        </ActionBtn>
+
+                        {/* Super like */}
+                        <ActionBtn onClick={onSuperLike} variant="super">
+                            <Star style={{ width: "22px", height: "22px", color: "#a855f7", fill: "#a855f7" }} />
+                        </ActionBtn>
+                    </div>
                 </div>
             </div>
-
-            {/* ── Info panel — remaining 35% ── */}
-            <div style={{
-                flex: 1,
-                minHeight: 0,
-                display: "flex",
-                flexDirection: "column",
-                background: "#ffffff"
-            }}>
-                {/* Pill tags */}
-                <div style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "6px",
-                    padding: "14px 16px 10px"
-                }}>
-                    {profile.profession && <Pill>{profile.profession}</Pill>}
-                    {profile.marital_status && <Pill>{profile.marital_status}</Pill>}
-                    {profile.religious_practice_level && <Pill>{profile.religious_practice_level}</Pill>}
-                    {profile.nationality && <Pill>{profile.nationality}</Pill>}
-                    {profile.education && <Pill>{profile.education}</Pill>}
-                </div>
-
-                {/* Expanded content */}
-                <AnimatePresence>
-                    {expanded && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                            style={{ overflow: "hidden", padding: "0 16px" }}
-                        >
-                            {profile.bio && (
-                                <p style={{
-                                    margin: "0 0 10px",
-                                    fontSize: "13px",
-                                    lineHeight: "1.5",
-                                    color: "#374151",
-                                    fontWeight: "400"
-                                }}>
-                                    {profile.bio}
-                                </p>
-                            )}
-                            {interests.length > 0 && (
-                                <div style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: "5px",
-                                    marginBottom: "10px"
-                                }}>
-                                    {interests.slice(0, 6).map((item, i) => (
-                                        <span
-                                            key={i}
-                                            style={{
-                                                padding: "3px 9px",
-                                                borderRadius: "6px",
-                                                fontSize: "11px",
-                                                fontWeight: "500",
-                                                background: "#fafaf9",
-                                                color: "#1B4D3E",
-                                                border: "0.5px solid rgba(27,77,62,0.12)"
-                                            }}
-                                        >
-                                            {item}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Divider */}
-                <div style={{
-                    height: "0.5px",
-                    background: "rgba(27,77,62,0.08)",
-                    margin: "auto 16px 0"
-                }} />
-
-                {/* Action bar */}
-                <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px"
-                }}>
-                    {/* Pass */}
-                    <ActionBtn onClick={onPass} variant="danger">
-                        <X style={{ width: "22px", height: "22px", color: "#ef4444" }} />
-                    </ActionBtn>
-
-                    {/* Info */}
-                    <ActionBtn onClick={gotoProfile}>
-                        <Info style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
-                    </ActionBtn>
-
-                    {/* Like — primary large */}
-                    <ActionBtn onClick={onLike} variant="primary" size="lg">
-                        <Heart style={{ width: "28px", height: "28px", color: "#ffffff", fill: "#ffffff" }} />
-                    </ActionBtn>
-
-                    {/* Expand */}
-                    <ActionBtn onClick={() => setExpanded(v => !v)}>
-                        {expanded ? (
-                            <ChevronDown style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
-                        ) : (
-                            <ChevronUp style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
-                        )}
-                    </ActionBtn>
-
-                    {/* Super like */}
-                    <ActionBtn onClick={onSuperLike} variant="super">
-                        <Star style={{ width: "22px", height: "22px", color: "#a855f7", fill: "#a855f7" }} />
-                    </ActionBtn>
-                </div>
-            </div>
-        </div>
+        </>
     );
 }

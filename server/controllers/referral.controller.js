@@ -436,12 +436,7 @@ export const getUserReferrer = async (req, res) => {
             ]
         });
 
-        if (!referral) {
-            return res.status(404).json({
-                success: false,
-                message: 'User was not referred by anyone'
-            });
-        }
+
 
         return res.status(200).json({
             success: true,

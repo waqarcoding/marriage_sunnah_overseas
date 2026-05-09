@@ -63,9 +63,11 @@ export default function Login({ onLogin }) {
 
 
             <section
-                className="min-h-screen px-4 py-5"
-                style={{ display: "flex", flexDirection: "column", height: "100%" }}
+                className="h-screen px-4 py-10 flex flex-col items-center justify-center"
+                style={{ background: "#f0f5f3", height: "100vh" }}
             >
+
+
 
                 <AppToaster></AppToaster>
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
@@ -124,7 +126,7 @@ export default function Login({ onLogin }) {
                                 src="/logo.png"
                                 alt="Logo"
                                 className="h-40 w-auto"
-                                style={{ maxHeight: 155 }}
+                                style={{ maxHeight: 130 }}
                             />
                         </div>
 

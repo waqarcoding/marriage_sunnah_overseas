@@ -91,9 +91,10 @@ export default function Register({ onRegister }) {
         <>
             <AppToaster></AppToaster>
             <section
-                className="min-h-screen px-4 py-10"
-                style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "center", alignItems: "center", background: "#f0f5f3" }}
+                className="h-screen px-4 py-10 flex flex-col items-center justify-center"
+                style={{ background: "#f0f5f3" }}
             >
+
 
                 <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 rounded-2xl overflow-hidden shadow-xl">
 
@@ -126,160 +127,166 @@ export default function Register({ onRegister }) {
                             © 2025 Marriage Sunnah Overseas
                         </p>
                     </div>
-
-                    {/* ── Right panel ── */}
-                    <div className="flex flex-col justify-center bg-white p-8 lg:p-10 overflow-y-auto max-h-screen">
-                        {step === "role" && (
-                            <div className="flex items-center justify-center mb-2">
-                                <img
-                                    src="/logo.png"
-                                    alt="Marriage Sunnah Overseas Logo"
-                                    className="h-40 w-auto"
-                                    style={{ maxHeight: 155 }}
-                                />
-                            </div>
-                        )}
-
-
-                        {/* STEP 1 — Role */}
-                        {step === "role" && (
-                            <div className="flex flex-col gap-4">
-                                <div>
-                                    <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>Join as</h2>
-                                    <p className="text-sm text-slate-400 mt-1">Choose how you want to register</p>
+                    <div className="w-full max-w-5xl overflow-y-auto max-h-full">
+                        <div className="flex flex-col justify-center bg-white p-8 lg:p-10 overflow-y-auto max-h-screen">
+                            {step === "role" && (
+                                <div className="flex items-center justify-center mb-2">
+                                    <img
+                                        src="/logo.png"
+                                        alt="Marriage Sunnah Overseas Logo"
+                                        className="h-40 w-auto"
+                                        style={{ maxHeight: 155 }}
+                                    />
                                 </div>
-                                <div className="flex flex-col gap-3 mt-2">
-                                    <button
-                                        onClick={() => handleRoleSelect("individual")}
-                                        className="rounded-xl border border-slate-200 p-4 flex items-center gap-4 text-left hover:border-[#1B4D3E] hover:bg-[#f0f5f3] transition-all"
-                                    >
-                                        <div className="w-11 h-11 rounded-xl bg-[#f0f5f3] flex items-center justify-center flex-shrink-0">
-                                            <User size={20} color="#1B4D3E" />
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Individual</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">Looking for a life partner</div>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => handleRoleSelect("guardian")}
-                                        className="rounded-xl border border-slate-200 p-4 flex items-center gap-4 text-left hover:border-[#1B4D3E] hover:bg-[#f0f5f3] transition-all"
-                                    >
-                                        <div className="w-11 h-11 rounded-xl bg-[#f0f5f3] flex items-center justify-center flex-shrink-0">
-                                            <Shield size={20} color="#1B4D3E" />
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Guardian (Wali)</div>
-                                            <div className="text-xs text-slate-400 mt-0.5">Managing on behalf of a family member</div>
-                                        </div>
-                                    </button>
-                                </div>
-                                <p className="text-xs text-center text-slate-400 mt-2">
-                                    Already have an account?{" "}
-                                    <button
-                                        type="button"
-                                        className="font-medium"
-                                        style={{ color: "var(--primary, #1B4D3E)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-                                        onClick={() => {
-                                            window.history.pushState({}, '', '/login');
-                                            window.dispatchEvent(new PopStateEvent('popstate'));
-                                        }}
-                                    >
-                                        Sign in
-                                    </button>
-                                </p>
+                            )}
 
-                            </div>
-                        )}
 
-                        {/* STEP 2 — Form */}
-                        {step === "form" && (
-                            <div className="flex flex-col gap-4">
-                                <button onClick={() => setStep("role")}
-                                    className="flex items-center gap-1 text-xs w-fit mb-1"
-                                    style={{ color: "var(--primary, #1B4D3E)", opacity: 0.7 }}>
-                                    <ChevronLeft size={14} /> Change role
-                                </button>
-
-                                <div>
-                                    <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>
-                                        Register as {role === "individual" ? "Individual" : "Guardian (Wali)"}
-                                    </h2>
-                                    <p className="text-sm text-slate-400 mt-1">Fill in your details to create your account</p>
-                                </div>
-
-                                {error && (
-                                    <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs border border-red-100">
-                                        {error}
+                            {/* STEP 1 — Role */}
+                            {step === "role" && (
+                                <div className="flex flex-col gap-4">
+                                    <div>
+                                        <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>Join as</h2>
+                                        <p className="text-sm text-slate-400 mt-1">Choose how you want to register</p>
                                     </div>
-                                )}
-
-                                {/* Avatar */}
-                                <div className="flex justify-center">
-                                    <div className="relative" style={{ width: 88, height: 88, cursor: "pointer" }}
-                                        onClick={() => document.getElementById("photoInput").click()}>
-                                        <div className="absolute inset-0 rounded-full border-2 border-slate-200" />
-                                        <div className="absolute rounded-full overflow-hidden flex items-center justify-center bg-[#f0f5f3]"
-                                            style={{ inset: 4 }}>
-                                            {photoPreview
-                                                ? <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-                                                : <User size={32} color="#94a3b8" />
-                                            }
-                                        </div>
-                                        <button type="button"
-                                            onClick={e => { e.stopPropagation(); document.getElementById("photoInput").click() }}
-                                            className="absolute bottom-0.5 right-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 hover:scale-110 transition-transform"
-                                            style={{ background: "var(--primary, #1B4D3E)", border: "2px solid #fff" }}>
-                                            <Pencil size={10} color="#fff" />
+                                    <div className="flex flex-col gap-3 mt-2">
+                                        <button
+                                            onClick={() => handleRoleSelect("individual")}
+                                            className="rounded-xl border border-slate-200 p-4 flex items-center gap-4 text-left hover:border-[#1B4D3E] hover:bg-[#f0f5f3] transition-all"
+                                        >
+                                            <div className="w-11 h-11 rounded-xl bg-[#f0f5f3] flex items-center justify-center flex-shrink-0">
+                                                <User size={20} color="#1B4D3E" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Individual</div>
+                                                <div className="text-xs text-slate-400 mt-0.5">Looking for a life partner</div>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => handleRoleSelect("guardian")}
+                                            className="rounded-xl border border-slate-200 p-4 flex items-center gap-4 text-left hover:border-[#1B4D3E] hover:bg-[#f0f5f3] transition-all"
+                                        >
+                                            <div className="w-11 h-11 rounded-xl bg-[#f0f5f3] flex items-center justify-center flex-shrink-0">
+                                                <Shield size={20} color="#1B4D3E" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Guardian (Wali)</div>
+                                                <div className="text-xs text-slate-400 mt-0.5">Managing on behalf of a family member</div>
+                                            </div>
                                         </button>
                                     </div>
-                                    <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp"
-                                        className="hidden" onChange={handlePhotoChange} />
+                                    <p className="text-xs text-center text-slate-400 mt-2">
+                                        Already have an account?{" "}
+                                        <button
+                                            type="button"
+                                            className="font-medium"
+                                            style={{ color: "var(--primary, #1B4D3E)", background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                                            onClick={() => {
+                                                window.history.pushState({}, '', '/login');
+                                                window.dispatchEvent(new PopStateEvent('popstate'));
+                                            }}
+                                        >
+                                            Sign in
+                                        </button>
+                                    </p>
+
                                 </div>
+                            )}
 
-                                <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                                    <Input label="Full Name" type="text" value={name}
-                                        onChange={e => setName(e.target.value)}
-                                        placeholder="Your full name" required autoComplete="name" />
-
-                                    <Input label="Email" type="email" value={email}
-                                        onChange={e => setEmail(e.target.value)}
-                                        placeholder="you@example.com" required autoComplete="email" />
-
-                                    <Input label="Mobile" type="tel" value={mobile}
-                                        onChange={e => setMobile(e.target.value)}
-                                        placeholder="+447700100001" required autoComplete="tel" />
-
-                                    <Select label="Gender" value={gender} onChange={setGender}
-                                        placeholder="Select gender"
-                                        options={[
-                                            { value: "male", label: "Male" },
-                                            { value: "female", label: "Female" },
-                                        ]} />
-
-                                    <Input label="Password" type="password" value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                        placeholder="Enter your password" required autoComplete="new-password" />
-
-                                    <Input label="Confirm Password" type="password" value={confirmPassword}
-                                        onChange={e => setConfirmPassword(e.target.value)}
-                                        placeholder="Confirm your password" required autoComplete="new-password"
-                                        error={confirmPassword && password !== confirmPassword ? "Passwords don't match" : ""} />
-
-                                    <button type="submit" disabled={loading}
-                                        className="w-full h-10 rounded-xl text-sm font-medium transition hover:opacity-90 disabled:opacity-50 mt-1"
-                                        style={{ background: "var(--primary, #1B4D3E)", color: "var(--primary-foreground, #f5f0e8)" }}>
-                                        {loading ? "Registering..." : "Sign Up"}
+                            {/* STEP 2 — Form */}
+                            {step === "form" && (
+                                <div className="flex flex-col gap-4">
+                                    <button onClick={() => setStep("role")}
+                                        className="flex items-center gap-1 text-xs w-fit mb-1"
+                                        style={{ color: "var(--primary, #1B4D3E)", opacity: 0.7 }}>
+                                        <ChevronLeft size={14} /> Change role
                                     </button>
-                                </form>
 
-                                <p className="text-xs text-center text-slate-400">
-                                    Already have an account?{" "}
-                                    <a href="/login" className="font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Sign in</a>
-                                </p>
-                            </div>
-                        )}
+                                    <div>
+                                        <div className="flex flex-row items-center justify-between gap-4 mb-1">
+                                            <div className="flex flex-col flex-1 min-w-0">
+                                                <h2 className="text-xl font-semibold" style={{ color: "var(--primary, #1B4D3E)" }}>
+                                                    Register as {role === "individual" ? "Individual" : "Guardian (Wali)"}
+                                                </h2>
+                                                <p className="text-sm text-slate-400 mt-1">Fill in your details to create your account</p>
+                                            </div>
+                                            {/* Avatar */}
+                                            <div className="relative flex-shrink-0" style={{ width: 56, height: 56, cursor: "pointer" }}
+                                                onClick={() => document.getElementById("photoInput").click()}>
+                                                <div className="absolute inset-0 rounded-full border-2 border-slate-200" />
+                                                <div className="absolute rounded-full overflow-hidden flex items-center justify-center bg-[#f0f5f3]"
+                                                    style={{ inset: 3 }}>
+                                                    {photoPreview
+                                                        ? <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                                                        : <User size={24} color="#94a3b8" />
+                                                    }
+                                                </div>
+                                                <button type="button"
+                                                    onClick={e => { e.stopPropagation(); document.getElementById("photoInput").click() }}
+                                                    className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center z-10 hover:scale-110 transition-transform"
+                                                    style={{ background: "var(--primary, #1B4D3E)", border: "2px solid #fff" }}>
+                                                    <Pencil size={10} color="#fff" />
+                                                </button>
+                                            </div>
+                                            <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp"
+                                                className="hidden" onChange={handlePhotoChange} />
+                                        </div>
+
+                                    </div>
+
+                                    {error && (
+                                        <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-xs border border-red-100">
+                                            {error}
+                                        </div>
+                                    )}
+
+
+
+                                    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                                        <Input label="Full Name" type="text" value={name}
+                                            onChange={e => setName(e.target.value)}
+                                            placeholder="Your full name" required autoComplete="name" />
+
+                                        <Input label="Email" type="email" value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            placeholder="you@example.com" required autoComplete="email" />
+
+                                        <Input label="Mobile" type="tel" value={mobile}
+                                            onChange={e => setMobile(e.target.value)}
+                                            placeholder="+447700100001" required autoComplete="tel" />
+
+                                        <Select label="Gender" value={gender} onChange={setGender}
+                                            placeholder="Select gender"
+                                            options={[
+                                                { value: "male", label: "Male" },
+                                                { value: "female", label: "Female" },
+                                            ]} />
+
+                                        <Input label="Password" type="password" value={password}
+                                            onChange={e => setPassword(e.target.value)}
+                                            placeholder="Enter your password" required autoComplete="new-password" />
+
+                                        <Input label="Confirm Password" type="password" value={confirmPassword}
+                                            onChange={e => setConfirmPassword(e.target.value)}
+                                            placeholder="Confirm your password" required autoComplete="new-password"
+                                            error={confirmPassword && password !== confirmPassword ? "Passwords don't match" : ""} />
+
+                                        <button type="submit" disabled={loading}
+                                            className="w-full h-10 rounded-xl text-sm font-medium transition hover:opacity-90 disabled:opacity-50 mt-1"
+                                            style={{ background: "var(--primary, #1B4D3E)", color: "var(--primary-foreground, #f5f0e8)" }}>
+                                            {loading ? "Registering..." : "Sign Up"}
+                                        </button>
+                                    </form>
+
+                                    <p className="text-xs text-center text-slate-400">
+                                        Already have an account?{" "}
+                                        <a href="/login" className="font-medium" style={{ color: "var(--primary, #1B4D3E)" }}>Sign in</a>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
+                    {/* ── Right panel ── */}
+
                 </div>
             </section>
         </>

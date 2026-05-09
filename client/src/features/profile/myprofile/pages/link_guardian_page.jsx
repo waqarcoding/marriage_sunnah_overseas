@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import GuardianService from '../../../guardian/services/GuardianService';
 import AuthService from '../../../auth/services/AuthService';
 import ChatService from '../../../chat/services/ChatService';
+import PageHeader from '../../../../ui/page_header';
 
 export default function ShowPinPage() {
     const navigate = useNavigate();
@@ -123,17 +124,10 @@ export default function ShowPinPage() {
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             {/* ── Header ── */}
-            <div className="px-5 pt-5 pb-2">
-                <h1 className="text-[26px] font-extrabold tracking-tight text-gray-900 leading-tight mb-1"
-                    style={{ letterSpacing: '-0.03em' }}>
-                    My Guardian
-                </h1>
-                <p className="text-sm text-gray-400 font-medium">
-                    {!loading && guardian
-                        ? `Linked with ${guardian.name}`
-                        : !loading ? 'Generate a PIN to share with your guardian' : 'Loading...'}
-                </p>
-            </div>
+            <PageHeader
+                title="Guardian"
+                subtitle="Fulfilling your sacred duty with honor"
+            />
 
             {/* ── Content Area ── */}
             <div style={{ flex: 1, overflow: "auto" }}>
@@ -393,28 +387,81 @@ function GuardianCard({ guardian, onChat, onRemove }) {
 /* ─────────────────────────────────────────────────────────
    Banners
    ───────────────────────────────────────────────────────── */
-function InfoBanner({ icon: Icon, tone = 'blue', title, body }) {
+function InfoBanner({ icon: Icon, tone = 'primary', title, body, showPattern = false }) {
     const tones = {
-        blue: { bg: '#eff6ff', border: '#bfdbfe', icon: '#2563eb', title: '#1e3a8a', body: '#1e40af' },
-        amber: { bg: '#fef3c7', border: '#fde68a', icon: '#d97706', title: '#92400e', body: '#78350f' },
+        primary: 'bg-[#1B4D3E]/5 border-[#1B4D3E]/15',
+        gold: 'bg-[#D4AF37]/8 border-[#D4AF37]/25',
+        success: 'bg-[#2d8c6e]/8 border-[#2d8c6e]/20',
+        warning: 'bg-amber-500/8 border-amber-500/20',
+        danger: 'bg-red-600/8 border-red-600/20',
+        info: 'bg-[#f0f5f3] border-[#1B4D3E]/10',
     };
-    const t = tones[tone];
+
+    const iconColors = {
+        primary: 'text-[#1B4D3E]',
+        gold: 'text-[#D4AF37]',
+        success: 'text-[#2d8c6e]',
+        warning: 'text-amber-600',
+        danger: 'text-red-600',
+        info: 'text-[#6a7282]',
+    };
+
+    const titleColors = {
+        primary: 'text-[#1B4D3E]',
+        gold: 'text-[#B8941F]',
+        success: 'text-[#1B4D3E]',
+        warning: 'text-amber-900',
+        danger: 'text-red-900',
+        info: 'text-[#1B4D3E]',
+    };
+
+    const bodyColors = {
+        primary: 'text-[#2d8c6e]',
+        gold: 'text-[#9c7d1a]',
+        success: 'text-[#2d8c6e]',
+        warning: 'text-amber-800',
+        danger: 'text-red-800',
+        info: 'text-[#5a7a70]',
+    };
+
+    const patternColors = {
+        primary: '#1B4D3E',
+        gold: '#D4AF37',
+        success: '#2d8c6e',
+        warning: '#f59e0b',
+        danger: '#dc2626',
+        info: '#1B4D3E',
+    };
+
     return (
-        <div className="rounded-2xl p-4"
-            style={{ background: t.bg, border: `1.5px solid ${t.border}` }}>
-            <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-white">
-                    <Icon size={16} style={{ color: t.icon }} />
+        <div className={`rounded-2xl p-4 border-[1.5px] relative overflow-hidden ${tones[tone]}`}>
+            {/* Islamic Pattern */}
+            {showPattern && (
+                <div className="absolute top-0 right-0 w-24 h-24 opacity-[0.03] pointer-events-none">
+                    <svg width="100%" height="100%" viewBox="0 0 100 100">
+                        <defs>
+                            <pattern id={`banner-pattern-${tone}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <circle cx="10" cy="10" r="8" fill="none" stroke={patternColors[tone]} strokeWidth="0.5" />
+                                <path d="M10 2 L18 10 L10 18 L2 10 Z" fill="none" stroke={patternColors[tone]} strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100" height="100" fill={`url(#banner-pattern-${tone})`} />
+                    </svg>
                 </div>
-                <div>
-                    <h3 className="text-[13px] font-bold mb-1" style={{ color: t.title }}>{title}</h3>
-                    <p className="text-[13px] leading-relaxed" style={{ color: t.body }}>{body}</p>
+            )}
+
+            <div className="flex items-start gap-3 relative z-10">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/90 shadow-sm ${iconColors[tone]}`}>
+                    <Icon size={16} />
+                </div>
+                <div className="flex-1">
+                    <h3 className={`text-[13px] font-bold mb-1 ${titleColors[tone]}`}>{title}</h3>
+                    <p className={`text-[13px] leading-relaxed ${bodyColors[tone]}`}>{body}</p>
                 </div>
             </div>
         </div>
     );
 }
-
 function InstructionsBanner() {
     const steps = [
         'Your guardian creates an account or logs in',

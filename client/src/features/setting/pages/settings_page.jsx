@@ -11,6 +11,7 @@ import {
 import AuthService from "../../auth/services/AuthService";
 import ProfileService from "../../profile/services/ProfileService";
 import SettingService from "../services/SettingService"; // ✅ import SettingService
+import PageHeader from "../../../ui/page_header";
 
 
 
@@ -219,26 +220,10 @@ export default function SettingsPage() {
 
 
                 {/* ── Page title ── */}
-                <div style={{ padding: "20px 20px 8px" }}>
-                    <h1 style={{
-                        margin: "0 0 3px",
-                        fontSize: 26,
-                        fontWeight: 800,
-                        color: "#111827",
-                        letterSpacing: "-0.03em",
-                        lineHeight: 1.2,
-                    }}>
-                        Settings
-                    </h1>
-                    <p style={{
-                        margin: 0,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: "#9ca3af",
-                    }}>
-                        Manage your account & preferences
-                    </p>
-                </div>
+                <PageHeader
+                    title="Settings"
+                    subtitle="Manage your journey with intention"
+                />
 
 
                 <div className="pt-4">

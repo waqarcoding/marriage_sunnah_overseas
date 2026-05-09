@@ -37,7 +37,7 @@ import AuthService from "../features/auth/services/AuthService";
 
 // ✅ Updated Tab Navigation
 export const INDIVIDUAL_TABS = [
-  { name: "Match", to: "/individual/explore", OutlineIcon: MapOutline, SolidIcon: HeartSolid },
+  { name: "Match", to: "/individual/explore", OutlineIcon: MapOutline, SolidIcon: MapSolid },
   { name: "Interest", to: "/individual/interest", OutlineIcon: HeartOutline, SolidIcon: HeartSolid },
   { name: "Guardian", to: "/individual/show-pin", OutlineIcon: Shield, SolidIcon: Shield },
   { name: "Chats", to: "/individual/chats", OutlineIcon: ChatOutline, SolidIcon: ChatSolid },
@@ -51,6 +51,7 @@ export const GUARDIAN_TABS = [
   { name: "Chats", to: "/guardian/chats", OutlineIcon: ChatOutline, SolidIcon: ChatSolid },
   { name: "Settings", to: "/guardian/settings", OutlineIcon: UserOutline, SolidIcon: UserSolid },
 ];
+
 async function getUserInfo() {
   const tokenData = AuthService.getTokenData();
   if (!tokenData) return { name: "User", avatar: null, role: null };
@@ -156,52 +157,139 @@ function AvatarOrInitial({ avatar, name, size = 8 }) {
 export function MobileGreetingBar({ name, avatar, notifCount = 0, onNotification, onMenuOpen }) {
   const firstName = name?.split(" ")[0] || "Friend";
   return (
-    <div className="flex items-center justify-between px-4 pt-3 pb-2   md:hidden"
-      style={{ borderBottom: "0.5px solid rgba(27,77,62,0.08) ", }}>
+    <div className="flex items-center justify-between px-4 pt-4 pb-3 md:hidden relative overflow-hidden"
+      style={{
+        borderBottom: "1px solid rgba(27,77,62,0.08)",
+      }}>
+      {/* Islamic Pattern Background */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="islamic-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M20 0 L40 20 L20 40 L0 20 Z M20 10 L30 20 L20 30 L10 20 Z"
+                fill="none" stroke="#1B4D3E" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#islamic-pattern)" />
+        </svg>
+      </div>
+
       {/* Left: avatar + greeting */}
-      <div className="flex items-center gap-3">
-        {/* Avatar */}
-        <button onClick={onMenuOpen} className="shrink-0 cursor-pointer border-none bg-transparent p-0">
+      <div className="flex items-center gap-3.5 relative z-10">
+        {/* Avatar with Islamic ornament */}
+        <button onClick={onMenuOpen} className="shrink-0 cursor-pointer border-none bg-transparent p-0 relative">
           {avatar ? (
-            <img src={avatar} alt={name}
-              className="w-11 h-11 rounded-full object-cover"
-              style={{ border: "2px solid rgba(27,77,62,0.15)" }} />
+            <div className="relative">
+              {/* Decorative ring */}
+              <div className="absolute inset-0 rounded-full"
+                style={{
+                  background: "conic-gradient(from 0deg, #1B4D3E 0deg, transparent 90deg, transparent 270deg, #1B4D3E 360deg)",
+                  opacity: 0.15,
+                  transform: "scale(1.15)"
+                }}></div>
+              <img src={avatar} alt={name}
+                className="w-12 h-12 rounded-full object-cover relative z-10"
+                style={{ border: "2px solid rgba(27,77,62,0.15)" }} />
+              {/* Small crescent accent */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center z-20"
+                style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d8c6e 100%)", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#D4AF37">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.51 5.07-1.39-1.39.09-2.82-.09-4.19-.64-3.49-1.39-5.95-4.66-5.95-8.47 0-2.18.77-4.18 2.05-5.75C7.32 4.2 5.78 3.5 4.07 3.5c-.55 0-1 .45-1 1 0 2.21 1.79 4 4 4 .93 0 1.79-.32 2.47-.85C8.97 9.06 8.5 10.49 8.5 12c0 3.03 1.95 5.61 4.66 6.56 1.37.48 2.82.66 4.26.54C19.58 17.49 21 14.91 21 12c0-4.97-4.03-9-9-9z" />
+                </svg>
+              </div>
+            </div>
           ) : (
-            <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold"
-              style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a5f)", color: "#fef3c7" }}>
-              {(name?.[0] || "U").toUpperCase()}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full"
+                style={{
+                  background: "conic-gradient(from 0deg, #1B4D3E 0deg, transparent 90deg, transparent 270deg, #1B4D3E 360deg)",
+                  opacity: 0.15,
+                  transform: "scale(1.15)"
+                }}></div>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold relative z-10"
+                style={{
+                  background: "linear-gradient(135deg,#1B4D3E,#2d8c6e)",
+                  color: "#fef3c7",
+                  boxShadow: "0 2px 8px rgba(27,77,62,0.25)",
+                  border: "2px solid rgba(212,175,55,0.2)"
+                }}>
+                {(name?.[0] || "U").toUpperCase()}
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center z-20"
+                style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d8c6e 100%)", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#D4AF37">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.51 5.07-1.39-1.39.09-2.82-.09-4.19-.64-3.49-1.39-5.95-4.66-5.95-8.47 0-2.18.77-4.18 2.05-5.75C7.32 4.2 5.78 3.5 4.07 3.5c-.55 0-1 .45-1 1 0 2.21 1.79 4 4 4 .93 0 1.79-.32 2.47-.85C8.97 9.06 8.5 10.49 8.5 12c0 3.03 1.95 5.61 4.66 6.56 1.37.48 2.82.66 4.26.54C19.58 17.49 21 14.91 21 12c0-4.97-4.03-9-9-9z" />
+                </svg>
+              </div>
             </div>
           )}
         </button>
-        {/* Text */}
-        <div>
-          <div className="text-[13px] font-medium text-gray-500 leading-tight mb-0.5">
-            Hello, {firstName} 👋
+
+        {/* Text with Arabic calligraphy style */}
+        <div className="flex flex-col gap-0.5">
+          <div className="text-[13px] font-medium leading-tight flex items-center gap-1.5"
+            style={{ color: "rgba(107,114,128,0.85)" }}>
+            <span>السلام عليكم</span>
+            <span className="text-[11px]">•</span>
+            <span>{firstName}</span>
           </div>
-          <div className="text-[17px] font-bold text-gray-900 leading-tight"
-            style={{ letterSpacing: "-0.02em" }}>
-            Let's Find A Match
+          <div className="text-[17px] font-bold leading-tight tracking-tight"
+            style={{
+              background: "linear-gradient(135deg, #1B4D3E 0%, #2d8c6e 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              fontFamily: "'Playfair Display', serif"
+            }}>
+            Find Your Halal Match
           </div>
         </div>
       </div>
 
-      {/* Right: notification bell */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        onClick={onNotification}
-        className="relative w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer shrink-0"
-        style={{ background: "var(--primary)", boxShadow: "0 2px 8px rgba(0,0,0,0.20)" }}
-      >
-        {/* Bell SVG */}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff">
-          <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-        </svg>
-      </motion.button>
+      {/* Right: notification bell with Islamic design */}
+      <div className="relative">
+        <motion.button
+          whileTap={{ scale: 0.90 }}
+          whileHover={{ scale: 1.05 }}
+          onClick={onNotification}
+          className="relative w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer shrink-0"
+          style={{
+            background: "linear-gradient(135deg, #1B4D3E 0%, #2d8c6e 100%)",
+            boxShadow: "0 4px 12px rgba(27,77,62,0.3)",
+            border: "1.5px solid rgba(212,175,55,0.3)"
+          }}
+        >
+          {/* Islamic star pattern overlay */}
+          <div className="absolute inset-0 rounded-full overflow-hidden opacity-10">
+            <svg width="100%" height="100%" viewBox="0 0 40 40">
+              <path d="M20 8 L24 16 L32 16 L26 22 L28 30 L20 24 L12 30 L14 22 L8 16 L16 16 Z"
+                fill="#D4AF37" />
+            </svg>
+          </div>
 
+          {/* Bell SVG */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fef3c7" strokeWidth="2" className="relative z-10">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+
+          {/* Notification badge with gold accent */}
+          {notifCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full leading-none"
+              style={{
+                background: "linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)",
+                color: "#1B4D3E",
+                boxShadow: "0 2px 6px rgba(212,175,55,0.5)",
+                border: "1.5px solid rgba(27,77,62,0.2)"
+              }}>
+              {notifCount > 9 ? "9+" : notifCount}
+            </span>
+          )}
+        </motion.button>
+      </div>
     </div>
   );
 }
-
 export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -233,22 +321,10 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
   const guardianCount = socketCtx?.guardianCount || 0;
   const credits = socketCtx?.credits || 0;
 
-  /*
-  
   const badgeMap = {
     Interest: interestCount,
     Interests: interestCount,
     Chats: chatCount,
-    
-    Dashboard: role === "guardian" ? guardianCount : 0,
-  };
-  */
-  const badgeMap = {
-    Interest: interestCount,
-    Interests: interestCount,
-
-    Chats: chatCount,//show badge only for chats 
-
   };
 
   useEffect(() => {
@@ -308,9 +384,6 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
       { icon: LogOut, label: "Logout", action: "logout", color: "#ef4444" },
     ]
     : [
-
-
-
       { icon: LogOut, label: "Logout", action: "logout", color: "#ef4444" },
     ];
 
@@ -346,9 +419,9 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
         }}
       >
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 h-full select-none shrink-0">
-          <img src="/public/logo.png" alt="Logo" className="h-9 w-auto" draggable={false} style={{ maxWidth: 140 }} />
-          <span className="font-bold text-base hidden sm:inline" style={{ color: "var(--background)", letterSpacing: "0.3px" }}>
+        <Link to="/" className="flex items-center gap-3 h-full select-none shrink-0">
+          <img src="/logo.png" alt="Logo" className="h-14 w-auto" draggable={false} style={{ maxWidth: 200 }} />
+          <span className="font-bold text-2xl hidden sm:inline" style={{ color: "var(--background)", letterSpacing: "0.3px" }}>
             Marriage Sunnah Overseas
           </span>
         </Link>
@@ -413,7 +486,6 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
             <ProfileDropdown avatar={avatar} name={name} role={role} onLogout={onLogout} menuItems={menuItems} />
           </div>
         )}
-
       </header>
 
       {/* ── Desktop spacer — only on md+ ── */}
@@ -429,7 +501,6 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
           onMenuOpen={() => navigate("/individual/myprofile")}
         />
       )}
-
 
       {/* ── Mobile bottom nav ── */}
       {isLoggedIn && (
