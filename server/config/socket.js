@@ -46,23 +46,44 @@ export const createNotification = async ({
 };
 
 // ─────────────────────────────────────────────────────────
-// INIT
+// INIT - ✅ FIXED FOR DIGITALOCEAN
 // ─────────────────────────────────────────────────────────
 export const initSocket = (server) => {
+    const allowedOrigins = [
+        process.env.CLIENT_URL,
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://marriagesunnaoverseas.com',
+        'https://www.marriagesunnaoverseas.com'
+    ].filter(Boolean);
+
     io = new Server(server, {
         cors: {
-            origin: process.env.CLIENT_URL || '*',
-            credentials: true,
+            origin: allowedOrigins,
+            methods: ["GET", "POST"],
+            credentials: true
         },
+        // ✅ CRITICAL: DigitalOcean-specific configuration
+        path: '/socket.io',
+        transports: ['polling', 'websocket'],  // Polling first for reliability
+        allowUpgrades: true,
+        pingTimeout: 60000,
+        pingInterval: 25000,
+        connectTimeout: 45000,
+        maxHttpBufferSize: 1e6,
+        // ✅ Important for DigitalOcean's load balancer
+        allowEIO3: true,
+        serveClient: false,
     });
 
     io.on('connection', (socket) => {
-        console.log('User connected:', socket.id);
+        console.log('✅ User connected:', socket.id);
 
         socket.on('join', (userId) => {
             socket.join(`user_${userId}`);
             onlineUsers.add(String(userId));
             io.emit('user_online', userId);
+            console.log(`👤 User ${userId} joined room`);
         });
 
         socket.on('typing', ({ to, from }) => {
@@ -73,8 +94,8 @@ export const initSocket = (server) => {
             io.to(`user_${to}`).emit('stop_typing', { from });
         });
 
-        socket.on('disconnect', () => {
-            console.log('User disconnected:', socket.id);
+        socket.on('disconnect', (reason) => {
+            console.log('❌ User disconnected:', socket.id, 'Reason:', reason);
 
             for (const userId of onlineUsers) {
                 const rooms = io.sockets.adapter.sids.get(socket.id);
@@ -85,8 +106,13 @@ export const initSocket = (server) => {
                 }
             }
         });
+
+        socket.on('error', (error) => {
+            console.error('🔌 Socket error:', error);
+        });
     });
 
+    console.log('✅ Socket.IO configured with CORS origins:', allowedOrigins);
     return io;
 };
 
