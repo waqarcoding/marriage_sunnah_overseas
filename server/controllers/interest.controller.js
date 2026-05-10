@@ -37,14 +37,27 @@ const pushGuardianPendingCount = async (guardianUserId) => {
 
 // Returns { rowId: Guardian.id, userId: guardian_user_id } or null
 const getGuardianOf = async (userId) => {
+    console.log(`🔍 getGuardianOf called for userId: ${userId}`);
+
     const row = await Guardian.findOne({
         where: { individual_id: userId },
         attributes: ['id', 'guardian_id'],
     });
-    return {
-        id: row.id,              // Changed from: rowId: row.id
-        userId: row.guardian_id
+
+    console.log(`🔍 Guardian query result:`, row ? row.toJSON() : null);
+
+    if (!row) {
+        console.log(`⚠️ No guardian found for user ${userId}`);
+        return null;
+    }
+
+    const result = {
+        id: row.id,              // Guardian table primary key
+        userId: row.guardian_id  // The guardian's user ID
     };
+
+    console.log(`✅ Returning guardian:`, result);
+    return result;
 };
 
 // ── Fetch avatar_url for a user (always from users.avatar_url) ────────────────
@@ -177,6 +190,14 @@ export const sendInterest = async (req, res) => {
                 getGuardianOf(toUserId),
             ]);
 
+            console.log('🔍 Guardian Debug:', {
+                fromUserId,
+                toUserId,
+                fromGuardian,
+                toGuardian,
+                fromGuardianId: fromGuardian?.id,
+                toGuardianId: toGuardian?.id
+            });
             // Update reverse interest to accepted
             await reverseInterest.update({
                 status: 'accepted',
