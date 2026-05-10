@@ -65,7 +65,7 @@ export const initSocket = (server) => {
         },
         // ✅ CRITICAL: DigitalOcean-specific configuration
         path: '/socket.io',
-        transports: ['polling', 'websocket'],  // Polling first for reliability
+        transports: ['polling', 'websocket'],  // ✅ Polling first for reliability
         allowUpgrades: true,
         pingTimeout: 60000,
         pingInterval: 25000,
@@ -115,6 +115,7 @@ export const initSocket = (server) => {
     console.log('✅ Socket.IO configured with CORS origins:', allowedOrigins);
     return io;
 };
+
 
 export const getIO = () => {
     if (!io) throw new Error('Socket not initialized');
