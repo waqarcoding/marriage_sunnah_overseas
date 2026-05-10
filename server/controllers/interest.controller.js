@@ -216,7 +216,7 @@ export const sendInterest = async (req, res) => {
                 both_guardians_approved: false,
                 from_guardian: fromGuardian?.id || null,
                 from_guardian_status: 'pending',
-                to_guardian: toGuardian?.rowId || null,
+                to_guardian: toGuardian?.id || null,
                 to_guardian_status: 'pending',
             });
 
@@ -288,7 +288,7 @@ export const sendInterest = async (req, res) => {
             both_guardians_approved: false,
             from_guardian: fromGuardian?.id || null,
             from_guardian_status: 'pending',
-            to_guardian: toGuardian?.rowId || null,
+            to_guardian: toGuardian?.id || null,
             to_guardian_status: 'pending',
         });
 
