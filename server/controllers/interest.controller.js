@@ -83,38 +83,44 @@ export const sendInterest = async (req, res) => {
     try {
         const fromUserId = req.user.id;
         const { interestId, isSuperLike = false } = req.body;
-        // ✅ ADD THIS LOGGING FIRST
+
+        // ✅ DEBUG LOGGING
         console.log('=== DEBUG sendInterest ===');
         console.log('req.user:', req.user);
         console.log('req.user.id:', req.user?.id);
         console.log('req.body:', req.body);
         console.log(`📨 sendInterest called: fromUserId=${fromUserId}, toUserId=${interestId}, isSuperLike=${isSuperLike}`);
 
-        if (!interestId)
+        // ✅ VALIDATION
+        if (!interestId) {
             return res.json({ success: false, message: 'interestId is required' });
+        }
 
         const toUserId = Number(interestId);
 
-        if (fromUserId === toUserId)
+        if (fromUserId === toUserId) {
             return res.json({ success: false, message: 'Cannot send interest to yourself' });
+        }
 
         // ✅ CRITICAL FIX: Check if both users exist in the database
+        console.log('🔍 Checking if users exist in database...');
         const [fromUser, toUser] = await Promise.all([
             User.findByPk(fromUserId),
             User.findByPk(toUserId)
         ]);
 
         if (!fromUser) {
-            console.error(`❌ From user not found: ${fromUserId}`);
+            console.error(`❌ From user not found in database: ${fromUserId}`);
             return res.status(401).json({
                 success: false,
                 message: 'Your account was not found. Please log in again.',
-                code: 'USER_NOT_FOUND'
+                code: 'USER_NOT_FOUND',
+                requiresRelogin: true
             });
         }
 
         if (!toUser) {
-            console.error(`❌ To user not found: ${toUserId}`);
+            console.error(`❌ To user not found in database: ${toUserId}`);
             return res.status(404).json({
                 success: false,
                 message: 'The user you are trying to send interest to does not exist.',
@@ -122,14 +128,28 @@ export const sendInterest = async (req, res) => {
             });
         }
 
-        const existing = await Interest.findOne({
-            where: { from_user: fromUserId, to_user: toUserId, status: { [Op.in]: ['pending', 'accepted'] } },
+        console.log('✅ Both users exist:', {
+            from: { id: fromUser.id, email: fromUser.email },
+            to: { id: toUser.id, email: toUser.email }
         });
-        if (existing)
-            return res.json({ success: false, message: 'Interest already sent' });
 
+        // ✅ CHECK EXISTING INTEREST
+        const existing = await Interest.findOne({
+            where: {
+                from_user: fromUserId,
+                to_user: toUserId,
+                status: { [Op.in]: ['pending', 'accepted'] }
+            },
+        });
+
+        if (existing) {
+            return res.json({ success: false, message: 'Interest already sent' });
+        }
+
+        // ✅ CHECK CREDITS
         const creditCost = isSuperLike ? 10 : 1;
         const hasCredits = await hasEnoughCredits(fromUserId, creditCost);
+
         if (!hasCredits) {
             return res.json({
                 success: false,
@@ -139,24 +159,32 @@ export const sendInterest = async (req, res) => {
             });
         }
 
+        // ✅ CHECK FOR REVERSE INTEREST (MUTUAL MATCH)
         const reverseInterest = await Interest.findOne({
-            where: { from_user: toUserId, to_user: fromUserId, status: 'pending' },
+            where: {
+                from_user: toUserId,
+                to_user: fromUserId,
+                status: 'pending'
+            },
         });
 
         if (reverseInterest) {
             console.log(`💑 Mutual match detected!`);
 
+            // Get guardians
             const [fromGuardian, toGuardian] = await Promise.all([
                 getGuardianOf(fromUserId),
                 getGuardianOf(toUserId),
             ]);
 
+            // Update reverse interest to accepted
             await reverseInterest.update({
                 status: 'accepted',
                 is_mutual: true,
                 both_users_approved: true
             });
 
+            // Create mutual interest
             const mutualInterest = await Interest.create({
                 from_user: fromUserId,
                 to_user: toUserId,
@@ -171,21 +199,24 @@ export const sendInterest = async (req, res) => {
                 to_guardian_status: 'pending',
             });
 
+            // Deduct credits
             const deductResult = await deductCredits(
                 fromUserId,
                 creditCost,
                 `${isSuperLike ? 'Super like' : 'Interest'} (mutual match)`
             );
+
             if (!deductResult.success) {
                 console.error('⚠️ Failed to deduct credits after mutual match:', deductResult.error);
             }
 
+            // Get profiles
             const [senderProfile, toProfile] = await Promise.all([
                 Profile.findOne({ where: { individual_id: fromUserId } }),
                 Profile.findOne({ where: { individual_id: toUserId } }),
             ]);
 
-            // ✅ notifyInterestReceived already sends email - no need to call sendInterestReceivedEmail again
+            // Send notification
             notifyInterestReceived(toUserId, {
                 interest_id: mutualInterest.id,
                 sender_id: fromUserId,
@@ -204,16 +235,28 @@ export const sendInterest = async (req, res) => {
                 success: true,
                 is_mutual: true,
                 message: 'Mutual interest — they already sent you an interest!',
-                data: { ...mutualInterest.toJSON(), creditsRemaining: deductResult.newBalance },
+                data: {
+                    ...mutualInterest.toJSON(),
+                    creditsRemaining: deductResult.newBalance
+                },
             });
         }
 
-        // ── No reverse interest — create new ──────────────────────────────────
+        // ✅ NO REVERSE INTEREST — CREATE NEW PENDING INTEREST
+        console.log('📝 Creating new pending interest...');
+
+        // Get guardians
         const [fromGuardian, toGuardian] = await Promise.all([
             getGuardianOf(fromUserId),
             getGuardianOf(toUserId),
         ]);
 
+        console.log('👨‍👧 Guardian info:', {
+            from: fromGuardian,
+            to: toGuardian
+        });
+
+        // Create interest
         const interest = await Interest.create({
             from_user: fromUserId,
             to_user: toUserId,
@@ -228,6 +271,9 @@ export const sendInterest = async (req, res) => {
             to_guardian_status: 'pending',
         });
 
+        console.log('✅ Interest created:', interest.id);
+
+        // Deduct credits
         const deductResult = await deductCredits(
             fromUserId,
             creditCost,
@@ -235,6 +281,7 @@ export const sendInterest = async (req, res) => {
         );
 
         if (!deductResult.success) {
+            console.error('❌ Failed to deduct credits, destroying interest');
             await interest.destroy();
             return res.json({
                 success: false,
@@ -244,12 +291,18 @@ export const sendInterest = async (req, res) => {
             });
         }
 
+        console.log('✅ Credits deducted:', {
+            amount: creditCost,
+            remaining: deductResult.newBalance
+        });
+
+        // Get profiles
         const [senderProfile, toProfile] = await Promise.all([
             Profile.findOne({ where: { individual_id: fromUserId } }),
             Profile.findOne({ where: { individual_id: toUserId } }),
         ]);
 
-        // ✅ notifyInterestReceived already sends email - no need to call sendInterestReceivedEmail again
+        // Send notification
         notifyInterestReceived(toUserId, {
             interest_id: interest.id,
             sender_id: fromUserId,
@@ -264,6 +317,8 @@ export const sendInterest = async (req, res) => {
 
         await pushInterestCount(toUserId);
 
+        console.log('✅ Interest sent successfully');
+
         return res.status(201).json({
             success: true,
             is_mutual: false,
@@ -277,8 +332,18 @@ export const sendInterest = async (req, res) => {
         });
 
     } catch (err) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.error('❌ sendInterest error:', err);
-        return res.status(500).json({ success: false, message: err.message || 'Server error' });
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+        return res.status(500).json({
+            success: false,
+            message: err.message || 'Server error',
+            code: 'SERVER_ERROR'
+        });
     }
 };
 // ✅ CORRECT: acceptInterest - Remove duplicate email calls for interest accepted and match
