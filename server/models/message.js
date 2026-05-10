@@ -29,21 +29,34 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true,
     },
-    sender_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
-    },
-    receiver_id: {
-      type: DataTypes.BIGINT,
-      allowNull: false,
-    },
+
     message: {
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    sender_id: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      references: {        // ✅ ADD THIS
+        model: 'Users',  // ✅ ADD THIS
+        key: 'id'        // ✅ ADD THIS
+      }
+    },
+    receiver_id: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      references: {        // ✅ ADD THIS
+        model: 'Users',  // ✅ ADD THIS
+        key: 'id'        // ✅ ADD THIS
+      }
+    },
     interest_id: {
       type: DataTypes.BIGINT,
       allowNull: true,
+      references: {           // ✅ ADD THIS
+        model: 'Interests', // ✅ ADD THIS (capital I)
+        key: 'id'           // ✅ ADD THIS
+      }
     },
     deletedBy: {
       type: DataTypes.TEXT, // ✅ Changed from JSON to TEXT

@@ -91,12 +91,42 @@ module.exports = (sequelize, DataTypes) => {
       id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
       status: { type: DataTypes.ENUM('pending', 'accepted', 'declined'), allowNull: false, defaultValue: 'pending' },
 
-      from_user: { type: DataTypes.BIGINT, allowNull: false },
-      from_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
+      from_user: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+          model: 'Users',  // ✅ FIXED: Capital U to match actual table name
+          key: 'id'
+        }
+      },
+      from_guardian: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+          model: 'Guardians',  // ✅ FIXED: Capital G to match actual table name
+          key: 'id'
+        }
+      },
       from_guardian_status: { type: DataTypes.ENUM('pending', 'accepted', 'declined'), allowNull: true, defaultValue: 'pending' },
 
-      to_user: { type: DataTypes.BIGINT, allowNull: false },
-      to_guardian: { type: DataTypes.BIGINT, allowNull: true, defaultValue: null },
+      to_user: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+          model: 'Users',  // ✅ FIXED: Capital U to match actual table name
+          key: 'id'
+        }
+      },
+      to_guardian: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+          model: 'Guardians',  // ✅ FIXED: Capital G to match actual table name
+          key: 'id'
+        }
+      },
       to_guardian_status: { type: DataTypes.ENUM('pending', 'accepted', 'declined'), allowNull: true, defaultValue: 'pending' },
 
       both_guardians_approved: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

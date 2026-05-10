@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
         user_id: {
             type: DataTypes.BIGINT,
             allowNull: false,
+            references: {        // ✅ ADD THIS
+                model: 'Users',  // ✅ ADD THIS
+                key: 'id'        // ✅ ADD THIS
+            }
         },
 
         type: {

@@ -11,16 +11,16 @@ module.exports = {
         allowNull: false
       },
 
+      message: {
+        type: Sequelize.TEXT,
+        allowNull: false
+      },
       sender_id: {
         type: Sequelize.BIGINT,
         allowNull: false
       },
       receiver_id: {
         type: Sequelize.BIGINT,
-        allowNull: false
-      },
-      message: {
-        type: Sequelize.TEXT,
         allowNull: false
       },
       interest_id: {

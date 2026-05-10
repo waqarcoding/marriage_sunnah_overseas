@@ -67,7 +67,14 @@ module.exports = (sequelize, DataTypes) => {
 
   Profile.init({
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
-    individual_id: { type: DataTypes.BIGINT, allowNull: false },
+    individual_id: {
+      type: DataTypes.BIGINT,
+      allowNull: false,
+      references: {        // ✅ ADD THIS
+        model: 'Users',  // ✅ ADD THIS
+        key: 'id'        // ✅ ADD THIS
+      }
+    },
     name: { type: DataTypes.STRING(255), allowNull: false },
     gender: { type: DataTypes.STRING(255), allowNull: false },
     date_of_birth: { type: DataTypes.DATEONLY, allowNull: true, defaultValue: null },
