@@ -41,8 +41,13 @@ function createSocket(userId, setters) {
   _badgeSetters = setters;
 
   const s = io(SERVER_URL, {
-    transports: ['websocket', 'polling'],
+    path: '/socket.io/',
+    transports: ['polling', 'websocket'],  // ✅ FIXED: polling first for DigitalOcean
+    upgrade: true,
     reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 20000,
     auth: { token: localStorage.getItem('jwtToken') },
   });
 
