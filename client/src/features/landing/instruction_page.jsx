@@ -1,5 +1,5 @@
 import * as React from "react";
-import AppBar from "../../ui/app_bar.jsx";
+import AppBar from "./appbar";
 
 /**
  * Marriage Sunna Overseas - How It Works & About Page
@@ -10,11 +10,12 @@ export default function HowItWorks() {
     return (
         <div>
 
-            <
-                // @ts-ignore
-                AppBar onLogout={() => { }} onSidebarLogout={() => { }} />
 
-            <div className="container mx-auto max-w-3xl px-4 py-12" id="how-it-works">
+            <AppBar
+                onLogout={() => { }}
+                onSidebarLogout={() => { }}
+                isScrolled={true} isopacityon={false} />
+            <div className="container mx-auto max-w-3xl px-4 py-12 mt-10" id="how-it-works">
                 <h1 className="text-3xl font-bold text-center mb-4">
                     Marriage Sunna Overseas
                 </h1>

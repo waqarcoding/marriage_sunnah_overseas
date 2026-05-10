@@ -41,8 +41,10 @@ const getGuardianOf = async (userId) => {
         where: { individual_id: userId },
         attributes: ['id', 'guardian_id'],
     });
-    if (!row) return null;
-    return { rowId: row.id, userId: row.guardian_id };
+    return {
+        id: row.id,              // Changed from: rowId: row.id
+        userId: row.guardian_id
+    };
 };
 
 // ── Fetch avatar_url for a user (always from users.avatar_url) ────────────────
@@ -91,6 +93,30 @@ export const sendInterest = async (req, res) => {
 
         if (fromUserId === toUserId)
             return res.json({ success: false, message: 'Cannot send interest to yourself' });
+
+        // ✅ CRITICAL FIX: Check if both users exist in the database
+        const [fromUser, toUser] = await Promise.all([
+            User.findByPk(fromUserId),
+            User.findByPk(toUserId)
+        ]);
+
+        if (!fromUser) {
+            console.error(`❌ From user not found: ${fromUserId}`);
+            return res.status(401).json({
+                success: false,
+                message: 'Your account was not found. Please log in again.',
+                code: 'USER_NOT_FOUND'
+            });
+        }
+
+        if (!toUser) {
+            console.error(`❌ To user not found: ${toUserId}`);
+            return res.status(404).json({
+                success: false,
+                message: 'The user you are trying to send interest to does not exist.',
+                code: 'RECIPIENT_NOT_FOUND'
+            });
+        }
 
         const existing = await Interest.findOne({
             where: { from_user: fromUserId, to_user: toUserId, status: { [Op.in]: ['pending', 'accepted'] } },
@@ -150,9 +176,7 @@ export const sendInterest = async (req, res) => {
                 console.error('⚠️ Failed to deduct credits after mutual match:', deductResult.error);
             }
 
-            const [senderUser, toUser, senderProfile, toProfile] = await Promise.all([
-                User.findByPk(fromUserId, { attributes: ['id', 'name', 'email', 'avatar_url'] }),
-                User.findByPk(toUserId, { attributes: ['id', 'name', 'email', 'avatar_url'] }),
+            const [senderProfile, toProfile] = await Promise.all([
                 Profile.findOne({ where: { individual_id: fromUserId } }),
                 Profile.findOne({ where: { individual_id: toUserId } }),
             ]);
@@ -161,11 +185,11 @@ export const sendInterest = async (req, res) => {
             notifyInterestReceived(toUserId, {
                 interest_id: mutualInterest.id,
                 sender_id: fromUserId,
-                sender_name: senderProfile?.name || senderUser?.name || '',
-                sender_avatar_url: senderUser?.avatar_url,
+                sender_name: senderProfile?.name || fromUser?.name || '',
+                sender_avatar_url: fromUser?.avatar_url,
                 is_mutual: true,
                 toUser: toUser,
-                senderUser: senderUser,
+                senderUser: fromUser,
                 senderProfile: senderProfile,
                 toUserEmail: toUser?.email,
             });
@@ -216,9 +240,7 @@ export const sendInterest = async (req, res) => {
             });
         }
 
-        const [senderUser, toUser, senderProfile, toProfile] = await Promise.all([
-            User.findByPk(fromUserId, { attributes: ['id', 'name', 'email', 'avatar_url'] }),
-            User.findByPk(toUserId, { attributes: ['id', 'name', 'email', 'avatar_url'] }),
+        const [senderProfile, toProfile] = await Promise.all([
             Profile.findOne({ where: { individual_id: fromUserId } }),
             Profile.findOne({ where: { individual_id: toUserId } }),
         ]);
@@ -227,11 +249,11 @@ export const sendInterest = async (req, res) => {
         notifyInterestReceived(toUserId, {
             interest_id: interest.id,
             sender_id: fromUserId,
-            sender_name: senderProfile?.name || senderUser?.name || '',
-            sender_avatar_url: senderUser?.avatar_url,
+            sender_name: senderProfile?.name || fromUser?.name || '',
+            sender_avatar_url: fromUser?.avatar_url,
             is_mutual: false,
             toUser: toUser,
-            senderUser: senderUser,
+            senderUser: fromUser,
             senderProfile: senderProfile,
             toUserEmail: toUser?.email,
         });
@@ -255,7 +277,6 @@ export const sendInterest = async (req, res) => {
         return res.status(500).json({ success: false, message: err.message || 'Server error' });
     }
 };
-
 // ✅ CORRECT: acceptInterest - Remove duplicate email calls for interest accepted and match
 export const acceptInterest = async (req, res) => {
     try {

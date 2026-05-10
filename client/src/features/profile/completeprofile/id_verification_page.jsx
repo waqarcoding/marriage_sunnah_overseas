@@ -49,6 +49,71 @@ const KEYFRAMES = `
   }
 `;
 
+// ── Image Compression Helper ──────────────────────────────────────────────────
+const compressImage = (file, maxSizeMB = 2, maxWidthOrHeight = 1920) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = typeof event.target.result === 'string' ? event.target.result : '';
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Resize if needed
+                if (width > height) {
+                    if (width > maxWidthOrHeight) {
+                        height *= maxWidthOrHeight / width;
+                        width = maxWidthOrHeight;
+                    }
+                } else {
+                    if (height > maxWidthOrHeight) {
+                        width *= maxWidthOrHeight / height;
+                        height = maxWidthOrHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Start with quality 0.9 and reduce if needed
+                let quality = 0.9;
+                const tryCompress = () => {
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.5) {
+                                quality -= 0.1;
+                                tryCompress();
+                            } else {
+                                const compressedFile = new File(
+                                    [blob],
+                                    file.name,
+                                    { type: 'image/jpeg', lastModified: Date.now() }
+                                );
+                                console.log(`✅ Compressed ${file.name}:`);
+                                console.log(`   Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+                                console.log(`   Compressed: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+                                console.log(`   Quality: ${(quality * 100).toFixed(0)}%`);
+                                resolve(compressedFile);
+                            }
+                        },
+                        'image/jpeg',
+                        quality
+                    );
+                };
+                tryCompress();
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+};
+
 function Sparkle({ x, y, delay, size = 6 }) {
     return (
         <div style={{ position: "absolute", left: x, top: y, width: size, height: size, pointerEvents: "none", animation: `sparkle 1.6s ease-in-out ${delay}s infinite`, opacity: 0 }}>
@@ -78,34 +143,108 @@ function VerifiedPill() {
 }
 
 // ─── Upload Card ──────────────────────────────────────────────────────────────
-function UploadCard({ side, icon, sub, onFile, preview, uploaded }) {
+function UploadCard({ side, icon, sub, onFile, preview, uploaded, loading }) {
     const inputRef = useRef(null);
     return (
         <div
-            onClick={() => !uploaded && inputRef.current?.click()}
-            style={{ background: uploaded ? SECONDARY : "#fff", border: `1.5px dashed ${uploaded ? PRIMARY : "#b6cfc9"}`, borderRadius: 14, padding: "1.25rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, cursor: uploaded ? "default" : "pointer", minHeight: 164, justifyContent: "center", position: "relative", transition: "all 0.2s" }}
+            onClick={() => !loading && inputRef.current?.click()}
+            style={{
+                background: uploaded ? SECONDARY : "#fff",
+                border: `1.5px dashed ${uploaded ? PRIMARY : "#b6cfc9"}`,
+                borderRadius: 14,
+                padding: "1.25rem 1rem",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 10,
+                cursor: loading ? "wait" : "pointer",
+                minHeight: 164,
+                justifyContent: "center",
+                position: "relative",
+                transition: "all 0.2s",
+                opacity: loading ? 0.6 : 1
+            }}
         >
-            <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFile} />
-            {uploaded && preview ? (
+            <input ref={inputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFile} disabled={loading} />
+
+            {loading ? (
+                // Loading state
                 <>
-                    <img src={preview} alt={side} style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 8 }} />
-                    <span style={{ fontSize: 12, fontWeight: 500, color: PRIMARY }}>{side === "front" ? "Front side" : "Back side"}</span>
-                    <div style={{ position: "absolute", top: 10, right: 10, width: 22, height: 22, borderRadius: "50%", background: PRIMARY, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 13 9 17 19 7" /></svg>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}>
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
+                    <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 500 }}>Compressing...</span>
+                </>
+            ) : uploaded && preview ? (
+                // Preview state
+                <>
+                    <img
+                        src={preview}
+                        alt={side}
+                        style={{
+                            width: "100%",
+                            height: 90,
+                            objectFit: "cover",
+                            borderRadius: 8
+                        }}
+                    />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: PRIMARY }}>
+                        {side === "front" ? "Front side" : "Back side"}
+                    </span>
+                    <div style={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        background: PRIMARY,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="5 13 9 17 19 7" />
+                        </svg>
                     </div>
-                    {/* Re-upload option */}
                     <button
-                        onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-                        style={{ fontSize: 11, color: PRIMARY, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            inputRef.current?.click();
+                        }}
+                        style={{
+                            fontSize: 11,
+                            color: PRIMARY,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                            padding: 0
+                        }}
                     >
                         Change
                     </button>
                 </>
             ) : (
+                // Empty state
                 <>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: SECONDARY, display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: PRIMARY, textAlign: "center" }}>{side === "front" ? "Front side" : "Back side"}</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af", textAlign: "center", lineHeight: 1.5 }}>{sub}</div>
+                    <div style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "50%",
+                        background: SECONDARY,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                    }}>
+                        {icon}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: PRIMARY, textAlign: "center" }}>
+                        {side === "front" ? "Front side" : "Back side"}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", textAlign: "center", lineHeight: 1.5 }}>
+                        {sub}
+                    </div>
                 </>
             )}
         </div>
@@ -115,56 +254,177 @@ function UploadCard({ side, icon, sub, onFile, preview, uploaded }) {
 // ════════════════════════════════════════════════════════════════════════════
 // PAGE 1 — Submit for verification
 // ════════════════════════════════════════════════════════════════════════════
-function SubmitVerificationPage({ onSubmit, onSkip }) {
-    // ✅ Store both preview (base64) AND actual File object
+function SubmitVerificationPage({
+    onSubmit,
+    onSkip,
+    mode = 'standalone',
+    showBackButton = false,
+    onBack = null
+}) {
     const [frontPreview, setFrontPreview] = useState(null);
     const [backPreview, setBackPreview] = useState(null);
-    const [frontFile, setFrontFile] = useState(null); // actual File
-    const [backFile, setBackFile] = useState(null); // actual File
+    const [frontFile, setFrontFile] = useState(null);
+    const [backFile, setBackFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [compressingFront, setCompressingFront] = useState(false);
+    const [compressingBack, setCompressingBack] = useState(false);
     const [error, setError] = useState(null);
 
-    const handleFile = (side) => (e) => {
+    const handleFile = (side) => async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // ✅ Store the real File object for FormData upload
-        if (side === "front") setFrontFile(file);
-        else setBackFile(file);
+        console.log(`📁 Selected ${side} file:`, {
+            name: file.name,
+            size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+            type: file.type
+        });
 
-        // Generate base64 for preview only
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            if (side === "front") setFrontPreview(ev.target.result);
-            else setBackPreview(ev.target.result);
-        };
-        reader.readAsDataURL(file);
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setError('Please upload an image file');
+            return;
+        }
+
+        // Check original file size (max 20MB before compression)
+        if (file.size > 20 * 1024 * 1024) {
+            setError('File is too large. Please choose an image under 20MB.');
+            return;
+        }
+
+        // Set compressing state
+        if (side === "front") {
+            setCompressingFront(true);
+            setFrontPreview(null);
+            setFrontFile(null);
+        } else {
+            setCompressingBack(true);
+            setBackPreview(null);
+            setBackFile(null);
+        }
+        setError(null);
+
+        try {
+            console.log(`🗜️ Compressing ${side} image...`);
+            // Compress the image
+            const compressedFile = await compressImage(file, 2, 1920); // Max 2MB, 1920px
+
+            // Store compressed file
+            if (side === "front") {
+                setFrontFile(compressedFile);
+            } else {
+                setBackFile(compressedFile);
+            }
+
+            // Generate preview from compressed file
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if (side === "front") {
+                    setFrontPreview(ev.target.result);
+                } else {
+                    setBackPreview(ev.target.result);
+                }
+                console.log(`✅ ${side} preview generated`);
+            };
+            reader.readAsDataURL(compressedFile);
+
+        } catch (err) {
+            console.error(`❌ Compression error for ${side}:`, err);
+            setError('Failed to process image. Please try another file.');
+        } finally {
+            if (side === "front") {
+                setCompressingFront(false);
+            } else {
+                setCompressingBack(false);
+            }
+        }
     };
 
     const handleSubmit = async () => {
-        if (!frontFile || !backFile) return;
+        if (!frontFile || !backFile) {
+            setError("Please upload both front and back images");
+            return;
+        }
+
         setSubmitting(true);
         setError(null);
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📤 STARTING VERIFICATION UPLOAD');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Front file:', {
+            name: frontFile.name,
+            size: `${(frontFile.size / 1024 / 1024).toFixed(2)}MB`,
+            type: frontFile.type
+        });
+        console.log('Back file:', {
+            name: backFile.name,
+            size: `${(backFile.size / 1024 / 1024).toFixed(2)}MB`,
+            type: backFile.type
+        });
+
         try {
-            // ✅ Pass actual File objects — NOT base64 strings
-            await ProfileService.uploadIdCard(frontFile, backFile);
+            const result = await ProfileService.uploadIdCard(frontFile, backFile);
+            console.log('✅ Upload successful:', result);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             onSubmit();
         } catch (err) {
-            console.error("ID upload failed:", err);
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.error("❌ ID upload failed:", err);
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack
+            });
+            console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             setError(err?.message || "Upload failed. Please check your connection and try again.");
             setSubmitting(false);
         }
     };
 
-    const canSubmit = !!frontFile && !!backFile && !submitting;
+    const canSubmit = !!frontFile && !!backFile && !submitting && !compressingFront && !compressingBack;
+    const isCompressing = compressingFront || compressingBack;
 
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
+            {/* Back button */}
+            {showBackButton && onBack && (
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "none",
+                        border: "none",
+                        color: PRIMARY,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        marginBottom: "1.25rem",
+                        padding: 0
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                </button>
+            )}
+
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: SECONDARY, color: PRIMARY, fontSize: 12, fontWeight: 500, padding: "4px 12px", borderRadius: 20, marginBottom: "1.25rem" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: PRIMARY }} /> Identity Verification
             </div>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 600, color: PRIMARY, marginBottom: 8, lineHeight: 1.25 }}>Verify your identity</h1>
-            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, marginBottom: "2rem" }}>Upload a clear photo of your government-issued ID. Your information is encrypted and kept private.</p>
+
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 600, color: PRIMARY, marginBottom: 8, lineHeight: 1.25 }}>
+                {mode === 'onboarding' ? 'Verify your identity' : 'Get verified'}
+            </h1>
+
+            <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, marginBottom: "2rem" }}>
+                {mode === 'onboarding'
+                    ? 'Upload a clear photo of your government-issued ID to unlock verified badge. Your information is encrypted and kept private.'
+                    : 'Upload a clear photo of your government-issued ID. Your information is encrypted and kept private.'
+                }
+            </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: "1.5rem" }}>
                 <UploadCard
@@ -172,6 +432,7 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
                     uploaded={!!frontPreview}
                     preview={frontPreview}
                     onFile={handleFile("front")}
+                    loading={compressingFront}
                     sub="National ID, passport\nor driving licence"
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="17" y2="10" /><line x1="7" y1="14" x2="13" y2="14" /></svg>}
                 />
@@ -180,6 +441,7 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
                     uploaded={!!backPreview}
                     preview={backPreview}
                     onFile={handleFile("back")}
+                    loading={compressingBack}
                     sub="Clear photo,\nall corners visible"
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="12" y2="10" /><circle cx="16" cy="12" r="2.5" /></svg>}
                 />
@@ -190,7 +452,6 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
                 <p style={{ fontSize: 13, color: PRIMARY, lineHeight: 1.55 }}><strong style={{ fontWeight: 500 }}>Tips for a clear photo:</strong> Ensure all four corners are visible, no glare or blur, and the text is fully readable.</p>
             </div>
 
-            {/* Error message */}
             {error && (
                 <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: 10, padding: "10px 14px", marginBottom: "1rem", fontSize: 13, color: "#dc2626" }}>
                     {error}
@@ -200,22 +461,72 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
             <button
                 disabled={!canSubmit}
                 onClick={handleSubmit}
-                style={{ width: "100%", background: canSubmit ? PRIMARY : "#9ca3af", color: PRIMARY_FG, border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", cursor: canSubmit ? "pointer" : "not-allowed", marginBottom: 10, transition: "background 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                style={{
+                    width: "100%",
+                    background: canSubmit ? PRIMARY : "#9ca3af",
+                    color: PRIMARY_FG,
+                    border: "none",
+                    borderRadius: 10,
+                    padding: "14px",
+                    fontSize: 15,
+                    fontWeight: 500,
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: canSubmit ? "pointer" : "not-allowed",
+                    marginBottom: 10,
+                    transition: "background 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8
+                }}
             >
                 {submitting ? (
-                    <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg>Uploading…</>
-                ) : "Submit for verification"}
+                    <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "spin 1s linear infinite" }}>
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                        </svg>
+                        Uploading…
+                    </>
+                ) : isCompressing ? (
+                    "Processing images..."
+                ) : (
+                    "Submit for verification"
+                )}
             </button>
 
-            <div style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>or</div>
-            <button
-                onClick={onSkip}
-                style={{ width: "100%", background: "transparent", color: "#6b7280", border: "1.5px solid #d1d5db", borderRadius: 10, padding: "13px", fontSize: 14, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = PRIMARY; e.currentTarget.style.color = PRIMARY; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#6b7280"; }}
-            >
-                Skip for now — verify later
-            </button>
+            {mode === 'onboarding' && onSkip && (
+                <>
+                    <div style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>or</div>
+                    <button
+                        onClick={onSkip}
+                        disabled={isCompressing}
+                        style={{
+                            width: "100%",
+                            background: "transparent",
+                            color: "#6b7280",
+                            border: "1.5px solid #d1d5db",
+                            borderRadius: 10,
+                            padding: "13px",
+                            fontSize: 14,
+                            fontFamily: "'DM Sans', sans-serif",
+                            cursor: isCompressing ? "not-allowed" : "pointer",
+                            opacity: isCompressing ? 0.5 : 1
+                        }}
+                        onMouseEnter={e => {
+                            if (!isCompressing) {
+                                e.currentTarget.style.borderColor = PRIMARY;
+                                e.currentTarget.style.color = PRIMARY;
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = "#d1d5db";
+                            e.currentTarget.style.color = "#6b7280";
+                        }}
+                    >
+                        Skip for now — verify later
+                    </button>
+                </>
+            )}
         </div>
     );
 }
@@ -223,7 +534,13 @@ function SubmitVerificationPage({ onSubmit, onSkip }) {
 // ════════════════════════════════════════════════════════════════════════════
 // PAGE 2 — Pending review
 // ════════════════════════════════════════════════════════════════════════════
-function PendingPage({ frontId, backId }) {
+function PendingPage({
+    frontId,
+    backId,
+    mode = 'standalone',
+    showBackButton = false,
+    onBack = null
+}) {
     const [visible, setVisible] = useState(false);
     useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t); }, []);
 
@@ -232,8 +549,8 @@ function PendingPage({ frontId, backId }) {
 
     const getImageUrl = (path) => {
         if (!path) return null;
-        if (path.startsWith('http')) return path; // already full URL (DO Spaces)
-        return `${baseUrl}${path}`;               // local path
+        if (path.startsWith('http')) return path;
+        return `${baseUrl}${path}`;
     };
 
     const steps = [
@@ -244,9 +561,34 @@ function PendingPage({ frontId, backId }) {
 
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
+            {showBackButton && onBack && (
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "none",
+                        border: "none",
+                        color: PRIMARY,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        marginBottom: "1.25rem",
+                        padding: 0
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                    Back to {mode === 'settings' ? 'Settings' : 'Profile'}
+                </button>
+            )}
+
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#fef9ec", color: "#92650a", fontSize: 12, fontWeight: 500, padding: "4px 12px", borderRadius: 20, marginBottom: "1.25rem", border: "1px solid #f5d97a40" }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f0b429", animation: "pulse 1.5s ease-in-out infinite" }} /> Under Review
             </div>
+
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 600, color: PRIMARY, marginBottom: 8 }}>Verification pending</h1>
             <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.65, marginBottom: "2rem" }}>Your documents have been submitted. Our team typically reviews submissions within 24–48 hours.</p>
 
@@ -309,7 +651,14 @@ function PendingPage({ frontId, backId }) {
 // ════════════════════════════════════════════════════════════════════════════
 // PAGE 3 — Already verified
 // ════════════════════════════════════════════════════════════════════════════
-function VerifiedPage({ name = "User", userImage }) {
+function VerifiedPage({
+    name = "User",
+    userImage,
+    mode = 'standalone',
+    onClose = null,
+    showBackButton = false,
+    onBack = null
+}) {
     const [visible, setVisible] = useState(false);
 
     useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t); }, []);
@@ -326,8 +675,40 @@ function VerifiedPage({ name = "User", userImage }) {
         { label: "Trusted by families" }, { label: "Priority in searches" },
     ];
 
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+        } else {
+            window.history.length > 1 ? window.history.back() : window.close();
+        }
+    };
+
     return (
         <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
+            {showBackButton && onBack && (
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "none",
+                        border: "none",
+                        color: PRIMARY,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        marginBottom: "1.25rem",
+                        padding: 0
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                </button>
+            )}
+
             <div style={{ position: "relative", background: ACCENT, border: `1.5px solid ${PRIMARY}22`, borderRadius: 20, padding: "2.5rem 1.75rem", textAlign: "center", overflow: "hidden", marginBottom: "1.5rem" }}>
                 {sparkles.map((s, i) => <Sparkle key={i} {...s} />)}
                 {visible && [0, 0.5].map((delay, i) => (
@@ -345,7 +726,6 @@ function VerifiedPage({ name = "User", userImage }) {
 
             <div style={{ background: "#fff", border: `1px solid ${PRIMARY}18`, borderRadius: 14, padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: 14, marginBottom: "1.5rem", animation: visible ? "fadeUp 0.5s ease 0.8s both" : "none", opacity: visible ? undefined : 0, boxShadow: `0 2px 12px ${PRIMARY}0a` }}>
                 <div style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, background: `linear-gradient(135deg, ${SECONDARY}, ${ACCENT})`, border: `2px solid ${PRIMARY}22`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-                    {/* Show profile image if available, else fallback avatar */}
                     {typeof userImage === "string" && userImage ? (
                         <img
                             src={userImage}
@@ -357,19 +737,15 @@ function VerifiedPage({ name = "User", userImage }) {
                             {name.charAt(0)}
                         </span>
                     )}
-
                     <div style={{ position: "absolute", bottom: -2, right: -2, background: "#fff", borderRadius: "50%", padding: 1 }}><BadgeIcon size={16} /></div>
                 </div>
                 <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                        {/* Show name only if you need a fallback label, otherwise remove this span */}
-                        {/* <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, fontWeight: 600, color: "#1a1a1a" }}>{name}</span> */}
                         <VerifiedPill />
                     </div>
                     <span style={{ fontSize: 12, color: "#9ca3af" }}>This is how others see your profile</span>
                 </div>
             </div>
-
 
             <p style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500, letterSpacing: "0.06em", marginBottom: 10, animation: visible ? "fadeUp 0.5s ease 0.9s both" : "none", opacity: visible ? undefined : 0 }}>WHAT YOU UNLOCKED</p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: "1.75rem", animation: visible ? "fadeUp 0.5s ease 1s both" : "none", opacity: visible ? undefined : 0 }}>
@@ -385,10 +761,10 @@ function VerifiedPage({ name = "User", userImage }) {
 
             <button
                 type="button"
-                onClick={() => window.history.length > 1 ? window.history.back() : window.close()}
+                onClick={handleClose}
                 style={{ width: "100%", background: PRIMARY, color: PRIMARY_FG, border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", animation: visible ? "fadeUp 0.5s ease 1.1s both" : "none", opacity: visible ? undefined : 0 }}
             >
-                View my profile
+                {mode === 'settings' ? 'Back to Settings' : 'View my profile'}
             </button>
         </div>
     );
@@ -397,9 +773,16 @@ function VerifiedPage({ name = "User", userImage }) {
 // ════════════════════════════════════════════════════════════════════════════
 // ROOT — loads profile and switches between pages
 // ════════════════════════════════════════════════════════════════════════════
-export default function VerificationPage({ onSubmit, onSkip }) {
+export default function VerificationPage({
+    onSubmit,
+    onSkip,
+    mode = 'standalone',
+    showBackButton = false,
+    onBack = null,
+    onClose = null
+}) {
     const [loading, setLoading] = useState(true);
-    const [status, setStatus] = useState("submit"); // "submit" | "pending" | "verified"
+    const [status, setStatus] = useState("submit");
     const [frontId, setFrontId] = useState(null);
     const [backId, setBackId] = useState(null);
     const [userimage, setuserimage] = useState(null);
@@ -408,36 +791,42 @@ export default function VerificationPage({ onSubmit, onSkip }) {
     useEffect(() => {
         const loadProfile = async () => {
             try {
+                console.log('🔄 Loading profile data...');
                 const res = await ProfileService.getCurrentUser();
 
-                const data = res.profile.name;
+                const profile = res.profile;
+                const data = res || res?.data || res;
 
-
+                console.log('📋 Profile data:', {
+                    is_verified: data.is_verified,
+                    hasFront: !!data.frontid_url,
+                    hasBack: !!data.backid_url,
+                    name: data.name
+                });
 
                 const isVerified = data.is_verified === true || data.is_verified === 1;
                 const hasFront = !!data.frontid_url;
                 const hasBack = !!data.backid_url;
-                const userimageurl = !!data.avatar_url;
-                const name = data.name || "User";
+                const userimageurl = data.avatar_url || null;
+                const name = profile.name || "User";
+
                 setuserimage(userimageurl);
-
-                console.log("isVerified:", isVerified);
-                console.log("hasFront:", hasFront);
-                console.log("hasBack:", hasBack);
-                console.log("name:", name);
-
                 setUserName(name);
                 setFrontId(data.frontid_url);
                 setBackId(data.backid_url);
 
-
-
-
-                if (isVerified && hasFront && hasBack) setStatus("verified");
-                else if (hasFront && hasBack) setStatus("pending");
-                else setStatus("submit");
+                if (isVerified && hasFront && hasBack) {
+                    console.log('✅ Status: Verified');
+                    setStatus("verified");
+                } else if (hasFront && hasBack) {
+                    console.log('⏳ Status: Pending');
+                    setStatus("pending");
+                } else {
+                    console.log('📝 Status: Submit');
+                    setStatus("submit");
+                }
             } catch (err) {
-                console.error("Failed to load profile:", err);
+                console.error("❌ Failed to load profile:", err);
                 setStatus("submit");
             } finally {
                 setLoading(false);
@@ -447,8 +836,14 @@ export default function VerificationPage({ onSubmit, onSkip }) {
     }, []);
 
     const handleSubmit = () => {
+        console.log('✅ Verification submitted, switching to pending status');
         setStatus("pending");
         onSubmit?.();
+    };
+
+    const handleSkip = () => {
+        console.log('⏭️ Verification skipped');
+        onSkip?.();
     };
 
     if (loading) {
@@ -466,10 +861,36 @@ export default function VerificationPage({ onSubmit, onSkip }) {
         <>
             <style>{KEYFRAMES}</style>
 
-            {status === "verified" && <VerifiedPage name={userName} userImage={userimage} />}
+            {status === "verified" && (
+                <VerifiedPage
+                    name={userName}
+                    userImage={userimage}
+                    mode={mode}
+                    onClose={onClose}
+                    showBackButton={showBackButton}
+                    onBack={onBack}
+                />
+            )}
 
-            {status === "pending" && <PendingPage frontId={frontId} backId={backId} />}
-            {status === "submit" && <SubmitVerificationPage onSubmit={handleSubmit} onSkip={onSkip} />}
+            {status === "pending" && (
+                <PendingPage
+                    frontId={frontId}
+                    backId={backId}
+                    mode={mode}
+                    showBackButton={showBackButton}
+                    onBack={onBack}
+                />
+            )}
+
+            {status === "submit" && (
+                <SubmitVerificationPage
+                    onSubmit={handleSubmit}
+                    onSkip={handleSkip}
+                    mode={mode}
+                    showBackButton={showBackButton}
+                    onBack={onBack}
+                />
+            )}
         </>
     );
 }

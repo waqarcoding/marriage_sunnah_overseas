@@ -121,6 +121,8 @@ export const uploadIdCard = async (req, res) => {
 
     user.frontid_url = frontPath;
     user.backid_url = backPath;
+    user.is_verified = false
+
     await user.save();
 
     console.log(`✅ ID uploaded — user ${userId}: front=${frontPath}, back=${backPath}`);

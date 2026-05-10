@@ -555,7 +555,9 @@ export default function ProfileInfoSection({ p, interests, onStartChat, onLike, 
                     alignItems: "center",
                     gap: "8px"
                 }}>
-                    <motion.button
+                    {/* 
+                       
+                              <motion.button
                         whileTap={{ scale: 0.96 }}
                         whileHover={{ y: -1 }}
                         onClick={onStartChat}
@@ -593,6 +595,9 @@ export default function ProfileInfoSection({ p, interests, onStartChat, onLike, 
                             Message
                         </span>
                     </motion.button>
+                    
+                    */}
+
 
                     {(
                         <motion.button

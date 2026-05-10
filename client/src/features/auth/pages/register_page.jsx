@@ -29,7 +29,69 @@ export default function Register({ onRegister }) {
         setRole(selectedRole)
         setStep("form")
     }
+    const compressImage = (file, maxSizeMB = 2, maxWidthOrHeight = 1920) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = typeof event.target.result === 'string' ? event.target.result : '';
 
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Resize if needed
+                    if (width > height) {
+                        if (width > maxWidthOrHeight) {
+                            height *= maxWidthOrHeight / width;
+                            width = maxWidthOrHeight;
+                        }
+                    } else {
+                        if (height > maxWidthOrHeight) {
+                            width *= maxWidthOrHeight / height;
+                            height = maxWidthOrHeight;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Start with quality 0.9 and reduce if needed
+                    let quality = 0.9;
+                    const tryCompress = () => {
+                        canvas.toBlob(
+                            (blob) => {
+                                if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.5) {
+                                    quality -= 0.1;
+                                    tryCompress();
+                                } else {
+                                    const compressedFile = new File(
+                                        [blob],
+                                        file.name,
+                                        { type: 'image/jpeg', lastModified: Date.now() }
+                                    );
+                                    console.log(`✅ Compressed ${file.name}:`);
+                                    console.log(`   Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+                                    console.log(`   Compressed: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+                                    console.log(`   Quality: ${(quality * 100).toFixed(0)}%`);
+                                    resolve(compressedFile);
+                                }
+                            },
+                            'image/jpeg',
+                            quality
+                        );
+                    };
+                    tryCompress();
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    };
     const handlePhotoChange = (e) => {
         const file = e.target.files[0]
         if (!file) return

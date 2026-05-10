@@ -383,8 +383,8 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
                         {profile.profession && <Pill>{profile.profession}</Pill>}
                         {profile.height_inches && <Pill>{formatHeight(profile.height_inches)}</Pill>}
                         {profile.marital_status && <Pill>{profile.marital_status}</Pill>}
-                        {profile.religious_practice_level && <Pill>{profile.religious_practice_level}</Pill>}
-                        {profile.nationality && <Pill>{profile.nationality}</Pill>}
+                        {profile.sect && <Pill>{profile.sect}</Pill>}
+
                         {profile.education && <Pill>{profile.education}</Pill>}
                     </div>
 

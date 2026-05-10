@@ -69,7 +69,7 @@ const upload = {
         try {
             const storage = useSpaces() ? await getS3Storage() : localStorage;
             console.log(`📦 ${useSpaces() ? "DO Spaces" : "Local disk"}`);
-            multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: imageFilter })
+            multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: imageFilter })
                 .fields(fields)(req, res, next);
         } catch (err) {
             next(err);

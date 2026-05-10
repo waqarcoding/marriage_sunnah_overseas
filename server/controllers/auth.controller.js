@@ -12,7 +12,7 @@ import { applyReferralReward } from './referral.controller.js';
 /**
  * Helper: Generate and store OTP for a user
  */
-const createOtp = async (userId) => {
+const createOtp = async (userId, issignup) => {
   // Generate a 6-digit OTP code
   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -34,7 +34,14 @@ const createOtp = async (userId) => {
     });
 
     if (user && user.email) {
-      await sendOtpEmail(user, otpCode, 10);
+      if (issignup) {
+        await sendOtpEmail(user, otpCode, 10);
+      }
+      else {
+        await sendLoginOtpEmail(user, otpCode, 10);
+
+      }
+
       console.log(`📧 OTP email sent to ${user.email}`);
     }
   } catch (emailError) {
@@ -102,7 +109,7 @@ export const signup = async (req, res) => {
 
     await t.commit();
 
-    const otpCode = await createOtp(user.id);
+    const otpCode = await createOtp(user.id, true);
     console.log(`OTP for user ${user.id}: ${otpCode}`);
     const newuserid = user.id;
     const token = jwt.sign(

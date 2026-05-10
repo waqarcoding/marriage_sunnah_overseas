@@ -55,7 +55,7 @@ function ProfileSkeleton() {
             <div className="max-w-2xl mx-auto">
                 {/* Media Skeleton */}
                 <div className="relative w-full overflow-hidden rounded-b-3xl animate-pulse"
-                    style={{ aspectRatio: "3/4", maxHeight: "600px", background: "linear-gradient(135deg, rgba(27,77,62,0.03) 0%, rgba(27,77,62,0.1) 100%)" }} />
+                    style={{ aspectRatio: "3/4", maxHeight: "400px", background: "linear-gradient(135deg, rgba(27,77,62,0.03) 0%, rgba(27,77,62,0.1) 100%)" }} />
 
                 {/* Info Section Skeleton */}
                 <div className="p-5 space-y-4">

@@ -321,12 +321,12 @@ export default function SettingsPage() {
                         {tokenData?.role !== "guardian" && (
                             <NavRow
                                 icon={BadgeCheck}
-
                                 label="Get Verified Badge"
                                 sublabel="Apply for account verification"
-                                onClick={() => navigate("/individual/verfication")}
+                                onClick={() => navigate("/individual/verification")}
                             />
                         )}
+
 
                         {tokenData?.role !== "guardian" && (
                             <NavRow
