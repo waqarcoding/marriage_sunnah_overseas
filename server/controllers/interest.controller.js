@@ -83,7 +83,11 @@ export const sendInterest = async (req, res) => {
     try {
         const fromUserId = req.user.id;
         const { interestId, isSuperLike = false } = req.body;
-
+        // ✅ ADD THIS LOGGING FIRST
+        console.log('=== DEBUG sendInterest ===');
+        console.log('req.user:', req.user);
+        console.log('req.user.id:', req.user?.id);
+        console.log('req.body:', req.body);
         console.log(`📨 sendInterest called: fromUserId=${fromUserId}, toUserId=${interestId}, isSuperLike=${isSuperLike}`);
 
         if (!interestId)
