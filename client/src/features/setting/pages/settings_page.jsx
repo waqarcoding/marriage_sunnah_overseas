@@ -233,10 +233,10 @@ export default function SettingsPage() {
                         <div
                             tabIndex={0}
                             role="button"
-                            onClick={() => navigate("/individual/subscription-detail")}
+                            onClick={() => navigate("/subscription-detail")}
                             onKeyPress={e => {
                                 if (e.key === "Enter" || e.key === " ") {
-                                    navigate("/individual/subscription-detail");
+                                    navigate("/subscription-detail");
                                 }
                             }}
                             className="mx-4 mb-4 rounded-2xl p-4 flex items-center gap-4 cursor-pointer outline-none"

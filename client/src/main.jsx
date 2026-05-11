@@ -276,9 +276,7 @@ function GuardianLayout() {
           <ConditionalContent path="/guardian/referral">
             <ReferralPage />
           </ConditionalContent>
-          <ConditionalContent path="/guardian/subscription-detail">
-            <SubscriptionDetailPage />
-          </ConditionalContent>
+
           <ConditionalContent path="/guardian/profile">
             <ProfileDetailPage />
           </ConditionalContent>

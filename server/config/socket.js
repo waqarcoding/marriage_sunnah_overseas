@@ -50,7 +50,7 @@ export const initSocket = (server) => {
                 methods: ["GET", "POST"],
                 credentials: true
             },
-            path: '/socket.io/',
+            path: '/',
             transports: ['polling', 'websocket'],
             allowUpgrades: true,
             pingTimeout: 60000,

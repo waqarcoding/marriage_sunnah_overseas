@@ -380,7 +380,7 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
   const handleSidebarClose = () => setSidebarOpen(false);
   const handleSidebarLogout = () => { setSidebarOpen(false); (onSidebarLogout || onLogout)?.(); };
   const handleCreditsClick = () => {
-    navigate(role === "guardian" ? '/guardian/subscription' : '/individual/subscription');
+    navigate(role === "guardian" ? '/subscription' : '/subscription');
     setSidebarOpen(false);
   };
   const menuItems = role === "guardian"
@@ -486,7 +486,7 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
         {isLoggedIn && (
           <div className="hidden md:flex items-center gap-3 ml-2">
             {role === "individual" && (
-              <CreditsDisplay credits={credits} onClick={() => navigate(role === "guardian" ? '/guardian/subscription' : '/individual/subscription')} loading={creditsLoading} />
+              <CreditsDisplay credits={credits} onClick={() => navigate(role === "guardian" ? '/subscription' : '/subscription')} loading={creditsLoading} />
             )}
             <ProfileDropdown avatar={avatar} name={name} role={role} onLogout={onLogout} menuItems={menuItems} />
           </div>
