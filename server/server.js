@@ -71,19 +71,6 @@ app.use((req, res, next) => {
   next();
 });
 
-/* ✅ CRITICAL: Socket.IO Path Rewrite (for DigitalOcean ingress path stripping) */
-app.use((req, res, next) => {
-  // If request has Socket.IO query params (EIO, transport), rewrite the URL
-  if (req.query.EIO || req.query.transport) {
-    console.log(`🔌 Detected Socket.IO request: ${req.url}`);
-    // Rewrite URL from / to /socket.io/ for Socket.IO to handle
-    if (!req.url.startsWith('/socket.io')) {
-      req.url = '/socket.io' + req.url;
-      console.log(`🔌 Rewritten URL to: ${req.url}`);
-    }
-  }
-  next();
-});
 
 /* ---------------- CRITICAL: Webhook route BEFORE bodyParser ---------------- */
 // This route needs raw body for Stripe signature verification
