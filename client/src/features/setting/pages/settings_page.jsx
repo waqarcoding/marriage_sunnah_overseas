@@ -139,6 +139,14 @@ export default function SettingsPage() {
 
 
 
+    const user = AuthService.getCurrentUser();
+    const avatar_url = (user.profile && Array.isArray(user.profile.images) && user.profile.images.length > 0)
+        ? user.profile.images[0]
+        : (user.profile?.avatar_url || user.avatar_url || null);
+
+
+
+
 
     // ✅ isPro is now state — not an async function called inline in JSX
     const [isPro, setIsPro] = useState(false);
@@ -275,9 +283,9 @@ export default function SettingsPage() {
                         >
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{ background: "var(--secondary,#f0f5f3)", border: "none" }}>
-                                {tokenData?.avatar_url ? (
+                                {avatar_url ? (
                                     <img
-                                        src={tokenData.avatar_url}
+                                        src={avatar_url}
                                         alt={tokenData?.name || "Profile photo"}
                                         className="w-9 h-9 rounded-lg object-cover"
                                         style={{ border: "none" }}

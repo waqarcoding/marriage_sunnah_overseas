@@ -54,10 +54,16 @@ export const GUARDIAN_TABS = [
 
 async function getUserInfo() {
   const tokenData = AuthService.getTokenData();
+  const user = await AuthService.getCurrentUser();
+  const avatar_url = (user.profile && Array.isArray(user.profile.images) && user.profile.images.length > 0)
+    ? user.profile.images[0]
+    : (user.profile?.avatar_url || user.avatar_url || null);
+
+
   if (!tokenData) return { name: "User", avatar: null, role: null };
   return {
     name: tokenData.name || tokenData.userName || tokenData.user_name || "User",
-    avatar: tokenData.avatar || tokenData.avatar_url || tokenData.profileImage || tokenData.profile_image || null,
+    avatar: avatar_url || tokenData.avatar || tokenData.avatar_url || tokenData.profileImage || tokenData.profile_image || null,
     role: tokenData.role || null,
   };
 }
@@ -377,8 +383,10 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
 
   const handleSidebarClose = () => setSidebarOpen(false);
   const handleSidebarLogout = () => { setSidebarOpen(false); (onSidebarLogout || onLogout)?.(); };
-  const handleCreditsClick = () => { navigate('/subscription'); setSidebarOpen(false); };
-
+  const handleCreditsClick = () => {
+    navigate(role === "guardian" ? '/guardian/subscription' : '/individual/subscription');
+    setSidebarOpen(false);
+  };
   const menuItems = role === "guardian"
     ? [
       { icon: LogOut, label: "Logout", action: "logout", color: "#ef4444" },
@@ -457,7 +465,8 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
         {isLoggedIn && (
           <motion.button
             whileTap={{ scale: 0.92 }}
-            onClick={() => navigate("/individual/notifications")}
+            onClick={() => navigate(role === "guardian" ? "/guardian/notifications" : "/individual/notifications")}
+
             className="relative w-11 h-11 rounded-full flex items-center justify-center border-none cursor-pointer shrink-0"
             style={{ background: "transparent", boxShadow: "transparent" }}
           >
@@ -481,7 +490,7 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
         {isLoggedIn && (
           <div className="hidden md:flex items-center gap-3 ml-2">
             {role === "individual" && (
-              <CreditsDisplay credits={credits} onClick={() => navigate('/subscription')} loading={creditsLoading} />
+              <CreditsDisplay credits={credits} onClick={() => navigate(role === "guardian" ? '/guardian/subscription' : '/individual/subscription')} loading={creditsLoading} />
             )}
             <ProfileDropdown avatar={avatar} name={name} role={role} onLogout={onLogout} menuItems={menuItems} />
           </div>
@@ -497,7 +506,8 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
           name={name}
           avatar={avatar}
           notifCount={interestCount + chatCount}
-          onNotification={() => navigate("/individual/notifications")}
+          onNotification={() => navigate(role === "guardian" ? "/guardian/notifications" : "/individual/notifications")}
+
           onMenuOpen={() => navigate("/individual/myprofile")}
         />
       )}

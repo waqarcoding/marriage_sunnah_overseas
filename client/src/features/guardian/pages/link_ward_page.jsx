@@ -193,11 +193,8 @@ export default function LinkWithPinPage() {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            {/* ── Header ── */}
-            <IslamicPageHeader
-                title="Guardian"
-                subtitle="Protecting and guiding with wisdom and care"
-            />
+
+
 
             {/* ── Header ── */}
             < PageHeader

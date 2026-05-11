@@ -236,6 +236,8 @@ function IndividualLayout() {
 
 function GuardianLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const handleLogout = () => {
     logout();
     navigate('/', { replace: true });
@@ -246,9 +248,13 @@ function GuardianLayout() {
       <div className="flex flex-col h-screen" style={{ background: "transparent" }}>
         <AppBar tabs={GUARDIAN_TABS} onLogout={handleLogout} onSidebarLogout={handleLogout} />
         <div className="flex flex-1 min-h-0 pb-16 md:pb-0">
-          <ConditionalContent path="/guardian">
-            <GuardianDashboard />
-          </ConditionalContent>
+          {/* ✅ FIXED: Only show on exact /guardian path */}
+          {location.pathname === '/guardian' && (
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto' }}>
+              <GuardianDashboard />
+            </div>
+          )}
+
           <ConditionalContent path="/guardian/add-ward">
             <LinkWithPin />
           </ConditionalContent>
