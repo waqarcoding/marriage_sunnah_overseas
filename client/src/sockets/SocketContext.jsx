@@ -5,10 +5,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
-const SERVER_URL =
-  import.meta.env.VITE_SOCKET_URL ||
-  import.meta.env.VITE_BASE_URL?.replace('/api', '') ||
-  'http://localhost:8080';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 const SocketContext = createContext(null);
 
@@ -42,7 +39,7 @@ function createSocket(userId, setters) {
 
   const s = io(SERVER_URL, {
     path: '/socket.io/',
-    transports: ['polling', 'websocket'],  // ✅ FIXED: polling first for DigitalOcean
+    transports: ['polling'],  // ✅ FIXED: polling first for DigitalOcean
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: 5,
