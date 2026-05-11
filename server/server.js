@@ -197,16 +197,19 @@ if (shouldServeClient) {
   }
 } else {
   console.log('🚫 API-only mode: Not serving client files');
+
+  // ✅ ADD THIS: Still need to exclude Socket.IO from 404 handler
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/socket.io")) {
+      return next();
+    }
+    next();
+  });
 }
 
 /* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
 /* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
 app.use((req, res, next) => {
-  // ✅ CRITICAL: Skip 404 for Socket.IO - let it handle at HTTP server level
-  if (req.path.startsWith('/socket.io')) {
-    return next(); // Pass through, don't send 404
-  }
-
   res.status(404).json({
     error: "Route not found",
     path: req.path,
@@ -214,7 +217,6 @@ app.use((req, res, next) => {
     message: "The endpoint you are looking for does not exist."
   });
 });
-
 /* ---------------- ERROR HANDLER (Must be last) ---------------- */
 app.use(errorMiddleware);
 
