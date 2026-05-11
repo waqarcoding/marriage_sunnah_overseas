@@ -64,7 +64,7 @@ export const initSocket = (server) => {
             credentials: true
         },
         // ✅ CRITICAL: DigitalOcean-specific configuration
-        path: '/socket.io',
+        path: '/api/socket.io/',
         transports: ['polling', 'websocket'],  // ✅ Polling first for reliability
         allowUpgrades: true,
         pingTimeout: 60000,
