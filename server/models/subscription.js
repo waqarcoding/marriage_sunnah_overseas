@@ -45,11 +45,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true, // ✅ Changed to nullable
             comment: 'Stripe price ID for the plan (Stripe only)'
         },
+
         plan_type: {
-            type: DataTypes.ENUM('weekly', 'monthly', 'yearly'),
+            type: DataTypes.STRING(64),
             allowNull: false,
-            comment: 'Subscription plan type'
+            comment: 'Subscription plan type (e.g., platinum, premium, basic, weekly, monthly, yearly)'
         },
+
         credits_amount: {
             type: DataTypes.INTEGER,
             allowNull: false,

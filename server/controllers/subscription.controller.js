@@ -530,7 +530,13 @@ export const handleWebhook = async (req, res) => {
     try {
         switch (event.type) {
             case 'checkout.session.completed':
-                await handleCheckoutCompleted(event.data.object);
+                try {
+                    await handleCheckoutCompleted(event.data.object);
+                } catch (err) {
+                    // @ts-ignore
+                    console.error('handleCheckoutCompleted failed:', err.message, err.stack);
+                    throw err; // still 500, but now you'll see the actual error
+                }
                 break;
 
             case 'invoice.payment_succeeded':
@@ -661,13 +667,19 @@ async function handleCheckoutCompleted(session) {
             previous_credits_carried: isUpgrade ? previousCredits : 0
         });
 
-        const totalCredits = isUpgrade ? user.credits + credits : credits;
+        // Debugging old credits vs new credits
+        console.log(`[DEBUG] Previous Credits: ${user.credits}, Credits to Add: ${credits}, isUpgrade: ${isUpgrade}`);
+
+        // const totalCredits = isUpgrade ? user.credits + credits : credits; //if updrade logic keep
+        const totalCredits = user.credits + credits;
+        console.log(`[DEBUG] New totalCredits to set: ${totalCredits}`);
 
         await user.update({
             is_pro: true,
             credits: totalCredits,
             subscription_expires_at: expiresAt
         });
+
 
         console.log('💾 Creating transaction with:', {
             paymentIntentId,

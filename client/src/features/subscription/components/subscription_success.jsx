@@ -186,16 +186,7 @@ export default function SubscriptionSuccess() {
                     <ArrowRight className="w-5 h-5" />
                 </motion.button>
 
-                {/* View Subscription Link */}
-                <motion.button
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.7 }}
-                    onClick={() => navigate(getRoleBasedPath('/subscription-detail'))}
-                    className="mt-4 text-sm text-gray-600 hover:text-gray-900 underline"
-                >
-                    View subscription details
-                </motion.button>
+
             </motion.div>
         </div>
     );
