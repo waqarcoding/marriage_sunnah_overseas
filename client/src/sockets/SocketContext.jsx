@@ -65,7 +65,7 @@ function createSocket(userId, setters) {
   console.log('   User ID:', userId);
 
   const s = io(SOCKET_URL, {
-    path: '/socket.io/',
+    path: '/api/socket.io/',
     transports: ['polling', 'websocket'],
     upgrade: true,
     reconnection: true,
