@@ -97,23 +97,18 @@ export const sendInterest = async (req, res) => {
         const fromUserId = req.user.id;
         const { interestId, isSuperLike = false } = req.body;
 
-
-        const [fromGuardian, toGuardian, fromUser, toUser] = await Promise.all([
+        const [fromG] = await Promise.all([
             getGuardianOf(fromUserId),
-            getGuardianOf(toUserId),
-            User.findByPk(fromUserId, { attributes: ['name'] }),
-            User.findByPk(toUserId, { attributes: ['name'] }),
+
         ]);
-
-        if (!fromGuardian || !toGuardian) {
+        if (!fromG) {
             return res.json({
-                error: !fromGuardian
-                    ? `${fromUser?.name || `User ${fromUserId}`} has no guardian linked.`
-                    : `${toUser?.name || `User ${toUserId}`} has no guardian linked.`
+                success: false,
+                message: `Please link your guardian before sending an interest.`
+
             });
+
         }
-
-
         // ✅ DEBUG LOGGING
         console.log('=== DEBUG sendInterest ===');
         console.log('req.user:', req.user);
@@ -992,6 +987,19 @@ export const sendDislike = async (req, res) => {
     try {
         const userId = req.user.id;
         const targetUserId = req.body.interestId;
+        const [fromG] = await Promise.all([
+            getGuardianOf(userId),
+
+        ]);
+        if (!fromG) {
+            return res.json({
+                success: false,
+                message: `Please link your guardian`
+
+            });
+
+        }
+
 
         const existingDislike = await Dislike.findOne({
             where: { user_id: userId, target_user_id: targetUserId },

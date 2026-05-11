@@ -360,7 +360,7 @@ export default function ExplorePage() {
             advance(-1); // ✅ Left swipe animation
         } else {
             console.error('Send dislike failed:', result);
-            toast.error("Failed to pass. Please try again.");
+            //  toast.error("Failed to pass. Please try again.");
             // ❌ Card stays - user can retry
         }
     };

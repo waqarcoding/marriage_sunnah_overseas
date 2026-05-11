@@ -135,7 +135,7 @@ function MobileCreditsDisplay({ credits, onClick, loading }) {
   return (
     <button onClick={onClick} className="flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all hover:opacity-70">
       <BoltSolid className="w-4 h-4" style={{ color: "#FFD700" }} />
-      <span className="text-sm font-bold" style={{ color: "var(--background)" }}>{credits}</span>
+      <span className="text-sm font-bold" style={{ color: "var(--primary)" }}>{credits}</span>
     </button>
   );
 }
@@ -156,7 +156,7 @@ function AvatarOrInitial({ avatar, name, size = 8 }) {
 // ── Mobile Greeting Bar ───────────────────────────────────────────────────────
 // Shown only on mobile, replaces the top header on small screens.
 // Pass onMenuOpen to open the sidebar.
-export function MobileGreetingBar({ name, avatar, notifCount = 0, onNotification, onMenuOpen }) {
+export function MobileGreetingBar({ name, avatar, notifCount = 0, onNotification, onMenuOpen, credits, creditsLoading, onCreditsClick }) {
   const firstName = name?.split(" ")[0] || "Friend";
   return (
     <div className="flex items-center justify-between px-4 pt-4 pb-3 md:hidden relative overflow-hidden"
@@ -250,48 +250,53 @@ export function MobileGreetingBar({ name, avatar, notifCount = 0, onNotification
 
       {/* Right: notification bell with Islamic design */}
       <div className="relative">
-        <motion.button
-          whileTap={{ scale: 0.90 }}
-          whileHover={{ scale: 1.05 }}
-          onClick={onNotification}
-          className="relative w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer shrink-0"
-          style={{
-            background: "linear-gradient(135deg, #1B4D3E 0%, #2d8c6e 100%)",
-            boxShadow: "0 4px 12px rgba(27,77,62,0.3)",
-            border: "1.5px solid rgba(212,175,55,0.3)"
-          }}
-        >
-          {/* Islamic star pattern overlay */}
-          <div className="absolute inset-0 rounded-full overflow-hidden opacity-10">
-            <svg width="100%" height="100%" viewBox="0 0 40 40">
-              <path d="M20 8 L24 16 L32 16 L26 22 L28 30 L20 24 L12 30 L14 22 L8 16 L16 16 Z"
-                fill="#D4AF37" />
+        <div className="flex flex-row items-center gap-2">
+          <MobileCreditsDisplay
+            credits={credits}
+            onClick={onCreditsClick}
+            loading={creditsLoading}
+          />
+          <motion.button
+            whileTap={{ scale: 0.90 }}
+            whileHover={{ scale: 1.05 }}
+            onClick={onNotification}
+            className="relative w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer shrink-0"
+            style={{
+              background: "linear-gradient(135deg, #1B4D3E 0%, #2d8c6e 100%)",
+              boxShadow: "0 4px 12px rgba(27,77,62,0.3)",
+              border: "1.5px solid rgba(212,175,55,0.3)"
+            }}
+          >
+            {/* Bell SVG */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fef3c7" strokeWidth="2" className="relative z-10">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-          </div>
 
-          {/* Bell SVG */}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fef3c7" strokeWidth="2" className="relative z-10">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
+            {/* Notification badge with gold accent */}
+            {notifCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full leading-none"
+                style={{
+                  background: "linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)",
+                  color: "#1B4D3E",
+                  boxShadow: "0 2px 6px rgba(212,175,55,0.5)",
+                  border: "1.5px solid rgba(27,77,62,0.2)"
+                }}>
+                {notifCount > 9 ? "9+" : notifCount}
+              </span>
+            )}
+          </motion.button>
+        </div>
 
-          {/* Notification badge with gold accent */}
-          {notifCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full leading-none"
-              style={{
-                background: "linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)",
-                color: "#1B4D3E",
-                boxShadow: "0 2px 6px rgba(212,175,55,0.5)",
-                border: "1.5px solid rgba(27,77,62,0.2)"
-              }}>
-              {notifCount > 9 ? "9+" : notifCount}
-            </span>
-          )}
-        </motion.button>
       </div>
     </div>
   );
 }
+
+
+
+
+
 export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -503,7 +508,9 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
           avatar={avatar}
           notifCount={interestCount + chatCount}
           onNotification={() => navigate(role === "guardian" ? "/guardian/notifications" : "/individual/notifications")}
-
+          credits={credits}                    // ✅ add
+          creditsLoading={creditsLoading}      // ✅ add
+          onCreditsClick={handleCreditsClick}
           onMenuOpen={() => navigate("/individual/myprofile")}
         />
       )}

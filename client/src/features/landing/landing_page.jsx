@@ -1,130 +1,90 @@
-
+// @ts-nocheck
 import { Card, CardContent } from "../../ui/card";
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Heart, Shield, Globe, Users, CheckCircle, Star } from "lucide-react";
+import {
+    Heart, Shield, Globe, Users, CheckCircle, Star, Sparkles,
+    KeyRound, MessageCircle, UserCheck, ArrowRight, Quote,
+    Lock, BookOpen, HeartHandshake, Award, ChevronDown, Mail,
+    Phone, MapPin, Instagram, Facebook, Twitter, BadgeCheck,
+} from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "../../ui/button";
 import AppBar from "./appbar";
 
-
-
-
 export default function Landing() {
-    // Handler for "Learn How It Works" scroll
     const handleLearnHowItWorks = (e) => {
-        e.preventDefault();
-        const section = document.getElementById("how-it-works");
-        if (section) {
-            section.scrollIntoView({ behavior: "smooth" });
-        }
+        e?.preventDefault?.();
+        document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
     };
+    const go = (path) => {
+        window.history.pushState({}, "", path);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+    };
+    const comingSoon = (p) => toast(`${p} app — coming soon, inshaAllah!`, { icon: p === "App Store" ? "🍎" : "🤖" });
+
+    const [openFaq, setOpenFaq] = React.useState(0);
 
     return (
-
         <div className="min-h-screen flex flex-col">
-
-
-
-            {/* Old AppBar Component - Remove wrapper, let AppBar handle its own positioning */}
-            {/* Wrap everything in a container with no gaps */}
             <div className="min-h-screen bg-background">
-                {/* Old AppBar Component - Fixed to top */}
-                {/* NEW APPBAR - Sticky with scroll effect */}
-                <AppBar
-                    onLogout={() => { }}
-                    onSidebarLogout={() => { }}
-                    isScrolled={true}
-                    isopacityon={true}
-                />
+                <AppBar onLogout={() => { }} onSidebarLogout={() => { }} isScrolled={true} isopacityon={true} />
 
-
-                {/* Hero Section with margin-top to account for fixed AppBar */}
-                <section className="relative min-h-screen flex items-center justify-center overflow-hidden  ">
+                {/* ── Hero ─── */}
+                <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
                     <div className="absolute inset-0">
-                        <img
-                            src="/hero-banner.png"
-                            alt="Marriage Sunna Overseas"
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-900/70 to-emerald-800/50" />
+                        <img src="/hero-banner.png" alt="Marriage Sunna Overseas" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/92 via-emerald-900/72 to-emerald-800/45" />
                     </div>
+                    <div className="absolute top-20 right-10 w-32 h-32 rounded-full bg-amber-300/10 blur-3xl" />
+                    <div className="absolute bottom-32 left-10 w-40 h-40 rounded-full bg-emerald-300/10 blur-3xl" />
 
                     <div className="relative z-10 container mx-auto px-4 py-20">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className="max-w-3xl"
-                        >
+                        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl">
                             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm mb-6 border border-white/20">
-                                <Star className="h-4 w-4 text-amber-400" />
-                                Halal & Family-Centric Matchmaking
+                                <Star className="h-4 w-4 text-amber-400" /> Halal & Family-Centric Matchmaking
                             </div>
-
                             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
                                 Find Your Partner <br />
                                 <span className="text-emerald-300">with Dignity & Sunna</span>
                             </h1>
-
                             <p className="text-lg md:text-xl text-white/80 max-w-xl leading-relaxed mb-10">
                                 Marriage Sunna Overseas connects Muslim families across borders.
-                                We prioritize privacy, guardian involvement, and Islamic values
-                                to help you complete half your deen.
+                                We prioritize privacy, guardian involvement, and Islamic values to help you complete half your deen.
                             </p>
-
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Button
-                                    variant="default"
-                                    size="lg"
-                                    className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
-                                    data-testid="button-start-journey"
-                                    onClick={() => {
-                                        window.history.pushState({}, '', '/register');
-                                        window.dispatchEvent(new PopStateEvent('popstate'));
-                                    }}
-                                >
-                                    Start Your Journey
+                            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                                <Button variant="default" size="lg" className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" onClick={() => go("/register")}>
+                                    Start Your Journey<ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
-
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/5 bg-white/10 backdrop-blur-sm"
-                                    onClick={() => {
-                                        window.history.pushState({}, '', '/how');
-                                        window.dispatchEvent(new PopStateEvent('popstate'));
-                                    }}
-                                >
+                                <Button variant="outline" size="lg" className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/5 bg-white/10 backdrop-blur-sm" onClick={handleLearnHowItWorks}>
                                     Learn How It Works
                                 </Button>
                             </div>
+                            <AppDownloadRow comingSoon={comingSoon} />
+
+                            {/* Trust badges */}
+                            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-white/70 text-sm">
+                                <span className="flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-emerald-300" /> Verified Profiles</span>
+                                <span className="flex items-center gap-1.5"><Lock className="h-4 w-4 text-emerald-300" /> Encrypted Data</span>
+                                <span className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-emerald-300" /> Family Trusted</span>
+                            </div>
                         </motion.div>
                     </div>
-
-                    {/* Decorative Elements */}
                     <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
                 </section>
 
-                {/* Rest of your page content... */}
-
-                {/* Stats Section */}
-                <section className="py-12 bg-primary/5 border-y border-primary/10">
+                {/* ── Stats ─── */}
+                <section className="py-14 bg-primary/5 border-y border-primary/10">
                     <div className="container mx-auto px-4">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                             {[
                                 { number: "5,000+", label: "Registered Families" },
                                 { number: "1,200+", label: "Successful Matches" },
                                 { number: "50+", label: "Countries" },
-                                { number: "100%", label: "Halal Process" }
+                                { number: "100%", label: "Halal Process" },
                             ].map((stat, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                >
-                                    <div className="text-3xl md:text-4xl font-bold text-primary mb-1">{stat.number}</div>
+                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                                    <div className="text-3xl md:text-4xl font-bold text-primary mb-1" style={{ letterSpacing: "-0.02em" }}>{stat.number}</div>
                                     <div className="text-muted-foreground text-sm">{stat.label}</div>
                                 </motion.div>
                             ))}
@@ -132,55 +92,20 @@ export default function Landing() {
                     </div>
                 </section>
 
-                {/* Features Section */}
+                {/* ── Features ─── */}
                 <section className="py-20">
                     <div className="container mx-auto px-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-center mb-16"
-                        >
-                            <h2 className="font-serif text-3xl md:text-5xl font-bold text-foreground mb-4">
-                                Why Choose <span className="text-primary">Marriage Sunna?</span>
-                            </h2>
-                            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                                We follow the principles of Islamic marriage to create a respectful,
-                                transparent, and family-oriented matchmaking experience.
-                            </p>
-                        </motion.div>
-
+                        <SectionHeader eyebrow="Our Values" title="Why Choose" highlight="Marriage Sunna?" subtitle="We follow the principles of Islamic marriage to create a respectful, transparent, and family-oriented experience." />
                         <div className="grid md:grid-cols-3 gap-8">
                             {[
-                                {
-                                    icon: Shield,
-                                    title: "Privacy First",
-                                    desc: "Photos are blurred by default. Full visibility is granted only after mutual interest and family approval.",
-                                    color: "bg-blue-500/10 text-blue-600"
-                                },
-                                {
-                                    icon: Users,
-                                    title: "Guardian Verified",
-                                    desc: "We encourage guardian (Wali) involvement from day one to ensure a respectful and serious process.",
-                                    color: "bg-amber-500/10 text-amber-600"
-                                },
-                                {
-                                    icon: Globe,
-                                    title: "Global Reach",
-                                    desc: "Connecting compatible families from overseas with shared values and cultural understanding.",
-                                    color: "bg-emerald-500/10 text-emerald-600"
-                                }
+                                { icon: Shield, title: "Privacy First", desc: "Photos are blurred by default. Full visibility is granted only after mutual interest and family approval.", color: "bg-blue-500/10 text-blue-600" },
+                                { icon: Users, title: "Guardian Verified", desc: "We encourage guardian (Wali) involvement from day one to ensure a respectful and serious process.", color: "bg-amber-500/10 text-amber-600" },
+                                { icon: Globe, title: "Global Reach", desc: "Connecting compatible families from overseas with shared values and cultural understanding.", color: "bg-emerald-500/10 text-emerald-600" },
                             ].map((feature, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.15 }}
-                                >
-                                    <Card className="h-full hover:shadow-lg transition-all border-primary/10 hover:border-primary/30">
+                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
+                                    <Card className="h-full hover:shadow-xl transition-all border-primary/10 hover:border-primary/30 hover:-translate-y-1 duration-300">
                                         <CardContent className="p-8">
-                                            <div className={`w-14 h-14 rounded-xl ${feature.color} flex items-center justify-center mb-6`}>
+                                            <div className={`w-14 h-14 rounded-2xl ${feature.color} flex items-center justify-center mb-6`}>
                                                 {React.createElement(feature.icon, { className: "h-7 w-7" })}
                                             </div>
                                             <h3 className="font-serif text-2xl font-bold text-foreground mb-3">{feature.title}</h3>
@@ -193,109 +118,360 @@ export default function Landing() {
                     </div>
                 </section>
 
-                {/* How It Works Section */}
+                {/* ── How It Works ─── */}
                 <section id="how-it-works" className="py-20 bg-secondary/30">
                     <div className="container mx-auto px-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-center mb-16"
-                        >
-                            <h2 className="font-serif text-3xl md:text-5xl font-bold text-foreground mb-4">
-                                How It <span className="text-primary">Works</span>
-                            </h2>
-                            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                                A simple, dignified process rooted in Islamic principles
-                            </p>
-                        </motion.div>
-
-                        <div className="grid md:grid-cols-4 gap-6">
+                        <SectionHeader eyebrow="Process" title="How It" highlight="Works" subtitle="A simple, dignified process rooted in Islamic principles" />
+                        <div className="grid md:grid-cols-4 gap-6 relative">
+                            <div className="hidden md:block absolute top-8 left-[12%] right-[12%] h-px border-t-2 border-dashed border-primary/20" />
                             {[
-                                { step: "1", title: "Create Profile", desc: "Register with your guardian details and preferences" },
-                                { step: "2", title: "Browse Profiles", desc: "View gender-appropriate matches based on your criteria" },
-                                { step: "3", title: "Express Interest", desc: "Send interest requests with guardian approval" },
-                                { step: "4", title: "Connect", desc: "Message and arrange meetings after mutual acceptance" }
+                                { step: "1", icon: UserCheck, title: "Create Profile", desc: "Register with your guardian details and preferences" },
+                                { step: "2", icon: Users, title: "Link Guardian", desc: "Connect your guardian (Wali) to enable family security" },
+
+                                { step: "3", icon: Heart, title: "Express Interest", desc: "Send interest requests with guardian approval" },
+                                { step: "4", icon: MessageCircle, title: "Connect", desc: "Message and arrange meetings after mutual acceptance" },
                             ].map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="text-center"
-                                >
-                                    <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg shadow-primary/20">
-                                        {item.step}
+                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center relative">
+                                    <div className="relative inline-block mb-4">
+                                        <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto shadow-lg shadow-primary/30">
+                                            {React.createElement(item.icon, { className: "h-7 w-7" })}
+                                        </div>
+                                        <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-amber-400 text-emerald-900 text-xs font-bold flex items-center justify-center shadow-md">{item.step}</span>
                                     </div>
                                     <h3 className="font-serif text-xl font-bold text-foreground mb-2">{item.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{item.desc}</p>
+                                    <p className="text-muted-foreground text-sm leading-relaxed max-w-[220px] mx-auto">{item.desc}</p>
                                 </motion.div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* CTA Section */}
+                {/* ── Sunna Values ─── */}
+                <section className="py-20">
+                    <div className="container mx-auto px-4">
+                        <SectionHeader eyebrow="Rooted in Sunna" title="Built on" highlight="Islamic Principles" subtitle="Every feature is designed around the teachings of marriage in Islam" />
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                            {[
+                                { icon: BookOpen, title: "Islamic Guidance", desc: "Inspired by the verses on marriage and family." },
+                                { icon: HeartHandshake, title: "Wali Involvement", desc: "The guardian is part of the process — by design." },
+                                { icon: Lock, title: "Modesty Preserved", desc: "Photos & details revealed only on mutual consent." },
+                                { icon: Award, title: "Verified Profiles", desc: "Each profile is reviewed before going live." },
+                            ].map((item, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                                    className="rounded-2xl p-6 border border-primary/10 bg-secondary/30 hover:bg-secondary/60 transition-all">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                                        {React.createElement(item.icon, { className: "h-6 w-6" })}
+                                    </div>
+                                    <h3 className="font-serif text-lg font-bold text-foreground mb-2">{item.title}</h3>
+                                    <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Pricing ─── */}
+                <section className="py-20 bg-secondary/30">
+                    <div className="container mx-auto px-4">
+                        <SectionHeader eyebrow="Pricing" title="Simple, Honest" highlight="Plans" subtitle="Start free. Upgrade only if you need more reach." />
+                        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                            {[
+                                { name: "Free", price: "$0", period: "forever", features: ["Create profile", "Browse matches", "Guardian linking", "Basic messaging"], cta: "Get Started", featured: false },
+                                { name: "Premium", price: "$19", period: "per month", features: ["Everything in Free", "Unlimited interests", "Profile boost", "See who liked you", "Priority support"], cta: "Go Premium", featured: true },
+                                { name: "Family", price: "$39", period: "per month", features: ["Everything in Premium", "Up to 3 wards", "Family dashboard", "Dedicated advisor"], cta: "Choose Family", featured: false },
+                            ].map((plan, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                                    <Card className={`h-full relative ${plan.featured ? "border-primary shadow-2xl shadow-primary/15 -translate-y-1" : "border-primary/10"} transition-all`}>
+                                        {plan.featured && (
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-amber-400 text-emerald-900 text-[11px] font-bold uppercase tracking-wider">
+                                                Most Popular
+                                            </div>
+                                        )}
+                                        <CardContent className="p-7">
+                                            <h3 className="font-serif text-xl font-bold text-foreground mb-1">{plan.name}</h3>
+                                            <div className="flex items-baseline gap-1 mb-5">
+                                                <span className="text-4xl font-bold text-primary" style={{ letterSpacing: "-0.02em" }}>{plan.price}</span>
+                                                <span className="text-muted-foreground text-sm">/ {plan.period}</span>
+                                            </div>
+                                            <ul className="space-y-2.5 mb-6">
+                                                {plan.features.map((f, j) => (
+                                                    <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                        <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" /> {f}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <Button className={`w-full ${plan.featured ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`} onClick={() => go("/register")}>
+                                                {plan.cta}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Testimonials ─── */}
+                <section className="py-20">
+                    <div className="container mx-auto px-4">
+                        <SectionHeader eyebrow="Stories" title="Blessed" highlight="Journeys" subtitle="Real families who completed half their deen with us" />
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {[
+                                { name: "Aisha & Ibrahim", country: "UK → Egypt", text: "Alhamdulillah, the guardian-first approach made our families comfortable from day one. We found each other with dignity." },
+                                { name: "Yusuf & Mariam", country: "Canada → Pakistan", text: "The privacy controls gave my family confidence. We took our time and chose with the help of our walis." },
+                                { name: "Khalid & Fatima", country: "USA → Morocco", text: "A halal, respectful process. The team supports you at every step, and the matches were thoughtfully suggested." },
+                            ].map((t, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.12 }}>
+                                    <Card className="h-full border-primary/10 hover:border-primary/30 hover:shadow-xl transition-all">
+                                        <CardContent className="p-7">
+                                            <Quote className="h-6 w-6 text-primary/30 mb-3" />
+                                            <p className="text-muted-foreground leading-relaxed mb-5 italic">"{t.text}"</p>
+                                            <div className="flex items-center gap-3 pt-4 border-t border-primary/10">
+                                                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">{t.name[0]}</div>
+                                                <div>
+                                                    <p className="font-semibold text-foreground text-sm leading-tight">{t.name}</p>
+                                                    <p className="text-muted-foreground text-xs">{t.country}</p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── FAQ ─── */}
+                <section className="py-20 bg-secondary/30">
+                    <div className="container mx-auto px-4 max-w-3xl">
+                        <SectionHeader eyebrow="FAQ" title="Common" highlight="Questions" subtitle="Everything families ask before joining" />
+                        <div className="space-y-3">
+                            {[
+                                { q: "Is the platform truly halal?", a: "Yes. Every feature — from blurred photos to guardian involvement — is designed around Islamic marriage principles, supervised by qualified scholars." },
+                                { q: "Do I need a guardian (Wali) to register?", a: "Sisters are strongly encouraged to involve their wali. Our 'Link with PIN' feature lets you connect your guardian instantly so they can oversee the process." },
+                                { q: "How is my privacy protected?", a: "Photos are blurred by default. Full profile details are only visible after mutual interest and explicit guardian approval." },
+                                { q: "Can I cancel my subscription anytime?", a: "Absolutely. There are no lock-ins. Cancel anytime from your account and you keep access until the end of the billing period." },
+                                { q: "Which countries do you support?", a: "We serve Muslim families in 50+ countries across the world. Browse globally or filter by region — your choice." },
+                            ].map((item, i) => (
+                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                                    <div className="rounded-2xl bg-white border border-primary/10 overflow-hidden">
+                                        <button onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                                            className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left">
+                                            <span className="font-semibold text-foreground">{item.q}</span>
+                                            <ChevronDown className={`h-5 w-5 text-primary shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                                        </button>
+                                        {openFaq === i && (
+                                            <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-primary/10 pt-3">
+                                                {item.a}
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── App promo banner ─── */}
+                <section className="py-20 relative overflow-hidden bg-gradient-to-br from-emerald-900 to-primary text-white">
+                    <div className="absolute inset-0 opacity-10"
+                        style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 80% 70%, white 1px, transparent 1px)", backgroundSize: "32px 32px, 48px 48px" }} />
+                    <div className="container mx-auto px-4 relative z-10">
+                        <div className="grid md:grid-cols-2 gap-10 items-center max-w-5xl mx-auto">
+                            <div>
+                                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-white/10 text-amber-200 mb-4">
+                                    Mobile App
+                                </span>
+                                <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4 leading-tight">
+                                    Take Marriage Sunna<br /><span className="text-amber-300">wherever you go</span>
+                                </h2>
+                                <p className="text-white/80 mb-7 leading-relaxed">
+                                    Get instant notifications, chat with matches on the move, and approve interests as a guardian from your phone.
+                                </p>
+                                <AppDownloadRow comingSoon={comingSoon} />
+                            </div>
+                            <div className="hidden md:flex justify-center">
+                                <PhoneMock />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Newsletter ─── */}
+                <section className="py-20">
+                    <div className="container mx-auto px-4 max-w-2xl text-center">
+                        <Mail className="h-10 w-10 text-primary mx-auto mb-4" />
+                        <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-3">
+                            Stay in the loop
+                        </h2>
+                        <p className="text-muted-foreground mb-7">
+                            Get marriage advice, success stories, and product updates — once a month, no spam.
+                        </p>
+                        <form onSubmit={(e) => { e.preventDefault(); toast.success("You're subscribed!"); }}
+                            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                            <input type="email" required placeholder="Your email"
+                                className="flex-1 h-12 px-4 rounded-xl border-2 border-primary/15 focus:border-primary outline-none text-sm bg-white" />
+                            <Button type="submit" className="h-12 px-6 bg-primary text-primary-foreground">
+                                Subscribe
+                            </Button>
+                        </form>
+                    </div>
+                </section>
+
+                {/* ── CTA ─── */}
                 <section className="py-20 relative overflow-hidden">
                     <div className="absolute inset-0">
-                        <img
-                            src="/pattern-bg.png"
-                            alt=""
-                            className="w-full h-full object-cover opacity-20"
-                        />
+                        <img src="/pattern-bg.png" alt="" className="w-full h-full object-cover opacity-20" />
                         <div className="absolute inset-0 bg-gradient-to-r from-primary/95 to-emerald-700/95" />
                     </div>
-
                     <div className="container mx-auto px-4 relative z-10">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-center max-w-3xl mx-auto"
-                        >
-                            <Heart className="h-12 w-12 text-white/80 mx-auto mb-6" />
-                            <h2 className="font-serif text-3xl md:text-5xl font-bold text-white mb-6">
-                                Begin Your Journey Today
-                            </h2>
-                            <p className="text-white/80 text-lg mb-10 max-w-xl mx-auto">
-                                Join thousands of families who have found their perfect match
-                                through our halal matchmaking platform.
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center max-w-3xl mx-auto">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm mb-6">
+                                <Heart className="h-8 w-8 text-white" />
+                            </div>
+                            <h2 className="font-serif text-3xl md:text-5xl font-bold text-white mb-6">Begin Your Journey Today</h2>
+                            <p className="text-white/85 text-lg mb-10 max-w-xl mx-auto">
+                                Join thousands of families who have found their perfect match through our halal matchmaking platform.
                             </p>
-                            <Button
-                                variant="default"
-                                size="lg"
-                                className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold"
-                                data-testid="button-cta-register"
-                                onClick={() => {
-                                    window.history.pushState({}, '', '/register');
-                                    window.dispatchEvent(new PopStateEvent('popstate'));
-                                }}
-                            >
-                                Register Now - It's Free
+                            <Button variant="default" size="lg" className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" onClick={() => go("/register")}>
+                                Register Now — It's Free<ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-
-
                         </motion.div>
                     </div>
                 </section>
 
-                {/* Footer */}
-                <footer className="py-12 bg-secondary/50 border-t">
+                {/* ── Footer ─── */}
+                <footer className="bg-secondary/50 border-t pt-14 pb-8">
                     <div className="container mx-auto px-4">
-                        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                            <div className="flex items-center gap-3">
-                                <img src="/logo.png" alt="Marriage Sunna Overseas" className="h-10 w-10 rounded-full" />
-                                <span className="font-serif font-bold text-xl text-primary">Marriage Sunna Overseas</span>
+                        <div className="grid md:grid-cols-4 gap-8 mb-10">
+                            <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <img src="/logo.png" alt="Marriage Sunna Overseas" className="h-10 w-10 rounded-full" />
+                                    <span className="font-serif font-bold text-lg text-primary leading-tight">Marriage Sunna<br />Overseas</span>
+                                </div>
+                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                    Connecting hearts with dignity and Islamic values, across borders.
+                                </p>
+                                <div className="flex gap-2 mt-4">
+                                    {[Instagram, Facebook, Twitter].map((I, i) => (
+                                        <a key={i} href="#" className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition">
+                                            <I className="h-4 w-4" />
+                                        </a>
+                                    ))}
+                                </div>
                             </div>
-                            <p className="text-muted-foreground text-sm text-center md:text-right">
-                                Connecting hearts with dignity and Islamic values.
-                            </p>
+                            <FooterCol title="Product" links={["Features", "How it Works", "Pricing", "Testimonials"]} />
+                            <FooterCol title="Company" links={["About Us", "Blog", "Careers", "Contact"]} />
+                            <div>
+                                <h4 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wider">Contact</h4>
+                                <ul className="space-y-2.5 text-sm text-muted-foreground">
+                                    <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-primary shrink-0" /> hello@marriagesunna.com</li>
+                                    <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-primary shrink-0" /> +1 (555) 123-4567</li>
+                                    <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" /> Global — overseas families</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="pt-6 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
+                            <p>© {new Date().getFullYear()} Marriage Sunna Overseas. All rights reserved.</p>
+                            <div className="flex gap-5">
+                                <a href="#" className="hover:text-primary">Privacy</a>
+                                <a href="#" className="hover:text-primary">Terms</a>
+                                <a href="#" className="hover:text-primary">Cookies</a>
+                            </div>
                         </div>
                     </div>
                 </footer>
             </div>
         </div>
+    );
+}
 
+/* ── Sub-components ─── */
+function SectionHeader({ eyebrow, title, highlight, subtitle }) {
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-14">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase bg-primary/10 text-primary mb-4">{eyebrow}</span>
+            <h2 className="font-serif text-3xl md:text-5xl font-bold text-foreground mb-4">
+                {title} <span className="text-primary">{highlight}</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{subtitle}</p>
+        </motion.div>
+    );
+}
+
+function FooterCol({ title, links }) {
+    return (
+        <div>
+            <h4 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wider">{title}</h4>
+            <ul className="space-y-2.5 text-sm">
+                {links.map((l) => (
+                    <li key={l}><a href="#" className="text-muted-foreground hover:text-primary transition">{l}</a></li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+function AppDownloadRow({ comingSoon }) {
+    return (
+        <div>
+            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-white/60 mb-3">Also Available On</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+                <button type="button" onClick={() => comingSoon("App Store")}
+                    className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/80 hover:bg-black border border-white/15 transition-all hover:-translate-y-0.5 hover:shadow-xl">
+                    <svg viewBox="0 0 384 512" className="h-8 w-8 fill-white shrink-0" aria-hidden="true">
+                        <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+                    </svg>
+                    <span className="text-left leading-tight">
+                        <span className="block text-[10px] text-white/70">Download on the</span>
+                        <span className="block text-lg font-semibold text-white">App Store</span>
+                    </span>
+                </button>
+                <button type="button" onClick={() => comingSoon("Google Play")}
+                    className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/80 hover:bg-black border border-white/15 transition-all hover:-translate-y-0.5 hover:shadow-xl">
+                    <svg viewBox="0 0 512 512" className="h-8 w-8 shrink-0" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="gp-blue" x1="105" y1="59" x2="291" y2="246" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#00a0ff" /><stop offset="1" stopColor="#00e2ff" /></linearGradient>
+                            <linearGradient id="gp-yellow" x1="380" y1="256" x2="100" y2="256" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#ffe000" /><stop offset="1" stopColor="#ffbd00" /></linearGradient>
+                            <linearGradient id="gp-red" x1="290" y1="244" x2="120" y2="473" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#ff3a44" /><stop offset="1" stopColor="#c31162" /></linearGradient>
+                            <linearGradient id="gp-green" x1="100" y1="40" x2="240" y2="180" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#00a070" /><stop offset="1" stopColor="#00f076" /></linearGradient>
+                        </defs>
+                        <path fill="url(#gp-blue)" d="M92 17c-6 3-9 10-9 18v442c0 8 3 14 9 17l232-232z" />
+                        <path fill="url(#gp-yellow)" d="M398 286l-74-30-66 66 66 66 74-42c21-12 21-48 0-60z" />
+                        <path fill="url(#gp-red)" d="M324 256L92 488c7 3 14 1 22-3l284-163z" />
+                        <path fill="url(#gp-green)" d="M92 24c-7-3-15-1-22 3l232 229 22-22z" />
+                    </svg>
+                    <span className="text-left leading-tight">
+                        <span className="block text-[10px] text-white/70">GET IT ON</span>
+                        <span className="block text-lg font-semibold text-white">Google Play</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function PhoneMock() {
+    return (
+        <div className="relative w-[240px] h-[480px] rounded-[40px] bg-black p-2 shadow-2xl rotate-3">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-b-2xl z-10" />
+            <div className="w-full h-full rounded-[32px] bg-gradient-to-br from-emerald-50 to-amber-50 overflow-hidden relative">
+                <div className="absolute inset-0 p-4 pt-10 flex flex-col gap-3">
+                    <div className="h-2 w-20 rounded-full bg-emerald-900/15" />
+                    <div className="h-7 w-32 rounded-md bg-emerald-900/25" />
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                        {[1, 2, 3, 4].map((n) => (
+                            <div key={n} className="aspect-[3/4] rounded-xl bg-white shadow-sm overflow-hidden">
+                                <div className="h-2/3 bg-gradient-to-br from-emerald-200 to-amber-200" />
+                                <div className="p-1.5">
+                                    <div className="h-1.5 w-3/4 bg-emerald-900/30 rounded mb-1" />
+                                    <div className="h-1.5 w-1/2 bg-emerald-900/15 rounded" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

@@ -103,7 +103,7 @@ db.syncDatabase = async () => {
       continue;
     }
     try {
-      await model.sync({ alter: true });
+      await model.sync({ alter: false });
       console.log(`✅ Synced: ${modelName}`);
       synced++;
     } catch (err) {

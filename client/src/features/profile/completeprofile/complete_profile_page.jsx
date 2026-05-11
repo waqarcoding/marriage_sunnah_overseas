@@ -100,7 +100,7 @@ function CompleteScreen({ navigate }) {
                 <p className="text-muted-foreground text-sm leading-relaxed">Your profile is now live. Matches will be suggested based on your preferences.</p>
             </div>
             <div className="w-full max-w-xs space-y-3">
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate("/verification")}
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate("/individual/verification")}
                     className="w-full py-4 rounded-2xl text-primary-foreground font-semibold shadow-lg"
                     style={{ background: "var(--gradient-primary)" }}>View Matches</motion.button>
                 <button onClick={() => navigate("/profile")} className="w-full py-3 text-sm text-muted-foreground underline underline-offset-2">Edit Profile</button>

@@ -269,7 +269,7 @@ export const getExplore = async (req, res) => {
                 {
                     model: Guardian,
                     as: 'asIndividual', // ✅ This is the correct alias - checks if profile HAS a guardian
-                    required: true, // ✅ Only profiles WITH guardians
+                    required: false, // ✅ Only profiles WITH guardians
                     attributes: ['id', 'guardian_id']
                 }
             ],
