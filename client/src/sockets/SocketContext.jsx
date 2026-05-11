@@ -61,7 +61,7 @@ function createSocket(userId, setters) {
 
   console.log('🔌 Creating new socket connection...');
   console.log('   URL:', SOCKET_URL);
-  console.log('   Path: /socket.io/');
+  console.log('   Path: /api/socket.io/');
   console.log('   User ID:', userId);
 
   const s = io(SOCKET_URL, {

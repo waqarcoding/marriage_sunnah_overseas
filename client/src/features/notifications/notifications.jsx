@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Api from "../../api/Api";
 import { io } from "socket.io-client";
 import AuthApi from "../../features/auth/services/AuthService";
+import { useSocket } from "../../sockets/SocketContext";
 
 let socket;
 
@@ -79,17 +80,17 @@ function formatTime(ts) {
 export default function Notifications() {
     const [notifications, setNotifications] = useState([]);
     const navigate = useNavigate();
-
+    const { socket, connected } = useSocket();
     useEffect(() => {
         init();
         const userId = AuthApi.getUserId();
 
-        if (!socket) {
-            // @ts-ignore
-            socket = io(import.meta.env.VITE_BASE_URL, {
-                transports: ["websocket", "polling"],
-                auth: { token: localStorage.getItem("jwtToken") },
-            });
+
+
+        // ✅ Only listen if socket is connected
+        if (!socket || !connected) {
+            console.log('⚠️ Socket not ready for notifications');
+            return;
         }
 
         if (userId) socket.emit("join", userId);
