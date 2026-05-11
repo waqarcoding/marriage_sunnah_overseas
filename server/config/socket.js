@@ -40,7 +40,7 @@ export const initSocket = (server) => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📡 Server instance:', !!server);
     console.log('📡 Allowed CORS origins:', allowedOrigins);
-    console.log('📡 Socket.IO path: /api/socket.io/');
+    console.log('📡 Socket.IO path: /socket.io/');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     try {
@@ -50,7 +50,7 @@ export const initSocket = (server) => {
                 methods: ["GET", "POST"],
                 credentials: true
             },
-            path: '/api/socket.io/',
+            path: '/socket.io/',
             transports: ['polling', 'websocket'],
             allowUpgrades: true,
             pingTimeout: 60000,
