@@ -67,7 +67,21 @@ app.use(cors({
 
 /* ---------------- DEBUG: Log all requests ---------------- */
 app.use((req, res, next) => {
-  console.log(`📨 ${req.method} ${req.path}`);
+  console.log(`📨 ${req.method} ${req.path} ${req.url}`);
+  next();
+});
+
+/* ✅ CRITICAL: Socket.IO Path Rewrite (for DigitalOcean ingress path stripping) */
+app.use((req, res, next) => {
+  // If request has Socket.IO query params (EIO, transport), rewrite the URL
+  if (req.query.EIO || req.query.transport) {
+    console.log(`🔌 Detected Socket.IO request: ${req.url}`);
+    // Rewrite URL from / to /socket.io/ for Socket.IO to handle
+    if (!req.url.startsWith('/socket.io')) {
+      req.url = '/socket.io' + req.url;
+      console.log(`🔌 Rewritten URL to: ${req.url}`);
+    }
+  }
   next();
 });
 
@@ -197,19 +211,15 @@ if (shouldServeClient) {
   }
 } else {
   console.log('🚫 API-only mode: Not serving client files');
-
-  // ✅ ADD THIS: Still need to exclude Socket.IO from 404 handler
-  app.use((req, res, next) => {
-    if (req.path.startsWith("/socket.io")) {
-      return next();
-    }
-    next();
-  });
 }
 
 /* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
-/* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
 app.use((req, res, next) => {
+  // ✅ Skip 404 for Socket.IO paths
+  if (req.path.startsWith('/socket.io')) {
+    return next();
+  }
+
   res.status(404).json({
     error: "Route not found",
     path: req.path,
@@ -217,6 +227,7 @@ app.use((req, res, next) => {
     message: "The endpoint you are looking for does not exist."
   });
 });
+
 /* ---------------- ERROR HANDLER (Must be last) ---------------- */
 app.use(errorMiddleware);
 
@@ -235,8 +246,6 @@ const startServer = async () => {
     } else {
       console.log("🚫 Production mode: skipping DB sync");
     }
-
-    // ❌ REMOVED: Don't initialize socket here - server hasn't started yet!
 
     // ✅ Initialize Cron Jobs (skip in test/development environment)
     if (process.env.NODE_ENV === 'production') {
@@ -280,7 +289,7 @@ const startServer = async () => {
       console.log('='.repeat(70));
       console.log(`📡 Webhook: ${baseUrl}/api/subscription/webhook`);
       console.log(`🏥 Health: ${baseUrl}/api/health`);
-      console.log(`🔌 Socket.IO: ${baseUrl}/api/socket.io/`);  // ✅ Added missing slash
+      console.log(`🔌 Socket.IO: ${baseUrl}/socket.io/`);
       console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
       console.log(`💬 WebSocket: ${process.env.SOCKET_ENABLED !== 'false' ? 'Enabled ✓' : 'Disabled ✗'}`);
