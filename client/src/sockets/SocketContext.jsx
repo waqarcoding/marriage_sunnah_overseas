@@ -5,9 +5,10 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
-const SERVER_URL = import.meta.env.VITE_SOCKET_URL ||
+const SERVER_URL =
+  import.meta.env.VITE_SOCKET_URL ||
   import.meta.env.VITE_BASE_URL?.replace('/api', '') ||
-  'https://marriage-sunna-overseas-wceze.ondigitalocean.app';
+  'http://localhost:8080';
 
 const SocketContext = createContext(null);
 

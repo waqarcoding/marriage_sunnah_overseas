@@ -43,7 +43,7 @@ export default function Landing() {
                     <div className="absolute inset-0">
                         <img
                             src="/hero-banner.png"
-                            alt="Marriage Sunnah Overseas"
+                            alt="Marriage Sunna Overseas"
                             className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-900/70 to-emerald-800/50" />
@@ -63,11 +63,11 @@ export default function Landing() {
 
                             <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
                                 Find Your Partner <br />
-                                <span className="text-emerald-300">with Dignity & Sunnah</span>
+                                <span className="text-emerald-300">with Dignity & Sunna</span>
                             </h1>
 
                             <p className="text-lg md:text-xl text-white/80 max-w-xl leading-relaxed mb-10">
-                                Marriage Sunnah Overseas connects Muslim families across borders.
+                                Marriage Sunna Overseas connects Muslim families across borders.
                                 We prioritize privacy, guardian involvement, and Islamic values
                                 to help you complete half your deen.
                             </p>

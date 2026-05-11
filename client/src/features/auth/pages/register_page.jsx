@@ -169,7 +169,7 @@ export default function Register({ onRegister }) {
                                 <Heart size={18} color="#f5f0e8" />
                             </div>
                             <span className="text-sm font-medium" style={{ color: "#f5f0e8" }}>
-                                Marriage Sunnah Overseas
+                                Marriage Sunna Overseas
                             </span>
                         </div>
                         <div className="flex flex-col gap-5">
@@ -186,7 +186,7 @@ export default function Register({ onRegister }) {
                             </p>
                         </div>
                         <p className="text-xs" style={{ color: "rgba(245,240,232,0.3)" }}>
-                            © 2025 Marriage Sunnah Overseas
+                            © 2025 Marriage Sunna Overseas
                         </p>
                     </div>
                     <div className="w-full max-w-5xl overflow-y-auto max-h-full">
@@ -195,7 +195,7 @@ export default function Register({ onRegister }) {
                                 <div className="flex items-center justify-center mb-2">
                                     <img
                                         src="/logo.png"
-                                        alt="Marriage Sunnah Overseas Logo"
+                                        alt="Marriage Sunna Overseas Logo"
                                         className="h-40 w-auto"
                                         style={{ maxHeight: 155 }}
                                     />

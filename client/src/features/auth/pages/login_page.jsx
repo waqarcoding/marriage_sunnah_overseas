@@ -85,7 +85,7 @@ export default function Login({ onLogin }) {
                                 <Heart size={18} color="#f5f0e8" />
                             </div>
                             <span className="text-sm font-medium text-[#f5f0e8]">
-                                Marriage Sunnah Overseas
+                                Marriage Sunna Overseas
                             </span>
                         </div>
 
@@ -113,7 +113,7 @@ export default function Login({ onLogin }) {
                         </div>
 
                         <p className="text-xs text-[rgba(245,240,232,0.3)]">
-                            © 2025 Marriage Sunnah Overseas
+                            © 2025 Marriage Sunna Overseas
                         </p>
                     </div>
 

@@ -10,7 +10,7 @@
 export default function AuroraBackground({ children }) {
     // Islamic theme background color definitions with opacity (inspired by rich greens, gold, and subtle creams)
     // Islamic background color palette (do not change variable names)
-    const primaryGlow = { color: '#239672', opacity: 0.14 };     // Subtle rich green, aurora vibe
+    const primaryGlow = { color: '#D4AF37', opacity: 0.14 };     // Subtle rich green, aurora vibe
     const secondaryGlow = { color: '#f7e5b2', opacity: 0.09 };   // Warm cream gold
     const tertiaryGlow = { color: '#dde9da', opacity: 0.11 };    // Misty light green sand
     const overlayTint = { color: '#d6c893', opacity: 0.13 };     // Soft muted gold green frost

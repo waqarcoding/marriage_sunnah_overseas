@@ -413,7 +413,7 @@ export default function SettingsPage() {
 
                     {/* ── Support ── */}
                     <SectionCard title="Support">
-                        <NavRow icon={Info} label="About Marriage Sunnah"
+                        <NavRow icon={Info} label="About Marriage Sunna"
                             sublabel="Version 1.0.0"
                             onClick={() => { }} />
                         <NavRow icon={Shield} label="Privacy Policy"

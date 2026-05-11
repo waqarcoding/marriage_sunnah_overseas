@@ -422,7 +422,7 @@ export default function AppBar({ onLogout, onSidebarLogout, tabs }) {
         <Link to="/" className="flex items-center gap-3 h-full select-none shrink-0">
           <img src="/logo.png" alt="Logo" className="h-14 w-auto" draggable={false} style={{ maxWidth: 200 }} />
           <span className="font-bold text-2xl hidden sm:inline" style={{ color: "var(--background)", letterSpacing: "0.3px" }}>
-            Marriage Sunnah Overseas
+            Marriage Sunna Overseas
           </span>
         </Link>
 
