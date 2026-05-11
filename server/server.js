@@ -228,17 +228,7 @@ const startServer = async () => {
       console.log("🚫 Production mode: skipping DB sync");
     }
 
-    // ✅ Initialize Socket.IO with proper error handling
-    try {
-      console.log('initialized Socket Started');
-      initSocket(server);
-      console.log('initialized Socket Ended');
-      console.log('✅ Socket.IO initialized successfully');
-    } catch (socketError) {
-      const msg = socketError instanceof Error ? socketError.message : String(socketError);
-      console.error('⚠️  Socket.IO initialization failed:', msg);  // ← Look for this!
-      console.log('   Server will continue without real-time features');
-    }
+    // ❌ REMOVED: Don't initialize socket here - server hasn't started yet!
 
     // ✅ Initialize Cron Jobs (skip in test/development environment)
     if (process.env.NODE_ENV === 'production') {
@@ -258,20 +248,21 @@ const startServer = async () => {
       console.log('   POST /api/admin/trigger-expired-check\n');
     }
 
-    // @ts-ignore
+    // Start server
     // @ts-ignore
     server.listen(PORT, "0.0.0.0", () => {
       const isProduction = process.env.NODE_ENV === 'production';
       const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-      // ✅ Initialize Socket.IO AFTER server is listening
+      // ✅ Initialize Socket.IO ONCE - AFTER server is listening
       try {
         console.log('🔌 Initializing Socket.IO...');
         initSocket(server);
         console.log('✅ Socket.IO initialized successfully');
       } catch (socketError) {
         const msg = socketError instanceof Error ? socketError.message : String(socketError);
-        console.error('⚠️  Socket.IO initialization failed:', msg);
+        console.error('❌ Socket.IO initialization failed:', msg);
+        console.log('   Server will continue without real-time features');
       }
 
       console.log('\n' + '='.repeat(70));
@@ -281,7 +272,7 @@ const startServer = async () => {
       console.log('='.repeat(70));
       console.log(`📡 Webhook: ${baseUrl}/api/subscription/webhook`);
       console.log(`🏥 Health: ${baseUrl}/api/health`);
-      console.log(`🔌 Socket.IO: ${baseUrl}/api/socket.io/`);  // ✅ Add this too
+      console.log(`🔌 Socket.IO: ${baseUrl}/socket.io/`);  // ✅ Fixed: No /api prefix
       console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
       console.log(`💬 WebSocket: ${process.env.SOCKET_ENABLED !== 'false' ? 'Enabled ✓' : 'Disabled ✗'}`);

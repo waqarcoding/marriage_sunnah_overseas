@@ -258,8 +258,8 @@ function GuardianLayout() {
           <ConditionalContent path="/guardian/add-ward">
             <LinkWithPin />
           </ConditionalContent>
-          <ConditionalContent path="/guardian/myprofile">
-            <MyProfile onLogout={() => { logout(); }} />
+          <ConditionalContent path="/guardian/guardianprofile">
+            <GuardianProfilePage onLogout={() => { logout(); }} />
           </ConditionalContent>
           <ConditionalContent path="/guardian/chats">
             <Chat />

@@ -263,7 +263,7 @@ export default function SettingsPage() {
                             onClick={() => {
                                 // Role-based access navigation
                                 if (tokenData?.role === "guardian") {
-                                    navigate("/guardian/myprofile");
+                                    navigate("/guardian/guardianprofile");
                                 } else {
                                     navigate("/individual/myprofile");
                                 }

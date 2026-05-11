@@ -5,7 +5,25 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+// ✅ FIXED: Determine socket URL based on environment
+const getSocketURL = () => {
+  // If VITE_SOCKET_URL is explicitly set, use it
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+
+  // Otherwise, use VITE_BASE_URL without /api suffix
+  if (import.meta.env.VITE_BASE_URL) {
+    return import.meta.env.VITE_BASE_URL.replace('/api', '');
+  }
+
+  // Fallback to production URL
+  return 'https://marriage-sunna-overseas-wceze.ondigitalocean.app';
+};
+
+const SOCKET_URL = getSocketURL();
+
+console.log('🔌 Socket URL:', SOCKET_URL);
 
 const SocketContext = createContext(null);
 
@@ -23,6 +41,7 @@ function destroySocket() {
     _socket = null;
     _userId = null;
     _badgeSetters = null;
+    console.log('🔌 Socket destroyed');
   }
 }
 
@@ -30,45 +49,71 @@ function destroySocket() {
 // CREATE SOCKET
 // ─────────────────────────────────────────
 function createSocket(userId, setters) {
-  if (_socket && String(_userId) === String(userId)) return _socket;
+  if (_socket && String(_userId) === String(userId)) {
+    console.log('✅ Reusing existing socket connection');
+    return _socket;
+  }
 
   destroySocket();
 
   _userId = userId;
   _badgeSetters = setters;
 
-  const s = io(SERVER_URL, {
-    path: '/api/socket.io/',
-    transports: ['polling'],  // ✅ FIXED: polling first for DigitalOcean
+  console.log('🔌 Creating new socket connection...');
+  console.log('   URL:', SOCKET_URL);
+  console.log('   Path: /socket.io/');
+  console.log('   User ID:', userId);
+
+  const s = io(SOCKET_URL, {
+    path: '/socket.io/',
+    transports: ['polling', 'websocket'],
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
     timeout: 20000,
-    auth: { token: localStorage.getItem('jwtToken') },
+    auth: {
+      token: localStorage.getItem('jwtToken')
+    },
   });
 
   // ─────────────────────────────────────────
   // CONNECT
   // ─────────────────────────────────────────
   s.on('connect', () => {
-    console.log('🔌 Connected:', s.id);
+    console.log('✅ Socket connected:', s.id);
+    console.log('   Transport:', s.io.engine.transport.name);
     s.emit('join', userId);
   });
 
   s.on('disconnect', (reason) => {
-    console.log('🔌 Disconnected:', reason);
+    console.log('🔌 Socket disconnected:', reason);
   });
 
   s.on('connect_error', (err) => {
-    console.warn('🔌 Error:', err.message);
+    console.error('❌ Socket connection error:', err.message);
+    console.error('   URL attempted:', SOCKET_URL);
+    console.error('   Path attempted: /socket.io/');
+  });
+
+  s.on('reconnect', (attemptNumber) => {
+    console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+  });
+
+  s.on('reconnect_error', (err) => {
+    console.error('❌ Socket reconnection error:', err.message);
+  });
+
+  s.on('reconnect_failed', () => {
+    console.error('❌ Socket reconnection failed after max attempts');
   });
 
   // ─────────────────────────────────────────
   // 🔔 MAIN NOTIFICATION HANDLER (NEW)
   // ─────────────────────────────────────────
   s.on('notification', (n) => {
-    console.log('🔔 Notification:', n);
+    console.log('🔔 Notification received:', n);
 
     const { type, message, data } = n;
 
@@ -122,7 +167,7 @@ function createSocket(userId, setters) {
         break;
 
       default:
-        console.log('Unhandled notification type:', type);
+        console.log('⚠️ Unhandled notification type:', type);
     }
   });
 
@@ -130,18 +175,22 @@ function createSocket(userId, setters) {
   // 🔢 COUNTERS (REAL-TIME)
   // ─────────────────────────────────────────
   s.on('interest_count', ({ count }) => {
+    console.log('📊 Interest count update:', count);
     _badgeSetters?.setInterestCount(Number(count));
   });
 
   s.on('guardian_pending_count', ({ count }) => {
+    console.log('📊 Guardian count update:', count);
     _badgeSetters?.setGuardianCount(Number(count));
   });
 
   s.on('chat_count_update', ({ count }) => {
+    console.log('📊 Chat count update:', count);
     _badgeSetters?.setChatCount(Number(count));
   });
 
   s.on('credit_update', ({ credits }) => {
+    console.log('📊 Credit update:', credits);
     _badgeSetters?.setCredits(Number(credits));
   });
 
@@ -149,11 +198,11 @@ function createSocket(userId, setters) {
   // 💬 CHAT REAL-TIME (no DB)
   // ─────────────────────────────────────────
   s.on('typing', ({ from }) => {
-    console.log('✍️ typing from:', from);
+    console.log('✍️ User typing:', from);
   });
 
   s.on('stop_typing', ({ from }) => {
-    console.log('✋ stop typing from:', from);
+    console.log('✋ User stopped typing:', from);
   });
 
   // ─────────────────────────────────────────
@@ -182,7 +231,7 @@ export function SocketProvider({ userId, children }) {
 
   const [connected, setConnected] = useState(false);
   const [socketInst, setSocketInst] = useState(null);
-  const isMountedRef = useRef(true); // ✅ Track mount status
+  const isMountedRef = useRef(true);
 
   const settersRef = useRef(null);
   settersRef.current = {
@@ -195,7 +244,12 @@ export function SocketProvider({ userId, children }) {
   useEffect(() => {
     isMountedRef.current = true;
 
-    if (!userId) return;
+    if (!userId) {
+      console.log('⚠️ No userId provided, skipping socket connection');
+      return;
+    }
+
+    console.log('🔌 Initializing socket for user:', userId);
 
     const proxy = {
       setInterestCount: (...a) => {
@@ -219,10 +273,12 @@ export function SocketProvider({ userId, children }) {
     }
 
     const onConnect = () => {
+      console.log('✅ Socket provider: connected');
       if (isMountedRef.current) setConnected(true);
     };
 
     const onDisconnect = () => {
+      console.log('🔌 Socket provider: disconnected');
       if (isMountedRef.current) setConnected(false);
     };
 
@@ -241,7 +297,6 @@ export function SocketProvider({ userId, children }) {
 
   useEffect(() => {
     if (!userId && _socket) {
-      // ✅ Defer cleanup to avoid DOM issues
       const timer = setTimeout(() => {
         destroySocket();
         if (isMountedRef.current) {
@@ -254,11 +309,9 @@ export function SocketProvider({ userId, children }) {
     }
   }, [userId]);
 
-  // ✅ Cleanup on unmount
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
-      // Don't destroy socket on unmount - keep it alive for app
     };
   }, []);
 

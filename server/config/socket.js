@@ -11,86 +11,121 @@ import {
     sendMatchCreatedEmail,
 } from '../mail/service.js';
 
-let io;
+// ✅ CRITICAL: Declare these at module scope
+let io = null;
+let isInitialized = false;  // ← THIS WAS MISSING!
 const onlineUsers = new Set();
+
 // ─────────────────────────────────────────────────────────
 // INIT - ✅ FIXED FOR DIGITALOCEAN
 // ─────────────────────────────────────────────────────────
 export const initSocket = (server) => {
+    // ✅ Guard: Return if already initialized
+    if (isInitialized && io) {
+        console.log('⚠️ Socket.IO already initialized, returning existing instance');
+        return io;
+    }
+
     const allowedOrigins = [
         process.env.CLIENT_URL,
         'http://localhost:5173',
         'http://localhost:3000',
         'https://marriagesunnaoverseas.com',
-        'https://www.marriagesunnaoverseas.com'
+        'https://www.marriagesunnaoverseas.com',
+        'https://marriage-sunna-overseas-wceze.ondigitalocean.app'
     ].filter(Boolean);
 
-    io = new Server(server, {
-        cors: {
-            origin: allowedOrigins,
-            methods: ["GET", "POST"],
-            credentials: true
-        },
-        // ✅ CRITICAL: DigitalOcean-specific configuration
-        path: '/api/socket.io/',
-        transports: ['polling'],  // ✅ Polling first for reliability
-        allowUpgrades: true,
-        pingTimeout: 60000,
-        pingInterval: 25000,
-        connectTimeout: 45000,
-        maxHttpBufferSize: 1e6,
-        // ✅ Important for DigitalOcean's load balancer
-        allowEIO3: true,
-        serveClient: false,
-    });
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔌 Initializing Socket.IO (FIRST TIME)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📡 Server instance:', !!server);
+    console.log('📡 Allowed CORS origins:', allowedOrigins);
+    console.log('📡 Socket.IO path: /socket.io/');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    io.on('connection', (socket) => {
-        console.log('✅ User connected:', socket.id);
-
-        socket.on('join', (userId) => {
-            socket.join(`user_${userId}`);
-            onlineUsers.add(String(userId));
-            io.emit('user_online', userId);
-            console.log(`👤 User ${userId} joined room`);
+    try {
+        io = new Server(server, {
+            cors: {
+                origin: allowedOrigins,
+                methods: ["GET", "POST"],
+                credentials: true
+            },
+            path: '/socket.io/',
+            transports: ['polling', 'websocket'],
+            allowUpgrades: true,
+            pingTimeout: 60000,
+            pingInterval: 25000,
+            connectTimeout: 45000,
+            maxHttpBufferSize: 1e6,
+            allowEIO3: true,
+            serveClient: false,
         });
 
-        socket.on('typing', ({ to, from }) => {
-            io.to(`user_${to}`).emit('typing', { from });
-        });
+        console.log('✅ Socket.IO Server instance created');
+        console.log('✅ Socket.IO listening on path:', io.path());
 
-        socket.on('stop_typing', ({ to, from }) => {
-            io.to(`user_${to}`).emit('stop_typing', { from });
-        });
+        io.on('connection', (socket) => {
+            console.log('✅ NEW Socket connection:', socket.id);
 
-        socket.on('disconnect', (reason) => {
-            console.log('❌ User disconnected:', socket.id, 'Reason:', reason);
+            socket.on('join', (userId) => {
+                const userRoom = `user_${userId}`;
+                socket.join(userRoom);
+                onlineUsers.add(String(userId));
+                io.emit('user_online', userId);
+                console.log(`👤 User ${userId} joined room: ${userRoom}`);
+            });
 
-            for (const userId of onlineUsers) {
-                const rooms = io.sockets.adapter.sids.get(socket.id);
-                if (rooms && rooms.has(`user_${userId}`)) {
-                    onlineUsers.delete(userId);
-                    io.emit('user_offline', userId);
-                    break;
+            socket.on('typing', ({ to, from }) => {
+                io.to(`user_${to}`).emit('typing', { from });
+            });
+
+            socket.on('stop_typing', ({ to, from }) => {
+                io.to(`user_${to}`).emit('stop_typing', { from });
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log('❌ Socket disconnected:', socket.id, 'Reason:', reason);
+
+                for (const userId of onlineUsers) {
+                    const rooms = Array.from(socket.rooms);
+                    if (rooms.includes(`user_${userId}`)) {
+                        onlineUsers.delete(userId);
+                        io.emit('user_offline', userId);
+                        console.log(`⚫ User ${userId} went offline`);
+                        break;
+                    }
                 }
-            }
+            });
+
+            socket.on('error', (error) => {
+                console.error('🔌 Socket error:', error);
+            });
         });
 
-        socket.on('error', (error) => {
-            console.error('🔌 Socket error:', error);
-        });
-    });
+        isInitialized = true;
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ Socket.IO initialization COMPLETE');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        return io;
 
-    console.log('✅ Socket.IO configured with CORS origins:', allowedOrigins);
-    return io;
+    } catch (error) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ Socket.IO initialization FAILED');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+        throw error;
+    }
 };
-
 
 export const getIO = () => {
-    if (!io) throw new Error('Socket not initialized');
+    if (!io) {
+        throw new Error('❌ Socket.IO not initialized! Call initSocket first.');
+    }
     return io;
 };
 
-
+export const isUserOnline = (userId) => onlineUsers.has(String(userId));
 
 // ─────────────────────────────────────────────────────────
 // 🔔 NOTIFICATION HELPER (DB + SOCKET)
@@ -117,15 +152,12 @@ export const createNotification = async ({
             sender_image,
         });
 
+        console.log(`🔔 Notification sent to user ${userId}:`, type);
         return notification;
     } catch (err) {
-        console.error('Notification error:', err);
+        console.error('❌ Notification error:', err);
     }
 };
-
-
-export const isUserOnline = (userId) =>
-    onlineUsers.has(String(userId));
 
 // ─────────────────────────────────────────────────────────
 // 💌 INTEREST EVENTS
@@ -140,17 +172,16 @@ export const notifyInterestReceived = async (toUserId, data) => {
         sender_image: data.sender_avatar_url || null,
     });
 
-    // ✅ Send email using new template with full user and profile data
     try {
         if (data.toUser && data.senderUser && data.toUserEmail) {
             await sendInterestReceivedEmail(
-                data.toUser,           // Recipient User model
-                data.senderUser,       // Sender User model
-                data.senderProfile     // Sender Profile model
+                data.toUser,
+                data.senderUser,
+                data.senderProfile
             );
         }
     } catch (error) {
-        console.error('Error sending interest received email:', error);
+        console.error('❌ Error sending interest received email:', error);
     }
 };
 
@@ -164,17 +195,16 @@ export const notifyInterestAccepted = async (toUserId, data) => {
         sender_image: data.accepted_by_avatar_url || null,
     });
 
-    // ✅ Send interest accepted email (waiting for guardian approval)
     try {
         if (data.senderUser && data.acceptedByUser && data.fromUserEmail) {
             await sendInterestAcceptedEmail(
-                data.senderUser,        // Original sender User model
-                data.acceptedByUser,    // Person who accepted User model
-                data.acceptedByProfile  // Person who accepted Profile model
+                data.senderUser,
+                data.acceptedByUser,
+                data.acceptedByProfile
             );
         }
     } catch (error) {
-        console.error('Error sending interest accepted email:', error);
+        console.error('❌ Error sending interest accepted email:', error);
     }
 };
 
@@ -187,7 +217,6 @@ export const notifyInterestDeclined = async (toUserId, data) => {
         data,
         sender_image: data.declined_by_avatar_url || null,
     });
-    // No email for declined interests
 };
 
 export const notifyInterestCancelled = async (toUserId, data) => {
@@ -199,14 +228,12 @@ export const notifyInterestCancelled = async (toUserId, data) => {
         data,
         sender_image: data.cancelled_by_avatar_url || null,
     });
-    // No email for cancelled interests
 };
 
 // ─────────────────────────────────────────────────────────
-// 💞 MATCH - Both families approved! Chat unlocked!
+// 💞 MATCH
 // ─────────────────────────────────────────────────────────
 export const notifyNewMatch = async (user1, user2, data) => {
-    // Notify user 1
     await createNotification({
         userId: user1,
         type: 'new_match',
@@ -216,7 +243,6 @@ export const notifyNewMatch = async (user1, user2, data) => {
         sender_image: data.user2_avatar_url || null,
     });
 
-    // Notify user 2
     await createNotification({
         userId: user2,
         type: 'new_match',
@@ -226,14 +252,13 @@ export const notifyNewMatch = async (user1, user2, data) => {
         sender_image: data.user1_avatar_url || null,
     });
 
-    // ✅ Send match created email to both users with full profiles
     if (data.user1Model && data.user2Model && data.user1Profile && data.user2Profile) {
         try {
             await sendMatchCreatedEmail(
-                data.user1Model,    // User 1 User model
-                data.user2Model,    // User 2 User model
-                data.user1Profile,  // User 1 Profile model
-                data.user2Profile   // User 2 Profile model
+                data.user1Model,
+                data.user2Model,
+                data.user1Profile,
+                data.user2Profile
             );
         } catch (error) {
             console.error('❌ Error sending match created email:', error);
@@ -254,7 +279,6 @@ export const notifyGuardianAssigned = async (userId, data) => {
         sender_image: data.ward_avatar_url || null,
     });
 
-    // Send basic email notification
     if (data.guardianEmail) {
         const { sendMail } = await import('../services/emailService.js');
         await sendMail({
@@ -263,19 +287,8 @@ export const notifyGuardianAssigned = async (userId, data) => {
             html: `
                 <h1>You've Been Assigned as Guardian 🤝</h1>
                 <p>Assalamu Alaikum,</p>
-                <p><strong>${data.ward_name}</strong> has assigned you as their guardian on Marriage Sunna.</p>
-                
-                <div class="info-box">
-                    <p>As a guardian, you can:</p>
-                    <p>• Review interests sent to ${data.ward_name}</p>
-                    <p>• Approve or decline matches</p>
-                    <p>• Help guide their marriage journey</p>
-                </div>
-
-                <a href="${process.env.CLIENT_URL}/guardian" class="button">View Guardian Dashboard</a>
-
-                <p>JazakAllah Khair for your support!</p>
-                <p><strong>The Marriage Sunna Team</strong></p>
+                <p><strong>${data.ward_name}</strong> has assigned you as their guardian.</p>
+                <a href="${process.env.CLIENT_URL}/guardian">View Dashboard</a>
             `
         });
     }
@@ -290,7 +303,6 @@ export const notifyGuardianRemoved = async (userId, data) => {
         data,
         sender_image: data.ward_avatar_url || null,
     });
-    // No email needed for removal
 };
 
 export const notifyWardAdded = async (userId, data) => {
@@ -302,7 +314,6 @@ export const notifyWardAdded = async (userId, data) => {
         data,
         sender_image: data.guardian_avatar_url || null,
     });
-    // No email needed
 };
 
 export const notifyWardRemoved = async (userId, data) => {
@@ -314,7 +325,6 @@ export const notifyWardRemoved = async (userId, data) => {
         data,
         sender_image: data.guardian_avatar_url || null,
     });
-    // No email needed
 };
 
 export const notifyGuardianApproved = async (userId, data) => {
@@ -327,17 +337,12 @@ export const notifyGuardianApproved = async (userId, data) => {
         sender_image: data.guardian_avatar_url || null,
     });
 
-    // ✅ Send guardian approved email
     if (data.wardUser && data.guardian_name && data.other_person_name) {
         await sendGuardianApprovedEmail(
-            data.wardUser,           // Ward User model
-            data.guardian_name,      // Guardian name
-            data.other_person_name   // Other person's name
-        ).catch((exception) => {
-            console.error("Error sending guardian approved email:", exception);
-        });
-    } else {
-        console.log("sendGuardianApprovedEmail email send failed");
+            data.wardUser,
+            data.guardian_name,
+            data.other_person_name
+        ).catch(console.error);
     }
 };
 
@@ -351,17 +356,16 @@ export const notifyGuardianRejected = async (userId, data) => {
         sender_image: data.guardian_avatar_url || null,
     });
 
-    // ✅ Send guardian rejected email
     try {
         if (data.wardUser && data.guardian_name && data.other_person_name) {
             await sendGuardianRejectedEmail(
-                data.wardUser,           // Ward User model
-                data.guardian_name,      // Guardian name
-                data.other_person_name   // Other person's name
+                data.wardUser,
+                data.guardian_name,
+                data.other_person_name
             );
         }
     } catch (error) {
-        console.error("Error sending guardian rejected email:", error);
+        console.error("❌ Error sending guardian rejected email:", error);
     }
 };
 
@@ -378,24 +382,15 @@ export const notifyNewMessage = async (toUserId, message) => {
         sender_image: message.sender_avatar_url || null,
     });
 
-    // Only send email if user is offline
     if (!isUserOnline(toUserId) && message.toUserEmail) {
         const { sendMail } = await import('../services/emailService.js');
         await sendMail({
             to: message.toUserEmail,
-            subject: `New Message from ${message.sender_name} - Marriage Sunna`,
+            subject: `New Message from ${message.sender_name}`,
             html: `
                 <h1>New Message 💬</h1>
-                <p>Assalamu Alaikum,</p>
-                <p>You received a new message from <strong>${message.sender_name}</strong>:</p>
-                
-                <div class="info-box">
-                    <p style="font-style: italic;">"${message.body}"</p>
-                </div>
-
-                <a href="${process.env.CLIENT_URL}/messages" class="button">Reply Now</a>
-
-                <p><strong>The Marriage Sunna Team</strong></p>
+                <p>"${message.body}"</p>
+                <a href="${process.env.CLIENT_URL}/messages">Reply Now</a>
             `
         });
     }
