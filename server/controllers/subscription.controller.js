@@ -148,16 +148,16 @@ const createStripeSession = async (req, res, user, planType, planConfig) => {
 
         console.log('💳 Creating Stripe session:', { userId: user.id, planType, priceId });
 
-        // ✅ Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [{
-                price: priceId, // Use the priceId from request
+                price: priceId,
                 quantity: 1,
             }],
             mode: 'subscription',
-            success_url: `${process.env.CLIENT_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `${process.env.CLIENT_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}&processor=stripe`,
             cancel_url: `${process.env.CLIENT_URL}/subscription/cancel`,
+
             client_reference_id: user.id.toString(),
             metadata: {
                 userId: user.id.toString(),
@@ -170,7 +170,6 @@ const createStripeSession = async (req, res, user, planType, planConfig) => {
 
         console.log('✅ Stripe session created:', session.id);
 
-        // ✅ Return in correct format
         return res.json({
             success: true,
             url: session.url,
@@ -475,7 +474,6 @@ export const createPaymentSession = async (req, res) => {
         // Load plans if empty
         if (Object.keys(PLANS).length === 0) {
             console.log('⚠️ PLANS empty, loading...');
-            // Call getPlans without res to just populate PLANS
             await getPlans();
         }
 
@@ -492,8 +490,11 @@ export const createPaymentSession = async (req, res) => {
 
         console.log('✅ Plan found:', planConfig);
 
-        // Only Stripe for now
-        if (paymentMethod !== 'stripe') {
+        // Route to payment method
+        if (paymentMethod === 'stripe') {
+            console.log('💳 Routing to Stripe...');
+            return await createStripeSession(req, res, user, planType, planConfig);
+        } else {
             console.log('⚠️ Unsupported payment method:', paymentMethod);
             return res.status(501).json({
                 success: false,
@@ -501,42 +502,8 @@ export const createPaymentSession = async (req, res) => {
             });
         }
 
-        console.log('💳 Creating Stripe session...');
-
-        // Create Stripe session
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [{
-                price: priceId,
-                quantity: 1,
-            }],
-            mode: 'subscription',
-            success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/subscription/cancel`,
-            client_reference_id: userId.toString(),
-            metadata: {
-                userId: userId.toString(),
-                planType: planType,
-                credits: planConfig.credits || 0,
-                durationDays: planConfig.durationDays || 0
-            },
-            billing_address_collection: 'required',
-        });
-
-        console.log('✅ Stripe session created:', session.id);
-        console.log('🔗 Checkout URL:', session.url);
-
-        return res.json({
-            success: true,
-            url: session.url,
-            sessionId: session.id
-        });
-
     } catch (error) {
-        console.error('❌ createPaymentSession error:');
-        console.error('Error message:', error);
-        console.error('Error stack:', error);
-
+        console.error('❌ createPaymentSession error:', error);
         return res.status(500).json({
             success: false,
             error: error || 'Failed to create payment session'

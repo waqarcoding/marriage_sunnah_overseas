@@ -276,7 +276,7 @@ const startServer = async () => {
       console.log('='.repeat(70));
       console.log(`📡 Webhook: ${baseUrl}/api/subscription/webhook`);
       console.log(`🏥 Health: ${baseUrl}/api/health`);
-      console.log(`🔌 Socket.IO: ${baseUrl}/socket.io/`);
+      console.log(`🔌 Socket.IO: ${baseUrl}/api/socket.io/?EIO=4&transport=polling`);
       console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
       console.log(`💬 WebSocket: ${process.env.SOCKET_ENABLED !== 'false' ? 'Enabled ✓' : 'Disabled ✗'}`);

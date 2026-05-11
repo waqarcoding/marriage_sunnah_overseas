@@ -25,21 +25,43 @@ export default function SubscriptionSuccess() {
 
     const verifyPayment = async () => {
         try {
-            if (processor === 'stripe' && sessionId) {
-                const response = await SubscriptionService.verifySession(sessionId);
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlSessionId = urlParams.get('session_id');
+            const urlOrderId = urlParams.get('order_id');
+            const urlProcessor = urlParams.get('processor') || processor;
+
+            console.log('🔍 Payment verification started');
+            console.log('   Session ID:', sessionId || urlSessionId);
+            console.log('   Order ID:', orderId || urlOrderId);
+            console.log('   Processor:', urlProcessor);
+
+            if ((urlProcessor === 'stripe' || processor === 'stripe') && (sessionId || urlSessionId)) {
+                const sessionToVerify = sessionId || urlSessionId;
+                console.log('✅ Verifying Stripe session:', sessionToVerify);
+
+                const response = await SubscriptionService.verifySession(sessionToVerify);
+
                 if (response.success) {
+                    console.log('✅ Payment verified successfully');
                     setPaymentData(response.session);
                 } else {
+                    console.error('❌ Verification failed:', response);
                     setError('Payment verification failed');
                 }
-            } else if ((processor === 'easypaisa' || processor === 'jazzcash') && orderId) {
+            } else if ((urlProcessor === 'easypaisa' || urlProcessor === 'jazzcash' || processor === 'easypaisa' || processor === 'jazzcash') && (orderId || urlOrderId)) {
                 // Payment already verified via callback
-                setPaymentData({ orderId, processor });
+                console.log('✅ Local payment verified');
+                setPaymentData({ orderId: orderId || urlOrderId, processor: urlProcessor });
             } else {
-                setError('Invalid payment session');
+                console.error('❌ Missing payment parameters');
+                console.error('   sessionId:', sessionId || urlSessionId);
+                console.error('   orderId:', orderId || urlOrderId);
+                console.error('   processor:', urlProcessor);
+                setError('Invalid payment session - missing payment parameters');
             }
         } catch (error) {
-            console.error('Verification error:', error);
+            console.error('❌ Verification error:', error);
             setError(error.message || 'Failed to verify payment');
         } finally {
             setVerifying(false);
