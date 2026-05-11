@@ -230,12 +230,13 @@ const startServer = async () => {
 
     // ✅ Initialize Socket.IO with proper error handling
     try {
+      console.log('initialized Socket Started');
       initSocket(server);
+      console.log('initialized Socket Ended');
       console.log('✅ Socket.IO initialized successfully');
     } catch (socketError) {
-      // socketError is 'unknown' type, so cast or safely access message
       const msg = socketError instanceof Error ? socketError.message : String(socketError);
-      console.error('⚠️  Socket.IO initialization failed:', msg);
+      console.error('⚠️  Socket.IO initialization failed:', msg);  // ← Look for this!
       console.log('   Server will continue without real-time features');
     }
 
@@ -258,9 +259,20 @@ const startServer = async () => {
     }
 
     // @ts-ignore
+    // @ts-ignore
     server.listen(PORT, "0.0.0.0", () => {
       const isProduction = process.env.NODE_ENV === 'production';
       const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+      // ✅ Initialize Socket.IO AFTER server is listening
+      try {
+        console.log('🔌 Initializing Socket.IO...');
+        initSocket(server);
+        console.log('✅ Socket.IO initialized successfully');
+      } catch (socketError) {
+        const msg = socketError instanceof Error ? socketError.message : String(socketError);
+        console.error('⚠️  Socket.IO initialization failed:', msg);
+      }
 
       console.log('\n' + '='.repeat(70));
       console.log(`✅ Server running on port ${PORT}`);
@@ -269,6 +281,7 @@ const startServer = async () => {
       console.log('='.repeat(70));
       console.log(`📡 Webhook: ${baseUrl}/api/subscription/webhook`);
       console.log(`🏥 Health: ${baseUrl}/api/health`);
+      console.log(`🔌 Socket.IO: ${baseUrl}/api/socket.io/`);  // ✅ Add this too
       console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
       console.log(`💬 WebSocket: ${process.env.SOCKET_ENABLED !== 'false' ? 'Enabled ✓' : 'Disabled ✗'}`);

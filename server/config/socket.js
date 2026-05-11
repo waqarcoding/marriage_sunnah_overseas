@@ -13,38 +13,6 @@ import {
 
 let io;
 const onlineUsers = new Set();
-
-// ─────────────────────────────────────────────────────────
-// 🔔 NOTIFICATION HELPER (DB + SOCKET)
-// ─────────────────────────────────────────────────────────
-export const createNotification = async ({
-    userId,
-    type,
-    title,
-    message,
-    data = {},
-    sender_image = null,
-}) => {
-    try {
-        const notification = await db.Notification.create({
-            user_id: userId,
-            type,
-            title,
-            message,
-            data: { ...data, sender_image },
-        });
-
-        io.to(`user_${userId}`).emit('notification', {
-            ...notification.toJSON(),
-            sender_image,
-        });
-
-        return notification;
-    } catch (err) {
-        console.error('Notification error:', err);
-    }
-};
-
 // ─────────────────────────────────────────────────────────
 // INIT - ✅ FIXED FOR DIGITALOCEAN
 // ─────────────────────────────────────────────────────────
@@ -121,6 +89,40 @@ export const getIO = () => {
     if (!io) throw new Error('Socket not initialized');
     return io;
 };
+
+
+
+// ─────────────────────────────────────────────────────────
+// 🔔 NOTIFICATION HELPER (DB + SOCKET)
+// ─────────────────────────────────────────────────────────
+export const createNotification = async ({
+    userId,
+    type,
+    title,
+    message,
+    data = {},
+    sender_image = null,
+}) => {
+    try {
+        const notification = await db.Notification.create({
+            user_id: userId,
+            type,
+            title,
+            message,
+            data: { ...data, sender_image },
+        });
+
+        io.to(`user_${userId}`).emit('notification', {
+            ...notification.toJSON(),
+            sender_image,
+        });
+
+        return notification;
+    } catch (err) {
+        console.error('Notification error:', err);
+    }
+};
+
 
 export const isUserOnline = (userId) =>
     onlineUsers.has(String(userId));

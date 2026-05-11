@@ -54,16 +54,12 @@ export const GUARDIAN_TABS = [
 
 async function getUserInfo() {
   const tokenData = AuthService.getTokenData();
-  const user = await AuthService.getCurrentUser();
-  const avatar_url = (user.profile && Array.isArray(user.profile.images) && user.profile.images.length > 0)
-    ? user.profile.images[0]
-    : (user.profile?.avatar_url || user.avatar_url || null);
 
 
   if (!tokenData) return { name: "User", avatar: null, role: null };
   return {
     name: tokenData.name || tokenData.userName || tokenData.user_name || "User",
-    avatar: avatar_url || tokenData.avatar || tokenData.avatar_url || tokenData.profileImage || tokenData.profile_image || null,
+    avatar: tokenData.avatar || tokenData.avatar_url || tokenData.profileImage || tokenData.profile_image || null,
     role: tokenData.role || null,
   };
 }

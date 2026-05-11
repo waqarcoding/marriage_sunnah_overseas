@@ -139,14 +139,6 @@ export default function SettingsPage() {
 
 
 
-    const user = AuthService.getCurrentUser();
-    const avatar_url = (user.profile && Array.isArray(user.profile.images) && user.profile.images.length > 0)
-        ? user.profile.images[0]
-        : (user.profile?.avatar_url || user.avatar_url || null);
-
-
-
-
 
     // ✅ isPro is now state — not an async function called inline in JSX
     const [isPro, setIsPro] = useState(false);
@@ -283,9 +275,9 @@ export default function SettingsPage() {
                         >
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{ background: "var(--secondary,#f0f5f3)", border: "none" }}>
-                                {avatar_url ? (
+                                {tokenData?.avatar_url ? (
                                     <img
-                                        src={avatar_url}
+                                        src={tokenData.avatar_url}
                                         alt={tokenData?.name || "Profile photo"}
                                         className="w-9 h-9 rounded-lg object-cover"
                                         style={{ border: "none" }}
@@ -329,12 +321,12 @@ export default function SettingsPage() {
                         {tokenData?.role !== "guardian" && (
                             <NavRow
                                 icon={BadgeCheck}
+
                                 label="Get Verified Badge"
                                 sublabel="Apply for account verification"
                                 onClick={() => navigate("/individual/verification")}
                             />
                         )}
-
 
                         {tokenData?.role !== "guardian" && (
                             <NavRow
@@ -421,7 +413,7 @@ export default function SettingsPage() {
 
                     {/* ── Support ── */}
                     <SectionCard title="Support">
-                        <NavRow icon={Info} label="About Marriage Sunna"
+                        <NavRow icon={Info} label="About Marriage Sunnah"
                             sublabel="Version 1.0.0"
                             onClick={() => { }} />
                         <NavRow icon={Shield} label="Privacy Policy"

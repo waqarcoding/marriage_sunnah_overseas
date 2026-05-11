@@ -3,7 +3,7 @@ import * as subscriptionController from '../controllers/subscription.controller.
 import { authenticate } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
-
+router.post('/webhook', subscriptionController.handleWebhook);
 // ✅ NEW: Get available plans
 router.get('/plans', subscriptionController.getPlans);
 
@@ -32,12 +32,7 @@ router.get('/verify-session', subscriptionController.verifySession);
 // WEBHOOKS & CALLBACKS
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Stripe webhook (must use raw body)
-router.post(
-    '/webhook/stripe',
-    express.raw({ type: 'application/json' }),
-    subscriptionController.handleWebhook
-);
+
 
 // ✅ NEW: EasyPaisa callback
 router.post('/easypaisa/callback', subscriptionController.handleEasyPaisaCallback);
