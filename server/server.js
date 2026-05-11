@@ -27,6 +27,7 @@ import guardianRoutes from "./routes/guardian.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import subscriptionRoutes from './routes/subscription.routes.js';
 import referralRoutes from './routes/referral.routes.js';
+import { handleWebhook } from './controllers/subscription.controller.js'; // ✅ Direct import
 import { initSocket } from "./config/socket.js";
 
 // ✅ Import cron job schedulers
@@ -71,20 +72,19 @@ app.use((req, res, next) => {
   next();
 });
 
-
-/* ---------------- CRITICAL: Webhook route BEFORE bodyParser ---------------- */
-// This route needs raw body for Stripe signature verification
-app.use('/api/subscription/webhook',
+/* ---------------- CRITICAL: Webhook routes BEFORE bodyParser ---------------- */
+// express.raw() applied ONLY to the webhook endpoint, not the entire router
+app.post('/api/subscription/webhook',
   express.raw({ type: 'application/json' }),
-  subscriptionRoutes
+  handleWebhook
 );
 // Handle without /api prefix (for ingress stripping)
-app.use('/subscription/webhook',
+app.post('/subscription/webhook',
   express.raw({ type: 'application/json' }),
-  subscriptionRoutes
+  handleWebhook
 );
 
-/* ---------------- MIDDLEWARE (After webhook route) ---------------- */
+/* ---------------- MIDDLEWARE (After webhook routes) ---------------- */
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

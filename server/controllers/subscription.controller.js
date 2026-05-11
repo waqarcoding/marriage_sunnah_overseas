@@ -513,6 +513,7 @@ export const createPaymentSession = async (req, res) => {
 
 // ── Handle Stripe Webhook ─────────────────────────────────────────────────────
 export const handleWebhook = async (req, res) => {
+    console.log('🔔 Webhook hit received'); // add this
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -525,7 +526,7 @@ export const handleWebhook = async (req, res) => {
         return res.send(`Webhook Error: ${err}`);
     }
 
-    console.log(`🔔 Webhook received: ${event.type}`);
+
 
     try {
         switch (event.type) {
