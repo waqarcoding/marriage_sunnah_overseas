@@ -109,6 +109,14 @@ export const signup = async (req, res) => {
 
     await t.commit();
 
+    try {
+      await sendWelcomeEmail(user);
+    } catch (emailErr) {
+      console.error("Failed to send welcome email:", emailErr);
+      // Don't fail signup if email fails
+    }
+
+
     const otpCode = await createOtp(user.id, true);
     console.log(`OTP for user ${user.id}: ${otpCode}`);
     const newuserid = user.id;
@@ -138,12 +146,6 @@ export const signup = async (req, res) => {
     // Import sendWelcomeEmail at the top of this file:
     // import { sendWelcomeEmail } from '../mail/service.js';
 
-    try {
-      await sendWelcomeEmail(user);
-    } catch (emailErr) {
-      console.error("Failed to send welcome email:", emailErr);
-      // Don't fail signup if email fails
-    }
 
     return res.status(201).json({
       success: true,

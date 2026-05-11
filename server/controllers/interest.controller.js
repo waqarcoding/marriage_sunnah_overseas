@@ -97,6 +97,23 @@ export const sendInterest = async (req, res) => {
         const fromUserId = req.user.id;
         const { interestId, isSuperLike = false } = req.body;
 
+
+        const [fromGuardian, toGuardian, fromUser, toUser] = await Promise.all([
+            getGuardianOf(fromUserId),
+            getGuardianOf(toUserId),
+            User.findByPk(fromUserId, { attributes: ['name'] }),
+            User.findByPk(toUserId, { attributes: ['name'] }),
+        ]);
+
+        if (!fromGuardian || !toGuardian) {
+            return res.json({
+                error: !fromGuardian
+                    ? `${fromUser?.name || `User ${fromUserId}`} has no guardian linked.`
+                    : `${toUser?.name || `User ${toUserId}`} has no guardian linked.`
+            });
+        }
+
+
         // ✅ DEBUG LOGGING
         console.log('=== DEBUG sendInterest ===');
         console.log('req.user:', req.user);
