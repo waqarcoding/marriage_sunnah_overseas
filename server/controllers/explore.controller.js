@@ -249,7 +249,8 @@ export const getExplore = async (req, res) => {
         // ✅ Build base where clause
         const baseWhere = {
             individual_id: { [Op.notIn]: excludeIds },
-            is_profile_completed: true
+            is_profile_completed: 1
+
         };
 
 
