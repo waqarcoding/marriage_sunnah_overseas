@@ -248,8 +248,10 @@ export const getExplore = async (req, res) => {
 
         // ✅ Build base where clause
         const baseWhere = {
-            individual_id: { [Op.notIn]: excludeIds }
+            individual_id: { [Op.notIn]: excludeIds },
+            is_profile_completed: true
         };
+
 
         // ✅ Gender filter - opposite gender only
         if (currentProfile.gender) {
