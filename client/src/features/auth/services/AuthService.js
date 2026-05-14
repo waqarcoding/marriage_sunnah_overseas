@@ -102,6 +102,9 @@ class AuthApi {
                     navigate("/individual/show-pin", { replace: true });
                 }
                 */
+                else {
+                    navigate("/", { replace: true });
+                }
 
 
                 return { isProfileCompleted, isVerified };

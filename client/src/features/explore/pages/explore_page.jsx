@@ -296,7 +296,7 @@ export default function ExplorePage() {
     const qc = useQueryClient();
 
     useEffect(() => {
-        AuthService.checkProfile(navigate);
+
         fetchProfiles();
     }, []);
 
