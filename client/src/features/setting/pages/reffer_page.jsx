@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthService from "../../auth/services/AuthService";
 import SettingService from "../../setting/services/SettingService";
+import settings from "../../../context/settings";
+
 
 const PRIMARY = "#1B4D3E";
 const LIGHT_GREEN = "#f0f7f5";
@@ -60,7 +62,7 @@ const UserIcon = () => (
 function ReferralPage() {
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
-    const [activeTab, setActiveTab] = useState("overview"); // overview, myReferrals, referredBy
+    const [activeTab, setActiveTab] = useState("overview");
     const [loading, setLoading] = useState(true);
 
     // State
@@ -73,6 +75,11 @@ function ReferralPage() {
         referred_users: []
     });
     const [referrer, setReferrer] = useState(null);
+
+    // ✅ Get dynamic values from settings
+    const commissionRate = settings.referralCommissionPercentage;
+    const referrerBonus = settings.referralCreditsReferrer;
+    const refereeBonus = settings.referralCreditsReferee;
 
     // Fetch current user and referral data
     useEffect(() => {
@@ -152,8 +159,8 @@ function ReferralPage() {
     const handleShare = () => {
         if (navigator.share) {
             navigator.share({
-                title: "Marriage Sunna",
-                text: "Join using my referral link and get 50 credits!",
+                title: settings.siteName,
+                text: `Join ${settings.siteName} using my referral link and get ${refereeBonus} credits!`,
                 url: referralLink,
             });
         } else {
@@ -201,7 +208,7 @@ function ReferralPage() {
             <div style={{ marginBottom: 20 }}>
                 <h2 style={{ margin: 0, fontSize: 24 }}>Invite & Earn</h2>
                 <p style={{ color: "#777", fontSize: 14, marginTop: 6 }}>
-                    Share your link and earn 10% commission on every credit your friends earn
+                    Share your link and earn {commissionRate}% commission on every credit your friends earn
                 </p>
             </div>
 
@@ -217,8 +224,8 @@ function ReferralPage() {
                 <h4 style={{ margin: "0 0 14px 0", fontSize: 16 }}>How it Works</h4>
                 {[
                     { step: "Share your referral link", detail: "Copy and send to friends" },
-                    { step: "Friend signs up using your link", detail: "They get 50 bonus credits" },
-                    { step: "You earn commission", detail: "Get 10% of all credits they earn" }
+                    { step: "Friend signs up using your link", detail: `They get ${refereeBonus} bonus credits` },
+                    { step: "You earn commission", detail: `Get ${commissionRate}% of all credits they earn` }
                 ].map((item, i) => (
                     <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}>
                         <div style={{
@@ -255,18 +262,30 @@ function ReferralPage() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                     <div>
                         <p style={{ fontSize: 12, color: "#666", margin: 0 }}>You get</p>
-                        <h3 style={{ margin: "4px 0 0 0", color: PRIMARY }}>10% Commission</h3>
+                        <h3 style={{ margin: "4px 0 0 0", color: PRIMARY }}>{referrerBonus} Credits</h3>
                         <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0 0" }}>
-                            On all credits they earn
+                            Signup bonus
                         </p>
                     </div>
                     <div>
-                        <p style={{ fontSize: 12, color: "#666", margin: 0 }}>They get</p>
-                        <h3 style={{ margin: "4px 0 0 0", color: PRIMARY }}>50 Credits</h3>
+                        <p style={{ fontSize: 12, color: "#666", margin: 0 }}>Plus</p>
+                        <h3 style={{ margin: "4px 0 0 0", color: PRIMARY }}>{commissionRate}% Commission</h3>
                         <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0 0" }}>
-                            Bonus on signup
+                            On their purchases
                         </p>
                     </div>
+                </div>
+                <div style={{
+                    marginTop: 16,
+                    paddingTop: 16,
+                    borderTop: `1px solid ${BORDER}`,
+                    textAlign: "center"
+                }}>
+                    <p style={{ fontSize: 12, color: "#666", margin: 0 }}>Your friend gets</p>
+                    <h3 style={{ margin: "4px 0 0 0", color: PRIMARY }}>{refereeBonus} Credits</h3>
+                    <p style={{ fontSize: 11, color: "#888", margin: "4px 0 0 0" }}>
+                        Bonus on signup
+                    </p>
                 </div>
             </div>
 

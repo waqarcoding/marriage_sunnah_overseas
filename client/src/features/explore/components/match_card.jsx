@@ -81,10 +81,11 @@ function Pill({ children, icon: Icon }) {
             borderRadius: "8px",
             fontSize: "11px",
             fontWeight: "500",
-            background: "#f0f5f3",
+            background: "rgba(255,255,255,0.92)",
             color: "#1B4D3E",
             border: "0.5px solid rgba(27,77,62,0.10)",
-            letterSpacing: "0.01em"
+            letterSpacing: "0.01em",
+            backdropFilter: "blur(8px)"
         }}>
             {Icon && <Icon style={{ width: "12px", height: "12px" }} />}
             {children}
@@ -151,7 +152,7 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
     const [isShowLastSeen, setIsShowLastSeen] = useState(false);
     const [isPro, setIsPro] = useState(false);
     const [iamPro, setiamPro] = useState(false);
-    const [showChatDialog, setShowChatDialog] = useState(false); // Chat dialog state
+    const [showChatDialog, setShowChatDialog] = useState(false);
     const navigate = useNavigate();
 
     const photos = parseImages(profile);
@@ -190,12 +191,10 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
         navigate("/individual/profile", { state: { profile } });
     };
 
-    // Handle chat button click
     const handleChatClick = () => {
         setShowChatDialog(true);
     };
 
-    // Handle confirm chat
     const handleConfirmChat = () => {
         setShowChatDialog(false);
         if (profile.individual_id) {
@@ -211,7 +210,6 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
         }
     };
 
-    // Converts height in inches to a string in feet and inches (e.g., "5' 7\"")
     function formatHeight(heightInches) {
         if (!heightInches || typeof heightInches !== "number") return "";
         const feet = Math.floor(heightInches / 12);
@@ -221,7 +219,6 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
 
     return (
         <>
-            {/* Islamic Chat Dialog */}
             <IslamicChatDialog
                 isOpen={showChatDialog}
                 onClose={() => setShowChatDialog(false)}
@@ -241,14 +238,15 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
                 boxShadow: "0 2px 16px rgba(27,77,62,0.08), 0 1px 4px rgba(0,0,0,0.04)",
                 border: "0.5px solid rgba(27,77,62,0.06)"
             }}>
-                {/* ── Photo area — 70% ── */}
+                {/* ── Photo area with overlay content ── */}
                 <div
                     style={{
                         position: "relative",
-                        height: "70%",
+                        flex: 1,
                         flexShrink: 0,
                         cursor: "pointer",
-                        background: "#f5f5f5"
+                        background: "#f5f5f5",
+                        overflow: "hidden"
                     }}
                     onClick={handlePhotoTap}
                 >
@@ -276,7 +274,7 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
                         pointerEvents: "none"
                     }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                            {isPro ? (
+                            {isPro && (
                                 <div style={{
                                     display: "inline-flex",
                                     alignItems: "center",
@@ -293,7 +291,7 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
                                     <Star style={{ width: "12px", height: "12px", fill: "#854d0e" }} />
                                     Premium
                                 </div>
-                            ) : null}
+                            )}
 
                             {isVerified && (
                                 <div style={{
@@ -316,15 +314,15 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
                         </div>
                     </div>
 
-                    {/* Gradient overlay + name */}
+                    {/* ✅ Gradient overlay + name + interests (moved inside image) */}
                     <div style={{
                         position: "absolute",
                         bottom: 0,
                         left: 0,
                         right: 0,
                         zIndex: 10,
-                        padding: "52px 18px 16px",
-                        background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.24) 50%, transparent 100%)"
+                        padding: "80px 18px 16px",
+                        background: "linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 60%, transparent 100%)"
                     }}>
                         <h2 style={{
                             margin: 0,
@@ -362,64 +360,57 @@ export default function ProfileCard({ profile, onLike, onPass, onSuperLike }) {
                                 )}
                             </div>
                         )}
+
+                        {/* ✅ Interests/Tags moved here */}
+                        <div style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "6px",
+                            marginTop: "10px"
+                        }}>
+                            {profile.profession && <Pill>{profile.profession}</Pill>}
+                            {profile.height_inches && <Pill>{formatHeight(profile.height_inches)}</Pill>}
+                            {profile.marital_status && <Pill>{profile.marital_status}</Pill>}
+                            {profile.sect && <Pill>{profile.sect}</Pill>}
+                            {profile.education && <Pill>{profile.education}</Pill>}
+                        </div>
                     </div>
                 </div>
 
-                {/* ── Info panel — remaining 30% ── */}
+                {/* ✅ Action bar only (fixed at bottom) */}
                 <div style={{
-                    flex: 1,
-                    minHeight: 0,
                     display: "flex",
-                    flexDirection: "column",
-                    background: "#ffffff"
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 16px",
+                    background: "#ffffff",
+                    borderTop: "0.5px solid rgba(27,77,62,0.06)",
+                    flexShrink: 0
                 }}>
-                    {/* Pill tags */}
-                    <div style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "6px",
-                        padding: "14px 16px 10px"
-                    }}>
-                        {profile.profession && <Pill>{profile.profession}</Pill>}
-                        {profile.height_inches && <Pill>{formatHeight(profile.height_inches)}</Pill>}
-                        {profile.marital_status && <Pill>{profile.marital_status}</Pill>}
-                        {profile.sect && <Pill>{profile.sect}</Pill>}
+                    {/* Pass */}
+                    <ActionBtn onClick={onPass} variant="danger">
+                        <X style={{ width: "22px", height: "22px", color: "#ef4444" }} />
+                    </ActionBtn>
 
-                        {profile.education && <Pill>{profile.education}</Pill>}
-                    </div>
+                    {/* Info */}
+                    <ActionBtn onClick={gotoProfile}>
+                        <Info style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
+                    </ActionBtn>
 
-                    {/* Action bar */}
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "14px 16px"
-                    }}>
-                        {/* Pass */}
-                        <ActionBtn onClick={onPass} variant="danger">
-                            <X style={{ width: "22px", height: "22px", color: "#ef4444" }} />
-                        </ActionBtn>
+                    {/* Like — primary large */}
+                    <ActionBtn onClick={onLike} variant="primary" size="lg">
+                        <Heart style={{ width: "28px", height: "28px", color: "#ffffff", fill: "#ffffff" }} />
+                    </ActionBtn>
 
-                        {/* Info */}
-                        <ActionBtn onClick={gotoProfile}>
-                            <Info style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
-                        </ActionBtn>
+                    {/* Message */}
+                    <ActionBtn onClick={handleChatClick} variant="message">
+                        <MessageCircle style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
+                    </ActionBtn>
 
-                        {/* Like — primary large */}
-                        <ActionBtn onClick={onLike} variant="primary" size="lg">
-                            <Heart style={{ width: "28px", height: "28px", color: "#ffffff", fill: "#ffffff" }} />
-                        </ActionBtn>
-
-                        {/* Message - NEW */}
-                        <ActionBtn onClick={handleChatClick} variant="message">
-                            <MessageCircle style={{ width: "20px", height: "20px", color: "#1B4D3E" }} />
-                        </ActionBtn>
-
-                        {/* Super like */}
-                        <ActionBtn onClick={onSuperLike} variant="super">
-                            <Star style={{ width: "22px", height: "22px", color: "#a855f7", fill: "#a855f7" }} />
-                        </ActionBtn>
-                    </div>
+                    {/* Super like */}
+                    <ActionBtn onClick={onSuperLike} variant="super">
+                        <Star style={{ width: "22px", height: "22px", color: "#a855f7", fill: "#a855f7" }} />
+                    </ActionBtn>
                 </div>
             </div>
         </>

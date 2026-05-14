@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -29,6 +29,16 @@ import LinkWithPin from './features/guardian/pages/link_ward_page.jsx';
 import GuardianProfilePage from './features/guardian/pages/guardian_profile_page.jsx';
 import SubscriptionSuccess from './features/subscription/components/subscription_success.jsx';
 
+// ✅ Admin Panel Imports
+
+import AdminDashboard from './features/admin/pages/admin_dashboard_page.jsx';
+import UsersPage from './features/admin/pages/users_page.jsx';
+import VerificationQueue from './features/admin/pages/verification_queue.jsx';
+import SubscriptionsPage from './features/admin/pages/subscriptions_page.jsx';
+import TransactionsPage from './features/admin/pages/transactions_page.jsx';
+import MessagesPage from './features/admin/pages/messages_page.jsx';
+import AdminSettingsPage from './features/admin/pages/admin_settings_page.jsx';
+
 import './theme/index.css';
 import SettingsPage from './features/setting/pages/settings_page.jsx';
 import ChangePassword from './features/setting/components/change_page.jsx';
@@ -39,16 +49,22 @@ import ProfileDetailPage from './features/profile/othersprofile/others_profile_p
 import AuroraBackground from './ui/aurora_background.jsx';
 import Api from './api/Api.js';
 import AuthService from './features/auth/services/AuthService.js';
+import settings from './context/settings.jsx';
+import {
+  LayoutDashboard, Users, CheckCircle, Crown,
+  DollarSign, MessageCircle, Settings, LogOut, Shield,
+  Menu, X
+} from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 10,      // ✅ 10 minutes instead of Infinity
+      staleTime: 1000 * 60 * 10,
       gcTime: 1000 * 60 * 30,
       retry: 1,
-      refetchOnWindowFocus: false,    // ✅ Don't refetch on tab focus
-      refetchOnMount: false,          // ✅ Don't refetch when component mounts
-      refetchOnReconnect: false,      // ✅ Don't refetch on reconnect
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     },
   },
 });
@@ -60,9 +76,18 @@ function isAuthenticated() {
   );
 }
 
+// ✅ Check if admin is authenticated
+
+function isAdminAuthenticated() {
+  const data = AuthService.getTokenData();
+  return data !== null && (data.role === 'admin' || data.role === 'staff');
+}
+
 const logout = () => {
   AuthService.logout();
 };
+
+
 
 // ── Error Boundary Component ──────────────────────────────────────────────────
 function ErrorBoundaryFallback() {
@@ -131,12 +156,18 @@ function RoleAccessDenied() {
 // ── Guards ────────────────────────────────────────────────────────────────────
 function RootGuard() {
   if (!isAuthenticated()) return <Landing />;
-  const role = AuthService.getUserRole();
-  return role === 'guardian'
-    ? <Navigate to="/guardian" replace />
-    : <Navigate to="/individual/explore" replace />;
-}
 
+  const role = AuthService.getUserRole();
+
+  if (role === 'admin' || role === 'staff') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  if (role === 'guardian') {
+    return <Navigate to="/guardian" replace />;
+  }
+  // individual (default)
+  return <Navigate to="/individual/explore" replace />;
+}
 function ProtectedRoute({ children, requireRole = null }) {
   if (localStorage.getItem('isLoggedIn') !== 'true') {
     return <Navigate to="/login" replace />;
@@ -149,6 +180,14 @@ function ProtectedRoute({ children, requireRole = null }) {
     if (userRole !== requireRole) {
       return <RoleAccessDenied />;
     }
+  }
+  return children;
+}
+
+// ✅ Admin Protected Route
+function AdminProtectedRoute({ children }) {
+  if (!isAdminAuthenticated()) {
+    return <Navigate to="/login" replace />;
   }
   return children;
 }
@@ -222,12 +261,10 @@ function IndividualLayout() {
           <ConditionalContent path="/individual/subscription">
             <SubscriptionPage />
           </ConditionalContent>
+          {/* ✅ Add verification here */}
           <ConditionalContent path="/individual/verification">
-            <ProtectedRoute>
-              <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
-            </ProtectedRoute>
+            <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
           </ConditionalContent>
-
         </div>
       </div>
     </AuroraBackground>
@@ -248,7 +285,6 @@ function GuardianLayout() {
       <div className="flex flex-col h-screen" style={{ background: "transparent" }}>
         <AppBar tabs={GUARDIAN_TABS} onLogout={handleLogout} onSidebarLogout={handleLogout} />
         <div className="flex flex-1 min-h-0 pb-16 md:pb-0">
-          {/* ✅ FIXED: Only show on exact /guardian path */}
           {location.pathname === '/guardian' && (
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto' }}>
               <GuardianDashboard />
@@ -276,9 +312,12 @@ function GuardianLayout() {
           <ConditionalContent path="/guardian/referral">
             <ReferralPage />
           </ConditionalContent>
-
           <ConditionalContent path="/guardian/profile">
             <ProfileDetailPage />
+          </ConditionalContent>
+          {/* ✅ Add verification here */}
+          <ConditionalContent path="/guardian/verification">
+            <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
           </ConditionalContent>
         </div>
       </div>
@@ -305,19 +344,208 @@ const router = createBrowserRouter([
 
   { path: '/profilesetup', element: <ProtectedRoute><CompleteProfile /></ProtectedRoute> },
 
-
   {
     path: '/guardian/*',
     element: <ProtectedRoute requireRole="guardian"><GuardianLayout /></ProtectedRoute>,
     errorElement: <ErrorBoundaryFallback />,
   },
-
+  // ✅ REMOVED - verification is now inside individual and guardian layouts
+  // {
+  //   path: '/verification',
+  //   element: (
+  //     <ProtectedRoute>
+  //       <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
+  //     </ProtectedRoute>
+  //   )
+  // },
   {
     path: '/individual/*',
     element: <ProtectedRoute requireRole="individual"><IndividualLayout /></ProtectedRoute>,
     errorElement: <ErrorBoundaryFallback />,
   },
+
+  // ✅ ── Admin Routes ────────────────────────────────────────────────────────
+  {
+    path: '/admin/login',
+    element: < LoginWrapper />
+  },
+  {
+    path: '/admin',
+    element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
+    errorElement: <ErrorBoundaryFallback />,
+    children: [
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'users', element: <UsersPage /> },
+      { path: 'verifications', element: <VerificationQueue /> },
+      { path: 'subscriptions', element: <SubscriptionsPage /> },
+      { path: 'transactions', element: <TransactionsPage /> },
+      { path: 'messages', element: <MessagesPage /> },
+      { path: 'settings', element: <AdminSettingsPage /> },
+    ]
+  },
 ]);
+
+
+
+// ✅ ── Admin Layout ─────────────────────────────────────────────────────────── 
+function AdminLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: Users, label: 'Users', path: '/admin/users' },
+    { icon: CheckCircle, label: 'Verifications', path: '/admin/verifications' },
+    { icon: Crown, label: 'Subscriptions', path: '/admin/subscriptions' },
+    { icon: DollarSign, label: 'Transactions', path: '/admin/transactions' },
+    { icon: MessageCircle, label: 'Messages', path: '/admin/messages' },
+    { icon: Settings, label: 'Settings', path: '/admin/settings' },
+  ];
+
+  const handleMenuClick = (path) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Mobile Drawer & Desktop Fixed */}
+      <div
+        className={`
+          fixed lg:static inset-y-0 left-0 z-50
+          w-72 lg:w-64 bg-white border-r border-gray-200
+          transform transition-transform duration-300 ease-in-out
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          flex flex-col
+        `}
+        style={{ boxShadow: '2px 0 12px rgba(0, 0, 0, 0.03)' }}
+      >
+        {/* Logo Section */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between mb-3">
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-all"
+            >
+              <X size={20} className="text-gray-600" />
+            </button>
+          </div>
+
+          {/* User Info */}
+          <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+            <img
+              src={adminUser.avatar_url || "/default-avatar.png"}
+              alt="Admin Avatar"
+              className="w-10 h-10 rounded-lg object-cover bg-gray-100"
+              style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/default-avatar.png";
+              }}
+            />
+
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {adminUser.name || 'Admin'}
+              </p>
+              <p className="text-xs text-gray-500 capitalize">
+                {adminUser.role || 'staff'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {menuItems.map(item => {
+            const isActive = location.pathname === item.path;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleMenuClick(item.path)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group"
+                style={{
+                  background: isActive
+                    ? "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)"
+                    : "transparent",
+                  color: isActive ? "white" : "#4b5563",
+                }}
+              >
+                <item.icon
+                  size={20}
+                  className={isActive ? "" : "group-hover:scale-110 transition-transform"}
+                />
+                <span className="text-sm font-medium">{item.label}</span>
+                {isActive && (
+                  <div className="ml-auto w-2 h-2 rounded-full bg-white/30" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Logout Button */}
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-red-600 hover:bg-red-50 border border-red-200"
+          >
+            <LogOut size={20} />
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+          >
+            <Menu size={24} className="text-gray-700" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
+            >
+              <Shield size={16} color="white" />
+            </div>
+            <span className="text-sm font-bold text-gray-900">Admin Panel</span>
+          </div>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ── Root app ──────────────────────────────────────────────────────────────────
 function AppRoot() {
@@ -332,8 +560,10 @@ function AppRoot() {
   );
 }
 
-createRoot(document.getElementById('root')).render(
-  <QueryClientProvider client={queryClient}>
-    <AppRoot />
-  </QueryClientProvider>
-);
+settings.load().then(() => {
+  createRoot(document.getElementById('root')).render(
+    <QueryClientProvider client={queryClient}>
+      <AppRoot />
+    </QueryClientProvider>
+  );
+});

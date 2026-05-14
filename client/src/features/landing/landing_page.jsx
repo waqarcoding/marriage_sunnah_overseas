@@ -2,15 +2,20 @@
 import { Card, CardContent } from "../../ui/card";
 import * as React from "react";
 import { motion } from "framer-motion";
+
+
+
+
 import {
     Heart, Shield, Globe, Users, CheckCircle, Star, Sparkles,
     KeyRound, MessageCircle, UserCheck, ArrowRight, Quote,
     Lock, BookOpen, HeartHandshake, Award, ChevronDown, Mail,
-    Phone, MapPin, Instagram, Facebook, Twitter, BadgeCheck,
+    Phone, MapPin, Instagram, Facebook, Twitter, BadgeCheck, Linkedin, Youtube
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../../ui/button";
 import AppBar from "./appbar";
+import settings from "../../context/settings";
 
 export default function Landing() {
     const handleLearnHowItWorks = (e) => {
@@ -171,37 +176,82 @@ export default function Landing() {
                 </section>
 
                 {/* ── Pricing ─── */}
+
+
+
                 <section className="py-20 bg-secondary/30">
                     <div className="container mx-auto px-4">
-                        <SectionHeader eyebrow="Pricing" title="Simple, Honest" highlight="Plans" subtitle="Start free. Upgrade only if you need more reach." />
+                        <SectionHeader
+                            eyebrow="Pricing"
+                            title="Simple, Honest"
+                            highlight="Plans"
+                            subtitle="Choose the plan that fits your needs."
+                        />
                         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                            {[
-                                { name: "Free", price: "$0", period: "forever", features: ["Create profile", "Browse matches", "Guardian linking", "Basic messaging"], cta: "Get Started", featured: false },
-                                { name: "Premium", price: "$19", period: "per month", features: ["Everything in Free", "Unlimited interests", "Profile boost", "See who liked you", "Priority support"], cta: "Go Premium", featured: true },
-                                { name: "Family", price: "$39", period: "per month", features: ["Everything in Premium", "Up to 3 wards", "Family dashboard", "Dedicated advisor"], cta: "Choose Family", featured: false },
-                            ].map((plan, i) => (
-                                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                                    <Card className={`h-full relative ${plan.featured ? "border-primary shadow-2xl shadow-primary/15 -translate-y-1" : "border-primary/10"} transition-all`}>
-                                        {plan.featured && (
+                            {settings.getActivePlans().map((plan, i) => (
+                                <motion.div
+                                    key={plan.type}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                >
+                                    <Card className={`h-full relative ${plan.popular ? "border-primary shadow-2xl shadow-primary/15 -translate-y-1" : "border-primary/10"} transition-all`}>
+                                        {plan.popular && (
                                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-amber-400 text-emerald-900 text-[11px] font-bold uppercase tracking-wider">
                                                 Most Popular
                                             </div>
                                         )}
                                         <CardContent className="p-7">
-                                            <h3 className="font-serif text-xl font-bold text-foreground mb-1">{plan.name}</h3>
+                                            <h3 className="font-serif text-xl font-bold text-foreground mb-1">
+                                                {plan.name}
+                                            </h3>
                                             <div className="flex items-baseline gap-1 mb-5">
-                                                <span className="text-4xl font-bold text-primary" style={{ letterSpacing: "-0.02em" }}>{plan.price}</span>
-                                                <span className="text-muted-foreground text-sm">/ {plan.period}</span>
+                                                <span className="text-4xl font-bold text-primary" style={{ letterSpacing: "-0.02em" }}>
+                                                    ${plan.priceUSD}
+                                                </span>
+                                                <span className="text-muted-foreground text-sm">
+                                                    / {plan.days} days
+                                                </span>
+                                            </div>
+                                            <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                                <p className="text-sm font-semibold text-primary">
+                                                    {plan.credits} Credits Included
+                                                </p>
                                             </div>
                                             <ul className="space-y-2.5 mb-6">
-                                                {plan.features.map((f, j) => (
-                                                    <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                        <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" /> {f}
+                                                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                    {plan.credits} credits to use
+                                                </li>
+                                                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                    Unlimited daily interests
+                                                </li>
+                                                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                    Unlock contact details
+                                                </li>
+                                                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                    Profile boost
+                                                </li>
+                                                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                    Valid for {plan.days} days
+                                                </li>
+                                                {plan.type === 'platinum' && (
+                                                    <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                        <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                                        Best value - ${(plan.priceUSD / (plan.days / 30)).toFixed(2)}/month
                                                     </li>
-                                                ))}
+                                                )}
                                             </ul>
-                                            <Button className={`w-full ${plan.featured ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`} onClick={() => go("/register")}>
-                                                {plan.cta}
+                                            <Button
+                                                className={`w-full ${plan.popular ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`}
+                                                onClick={() => go("/register")}
+                                            >
+                                                Choose {plan.name}
                                             </Button>
                                         </CardContent>
                                     </Card>
@@ -346,37 +396,115 @@ export default function Landing() {
                         <div className="grid md:grid-cols-4 gap-8 mb-10">
                             <div>
                                 <div className="flex items-center gap-3 mb-4">
-                                    <img src="/logo.png" alt="Marriage Sunna Overseas" className="h-10 w-10 rounded-full" />
-                                    <span className="font-serif font-bold text-lg text-primary leading-tight">Marriage Sunna<br />Overseas</span>
+                                    <img
+                                        src={settings.siteLogo || "/logo.png"}
+                                        alt={settings.siteName}
+                                        className="h-10 w-10 rounded-full"
+                                    />
+                                    <span className="font-serif font-bold text-lg text-primary leading-tight">
+                                        {settings.siteName}
+                                    </span>
                                 </div>
                                 <p className="text-muted-foreground text-sm leading-relaxed">
-                                    Connecting hearts with dignity and Islamic values, across borders.
+                                    {settings.siteTagline}
                                 </p>
                                 <div className="flex gap-2 mt-4">
-                                    {[Instagram, Facebook, Twitter].map((I, i) => (
-                                        <a key={i} href="#" className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition">
-                                            <I className="h-4 w-4" />
+                                    {settings.instagramUrl && (
+                                        <a
+                                            href={settings.instagramUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition"
+                                        >
+                                            <Instagram className="h-4 w-4" />
                                         </a>
-                                    ))}
+                                    )}
+                                    {settings.facebookUrl && (
+                                        <a
+                                            href={settings.facebookUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition"
+                                        >
+                                            <Facebook className="h-4 w-4" />
+                                        </a>
+                                    )}
+                                    {settings.twitterUrl && (
+                                        <a
+                                            href={settings.twitterUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition"
+                                        >
+                                            <Twitter className="h-4 w-4" />
+                                        </a>
+                                    )}
+                                    {settings.linkedinUrl && (
+                                        <a
+                                            href={settings.linkedinUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition"
+                                        >
+                                            <Linkedin className="h-4 w-4" />
+                                        </a>
+                                    )}
+                                    {settings.youtubeUrl && (
+                                        <a
+                                            href={settings.youtubeUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition"
+                                        >
+                                            <Youtube className="h-4 w-4" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
+
                             <FooterCol title="Product" links={["Features", "How it Works", "Pricing", "Testimonials"]} />
                             <FooterCol title="Company" links={["About Us", "Blog", "Careers", "Contact"]} />
+
                             <div>
                                 <h4 className="font-bold text-foreground mb-4 text-sm uppercase tracking-wider">Contact</h4>
                                 <ul className="space-y-2.5 text-sm text-muted-foreground">
-                                    <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 text-primary shrink-0" /> hello@marriagesunna.com</li>
-                                    <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-primary shrink-0" /> +1 (555) 123-4567</li>
-                                    <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" /> Global — overseas families</li>
+                                    <li className="flex items-start gap-2">
+                                        <Mail className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                                        <a href={`mailto:${settings.supportEmail}`} className="hover:text-primary">
+                                            {settings.supportEmail}
+                                        </a>
+                                    </li>
+                                    {settings.supportPhone && (
+                                        <li className="flex items-start gap-2">
+                                            <Phone className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                                            <a href={`tel:${settings.supportPhone}`} className="hover:text-primary">
+                                                {settings.supportPhone}
+                                            </a>
+                                        </li>
+                                    )}
+
+                                    {settings.officeAddress && (
+                                        <li className="flex items-start gap-2">
+                                            <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                                            {settings.officeAddress}
+                                        </li>
+                                    )}
                                 </ul>
                             </div>
                         </div>
+
                         <div className="pt-6 border-t border-primary/10 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
-                            <p>© {new Date().getFullYear()} Marriage Sunna Overseas. All rights reserved.</p>
+                            <p>© {new Date().getFullYear()} {settings.siteName}. All rights reserved.</p>
                             <div className="flex gap-5">
-                                <a href="#" className="hover:text-primary">Privacy</a>
-                                <a href="#" className="hover:text-primary">Terms</a>
-                                <a href="#" className="hover:text-primary">Cookies</a>
+                                {settings.privacyPolicyUrl && (
+                                    <a href={settings.privacyPolicyUrl} className="hover:text-primary">Privacy</a>
+                                )}
+                                {settings.termsOfServiceUrl && (
+                                    <a href={settings.termsOfServiceUrl} className="hover:text-primary">Terms</a>
+                                )}
+                                {settings.cookiePolicyUrl && (
+                                    <a href={settings.cookiePolicyUrl} className="hover:text-primary">Cookies</a>
+                                )}
                             </div>
                         </div>
                     </div>

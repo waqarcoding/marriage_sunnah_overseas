@@ -178,7 +178,21 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
     const [showSuccess, setShowSuccess] = useState(false);
     const [saveError, setSaveError] = useState("");
     const [defaultCountry, setDefaultCountry] = useState("");
+    const [mounted, setMounted] = useState(false);
 
+    // ✅ Add mount/unmount tracking
+    useEffect(() => {
+        if (isOpen) {
+            setMounted(true);
+        } else {
+            // Delay unmount to allow exit animation
+            const timer = setTimeout(() => setMounted(false), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    // ✅ Don't render portal if not mounted
+    if (!mounted && !isOpen) return null;
     useEffect(() => {
         if (!isOpen) return;
 
@@ -314,24 +328,27 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
             const result = await ExploreService.savePreferences(payload);
 
             console.log('✅ Save successful:', result);
-            // onApply(payload);
-            // ✅ Show success and close
+
+            // ✅ Show success dialog
             setShowSuccess(true);
+
+            // ✅ After 2 seconds, close filter and trigger reload in parent
             setTimeout(() => {
                 setShowSuccess(false);
-
                 onClose();
+                // ✅ This will trigger parent to reload profiles
+                if (onApply) {
+                    onApply(payload);
+                }
             }, 2000);
 
         } catch (err) {
             console.error("❌ Save error:", err);
-            // ✅ Display the error message from the thrown Error
             setSaveError(err.message || "Failed to save preferences. Please try again.");
         } finally {
             setSaving(false);
         }
     };
-
     // ✅ Portal renders outside your component tree, above the app bar
     return createPortal(
         <div

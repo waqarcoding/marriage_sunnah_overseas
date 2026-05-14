@@ -94,7 +94,7 @@ function DeleteAccountModal({ onClose, onConfirm }) {
     const [confirm, setConfirm] = useState("");
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
             style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
             onClick={onClose}>
             <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -190,13 +190,7 @@ export default function SettingsPage() {
 
     const handleDeleteAccount = async () => {
         try {
-            const token = localStorage.getItem("jwtToken");
-            const res = await fetch(`${import.meta.env.VITE_BASE_URL}/auth/delete-account`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed");
+            ProfileService.deleteAccount()
             handleLogout();
         } catch (err) {
             toast.error(err.message || "Failed to delete account");
@@ -318,15 +312,21 @@ export default function SettingsPage() {
                                 onClick={() => navigate("/individual/subscription-detail")}
                             />
                         )}
-                        {tokenData?.role !== "guardian" && (
-                            <NavRow
-                                icon={BadgeCheck}
+                        {/* ✅ Available for both guardian and individual */}
+                        <NavRow
+                            icon={BadgeCheck}
+                            label={tokenData?.role === "guardian" ? "Verification" : "Get Verified Badge"}
 
-                                label="Get Verified Badge"
-                                sublabel="Apply for account verification"
-                                onClick={() => navigate("/individual/verification")}
-                            />
-                        )}
+                            sublabel="Apply for account verification"
+                            onClick={() => {
+                                const role = tokenData?.role;
+                                if (role === "guardian") {
+                                    navigate("/guardian/verification");
+                                } else {
+                                    navigate("/individual/verification");
+                                }
+                            }}
+                        />
 
                         {tokenData?.role !== "guardian" && (
                             <NavRow

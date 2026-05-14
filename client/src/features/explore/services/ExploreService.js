@@ -13,17 +13,43 @@ class ExploreService {
     }
 
     // ── Get Explore feed ───────────────────────────────────────────────────
+    // In ExploreService.js
+
     async getExplore(filters = {}) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📤 FETCHING EXPLORE PROFILES');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Filters being sent to backend:', JSON.stringify(filters, null, 2));
+
         const params = new URLSearchParams();
+
+        // Basic filters
         if (filters.gender) params.append("gender", filters.gender);
         if (filters.city) params.append("city", filters.city);
-        if (filters.country) params.append("country", filters.country);
+
+        // ✅ Handle single country OR multiple countries
+        if (filters.country) {
+            params.append("country", filters.country);
+        } else if (filters.countries) {
+            // Multiple countries as comma-separated string
+            params.append("countries", filters.countries);
+        }
+
         if (filters.minAge) params.append("minAge", filters.minAge);
         if (filters.maxAge) params.append("maxAge", filters.maxAge);
+
+        // Additional filters from activeFilters
+        if (filters.isVerified) params.append("isVerified", "1");
+        if (filters.isPremium) params.append("isPremium", "1");
+        if (filters.isOnline) params.append("isOnline", "1");
+
         const query = params.toString();
+        console.log('Query string:', query || '(no filters)');
+        console.log('Full URL:', `${this.base}/get-explore${query ? `?${query}` : ""}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
         return Api.get(`${this.base}/get-explore${query ? `?${query}` : ""}`);
     }
-
     // ── Send Interest (Like) ───────────────────────────────────────────────
     async sendInterest(toUserId, isSuperLike = false) {
         return Api.post(`/interest/send-interest`, {

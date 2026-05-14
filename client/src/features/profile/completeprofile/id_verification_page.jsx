@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import ProfileService from "../services/ProfileService";
 
+import { useLocation, useNavigate } from "react-router-dom";
+import AuthService from "../../auth/services/AuthService";
+
 const PRIMARY = "#1B4D3E";
 const PRIMARY_FG = "#f5f0e8";
 const SECONDARY = "#f0f5f3";
@@ -258,7 +261,7 @@ function SubmitVerificationPage({
     onSubmit,
     onSkip,
     mode = 'standalone',
-    showBackButton = false,
+    showBackButton = true,
     onBack = null
 }) {
     const [frontPreview, setFrontPreview] = useState(null);
@@ -433,7 +436,14 @@ function SubmitVerificationPage({
                     preview={frontPreview}
                     onFile={handleFile("front")}
                     loading={compressingFront}
-                    sub="National ID, passport\nor driving licence"
+                    sub={
+                        <>
+                            National ID, passport
+                            <br />
+                            or driving licence
+                        </>
+                    }
+
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="17" y2="10" /><line x1="7" y1="14" x2="13" y2="14" /></svg>}
                 />
                 <UploadCard
@@ -442,7 +452,14 @@ function SubmitVerificationPage({
                     preview={backPreview}
                     onFile={handleFile("back")}
                     loading={compressingBack}
-                    sub="Clear photo,\nall corners visible"
+                    sub={
+                        <>
+                            Clear photo,
+                            <br />
+                            all corners visible
+                        </>
+                    }
+
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={PRIMARY} strokeWidth="1.5"><rect x="3" y="5" width="18" height="14" rx="2" /><line x1="7" y1="10" x2="12" y2="10" /><circle cx="16" cy="12" r="2.5" /></svg>}
                 />
             </div>
@@ -770,17 +787,15 @@ function VerifiedPage({
     );
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// ROOT — loads profile and switches between pages
-// ════════════════════════════════════════════════════════════════════════════
+
+
 export default function VerificationPage({
     onSubmit,
     onSkip,
     mode = 'standalone',
-    showBackButton = false,
-    onBack = null,
-    onClose = null
 }) {
+    const navigate = useNavigate();
+
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState("submit");
     const [frontId, setFrontId] = useState(null);
@@ -846,6 +861,18 @@ export default function VerificationPage({
         onSkip?.();
     };
 
+    // ✅ Fixed back handler - navigates to correct settings page based on role
+    const handleBack = () => {
+        const role = AuthService.getUserRole();
+        console.log('🔙 Back button clicked, role:', role);
+
+        if (role === "guardian") {
+            navigate("/guardian/settings", { replace: true });
+        } else {
+            navigate("/individual/settings", { replace: true });
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh", flexDirection: "column", gap: 16 }}>
@@ -866,9 +893,9 @@ export default function VerificationPage({
                     name={userName}
                     userImage={userimage}
                     mode={mode}
-                    onClose={onClose}
-                    showBackButton={showBackButton}
-                    onBack={onBack}
+                    onClose={handleBack}
+                    showBackButton={true}
+                    onBack={handleBack}
                 />
             )}
 
@@ -877,8 +904,8 @@ export default function VerificationPage({
                     frontId={frontId}
                     backId={backId}
                     mode={mode}
-                    showBackButton={showBackButton}
-                    onBack={onBack}
+                    showBackButton={true}
+                    onBack={handleBack}
                 />
             )}
 
@@ -887,8 +914,8 @@ export default function VerificationPage({
                     onSubmit={handleSubmit}
                     onSkip={handleSkip}
                     mode={mode}
-                    showBackButton={showBackButton}
-                    onBack={onBack}
+                    showBackButton={true}
+                    onBack={handleBack}
                 />
             )}
         </>

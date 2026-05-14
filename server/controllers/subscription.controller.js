@@ -5,7 +5,7 @@ import { Op } from 'sequelize';
 import crypto from 'crypto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
-const { User, Subscription, Transaction, Profile, Referral } = db;
+const { User, Subscription, Transaction, Profile, Referral, Setting } = db;
 import { applyReferralReward } from './referral.controller.js';
 
 
@@ -23,110 +23,135 @@ const PAYMENT_PROCESSORS = {
 
 let PLANS = {}; // ✅ Keep PLANS variable for other functions to use
 
+
 export const getPlans = async (req, res) => {
     try {
-        const products = await stripe.products.list({
-            active: true
+        // ✅ Get all settings from database
+        const settings = await Setting.getAllSettings();
+
+        if (!settings) {
+            return res.status(404).json({
+                success: false,
+                error: 'Settings not found'
+            });
+        }
+
+        const plans = [];
+
+        // ✅ Basic Plan
+        if (settings.basic_plan_enabled) {
+            plans.push({
+                id: 'basic',
+                type: 'basic',
+                name: settings.basic_plan_name,
+                credits: settings.basic_plan_credits,
+                durationDays: settings.basic_plan_duration_days,
+                priceUSD: parseFloat(settings.basic_plan_price_usd),
+                pricePKR: parseFloat(settings.basic_plan_price_pkr),
+                priceAED: parseFloat(settings.basic_plan_price_aed),
+                popular: settings.basic_plan_popular,
+                stripePriceId: process.env.STRIPE_WEEKLY_PRICE_ID, // From env
+            });
+        }
+
+        // ✅ Premium Plan
+        if (settings.premium_plan_enabled) {
+            plans.push({
+                id: 'premium',
+                type: 'premium',
+                name: settings.premium_plan_name,
+                credits: settings.premium_plan_credits,
+                durationDays: settings.premium_plan_duration_days,
+                priceUSD: parseFloat(settings.premium_plan_price_usd),
+                pricePKR: parseFloat(settings.premium_plan_price_pkr),
+                priceAED: parseFloat(settings.premium_plan_price_aed),
+                popular: settings.premium_plan_popular,
+                stripePriceId: process.env.STRIPE_MONTHLY_PRICE_ID, // From env
+            });
+        }
+
+        // ✅ Platinum Plan
+        if (settings.platinum_plan_enabled) {
+            plans.push({
+                id: 'platinum',
+                type: 'platinum',
+                name: settings.platinum_plan_name,
+                credits: settings.platinum_plan_credits,
+                durationDays: settings.platinum_plan_duration_days,
+                priceUSD: parseFloat(settings.platinum_plan_price_usd),
+                pricePKR: parseFloat(settings.platinum_plan_price_pkr),
+                priceAED: parseFloat(settings.platinum_plan_price_aed),
+                popular: settings.platinum_plan_popular,
+                stripePriceId: process.env.STRIPE_YEARLY_PRICE_ID, // From env
+            });
+        }
+
+        console.log('✅ Plans loaded from settings:', plans.map(p => p.name));
+
+        res.json({
+            success: true,
+            data: plans
         });
 
-        const plans = {};
-
-        const planDefaults = {
-            platinum: { credits: 3500, durationDays: 7 },
-            premium: { credits: 250, durationDays: 30 },
-            basic: { credits: 50, durationDays: 7 }
-        };
-
-        for (const product of products.data) {
-            const prices = await stripe.prices.list({
-                product: product.id,
-                active: true
-            });
-
-            const planKey = product.metadata.planKey || product.name.toLowerCase();
-            const defaults = planDefaults[planKey] || { credits: 0, durationDays: 0 };
-            const usdPrice = prices.data.find(p => p.currency === 'usd');
-
-            plans[planKey] = {
-                productId: product.id,
-                name: product.name,
-                description: product.description,
-                credits: Number(product.metadata.credits || defaults.credits),
-                durationDays: Number(product.metadata.durationDays || defaults.durationDays),
-                // @ts-ignore
-                priceUSD: usdPrice ? usdPrice.unit_amount / 100 : 0,
-                stripePriceId: usdPrice ? usdPrice.id : null,
-                popular: planKey === "premium"
-            };
-        }
-
-        PLANS = plans; // ✅ Update global
-
-        console.log("Plans loaded:", Object.keys(PLANS));
-
-        // ✅ Only send response if called as route handler
-        if (res) {
-            return res.json({
-                success: true,
-                data: PLANS
-            });
-        }
-
-        // ✅ Return plans if called internally
-        return plans;
-
     } catch (error) {
-        console.error('Error loading plans:', error);
-
-        if (res) {
-            return res.status(500).json({
-                success: false,
-                error: 'Failed to fetch plans',
-                message: error
-            });
-        }
-
-        throw error;
+        console.error('❌ Get plans error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch plans',
+            message: error
+        });
     }
 };
 
-// ✅ NEW: Get Available Payment Methods
-
 export const getPaymentMethods = async (req, res) => {
     try {
+        // ✅ Get payment processor settings from database
+        const settings = await Setting.getAllSettings();
+
         const methods = [
             {
-                id: PAYMENT_PROCESSORS.STRIPE,
+                id: 'stripe',
                 name: 'Credit/Debit Card',
                 description: 'Pay with Visa, Mastercard, or American Express',
                 icon: 'credit-card',
-                enabled: !!process.env.STRIPE_SECRET_KEY,
-                currencies: ['USD', 'PKR'],
+                enabled: settings?.stripe_enabled && !!process.env.STRIPE_SECRET_KEY,
+                currencies: ['USD', 'PKR', 'AED'],
                 fees: 'No additional fees',
-                autoRenewal: true, // ✅ Stripe supports auto-renewal
+                autoRenewal: true,
                 renewalNote: 'Automatically renews each period'
             },
             {
-                id: PAYMENT_PROCESSORS.EASYPAISA,
+                id: 'easypaisa',
                 name: 'EasyPaisa',
                 description: 'Pay with EasyPaisa Mobile Account',
                 icon: 'easypaisa',
-                enabled: !!process.env.EASYPAISA_STORE_ID,
+                enabled: settings?.easypaisa_enabled && !!process.env.EASYPAISA_STORE_ID,
                 currencies: ['PKR'],
                 fees: 'Standard EasyPaisa charges apply',
-                autoRenewal: false, // ✅ EasyPaisa requires manual renewal
+                autoRenewal: false,
                 renewalNote: 'Manual renewal required when subscription expires'
             },
             {
-                id: PAYMENT_PROCESSORS.JAZZCASH,
+                id: 'jazzcash',
                 name: 'JazzCash',
                 description: 'Pay with JazzCash Mobile Account',
                 icon: 'jazzcash',
-                enabled: !!process.env.JAZZCASH_MERCHANT_ID,
+                enabled: settings?.jazzcash_enabled && !!process.env.JAZZCASH_MERCHANT_ID,
                 currencies: ['PKR'],
                 fees: 'Standard JazzCash charges apply',
-                autoRenewal: false, // ✅ JazzCash requires manual renewal
+                autoRenewal: false,
                 renewalNote: 'Manual renewal required when subscription expires'
+            },
+            {
+                id: 'paypal',
+                name: 'PayPal',
+                description: 'Pay with PayPal account',
+                icon: 'paypal',
+                enabled: settings?.paypal_enabled && !!process.env.PAYPAL_CLIENT_ID,
+                currencies: ['USD', 'AED'],
+                fees: 'Standard PayPal charges apply',
+                autoRenewal: true,
+                renewalNote: 'Automatically renews each period'
             }
         ];
 
@@ -136,7 +161,10 @@ export const getPaymentMethods = async (req, res) => {
         });
     } catch (error) {
         console.error('Get payment methods error:', error);
-        res.status(500).json({ success: false, error: error });
+        res.status(500).json({
+            success: false,
+            error: error
+        });
     }
 };
 

@@ -86,6 +86,13 @@ class ProfileService {
     async checkContactRevealStatus(userId) {
         return Api.get(`${this.base}/contact-reveal-status/${userId}`);
     }
+    /**
+     * Delete the current user's account
+     * @returns {Promise} Response from backend after deleting account
+     */
+    async deleteAccount() {
+        return Api.delete(`${this.base}/delete-account`);
+    }
 
     /**
      * Get current user's contact reveal stats

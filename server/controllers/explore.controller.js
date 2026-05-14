@@ -206,19 +206,36 @@ export const getCountryOptions = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const getExplore = async (req, res) => {
     try {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🔍 GET EXPLORE - START');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
         const currentUser = await User.findByPk(req.user.id);
         if (!currentUser) return res.json({ error: 'User not found' });
 
         const currentProfile = await Profile.findOne({
             where: { individual_id: currentUser.id }
         });
-        if (!currentProfile) {
-            return res.json({ error: 'Profile not found' });
-        }
+        if (!currentProfile) return res.json({ error: 'Profile not found' });
 
         const prefs = await Preference.findOne({
             where: { individual_id: currentUser.id }
         });
+
+        // ✅ Extract query parameters from request
+        const {
+            gender,
+            city,
+            country,      // Single country
+            countries,    // Multiple countries (comma-separated)
+            minAge,
+            maxAge,
+            isVerified,
+            isPremium,
+            isOnline
+        } = req.query;
+
+        console.log('📥 Filters received:', req.query);
 
         // Get exclusions
         const sentInterests = await Interest.findAll({
@@ -246,33 +263,83 @@ export const getExplore = async (req, res) => {
             ...receivedInterests.map(i => i.from_user),
         ].filter(id => id != null);
 
+        console.log('🚫 Excluding', excludeIds.length, 'user IDs');
+
         // ✅ Build base where clause
         const baseWhere = {
             individual_id: { [Op.notIn]: excludeIds },
             is_profile_completed: 1
-
         };
 
-
-        // ✅ Gender filter - opposite gender only
-        if (currentProfile.gender) {
+        // Gender filter
+        if (gender) {
+            baseWhere.gender = gender;
+        } else if (currentProfile.gender) {
             baseWhere.gender = currentProfile.gender === 'male' ? 'female' : 'male';
         }
 
-        // ✅ Get all profiles (with and without pref matches)
+        // ✅ COUNTRY FILTER - Handle single OR multiple countries
+        if (country) {
+            // Single country
+            baseWhere.country = country;
+            console.log('✅ Applied single country filter:', country);
+        } else if (countries) {
+            // Multiple countries - split by comma
+            const countryList = countries.split(',').map(c => c.trim()).filter(Boolean);
+            if (countryList.length > 0) {
+                baseWhere.country = { [Op.in]: countryList };
+                console.log('✅ Applied multiple countries filter:', countryList);
+            }
+        }
+
+        // ✅ CITY FILTER (HARD CONDITION)
+        if (city) {
+            baseWhere.city = city;
+            console.log('✅ Applied city filter:', city);
+        }
+
+        // ✅ Build User include conditions
+        const userIncludeWhere = {};
+
+        // ✅ VERIFIED FILTER (HARD CONDITION)
+        if (isVerified === '1' || isVerified === 'true') {
+            userIncludeWhere.is_verified = true;
+            console.log('✅ Applied verified filter');
+        }
+
+        // ✅ PREMIUM FILTER (HARD CONDITION)
+        if (isPremium === '1' || isPremium === 'true') {
+            userIncludeWhere.is_pro = true;
+            console.log('✅ Applied premium filter');
+        }
+
+        // ✅ ONLINE FILTER (HARD CONDITION - last seen within 1 hour)
+        if (isOnline === '1' || isOnline === 'true') {
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+            userIncludeWhere.last_seen = { [Op.gte]: oneHourAgo };
+            console.log('✅ Applied online filter');
+        }
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📋 Final WHERE clauses:');
+        console.log('baseWhere:', JSON.stringify(baseWhere, null, 2));
+        console.log('userIncludeWhere:', JSON.stringify(userIncludeWhere, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+        // ✅ Get all profiles with applied filters
         const allProfiles = await Profile.findAll({
             where: baseWhere,
             include: [
                 {
                     model: User.unscoped(),
                     as: 'user',
-
+                    where: Object.keys(userIncludeWhere).length > 0 ? userIncludeWhere : undefined,
                     required: true
                 },
                 {
                     model: Guardian,
-                    as: 'asIndividual', // ✅ This is the correct alias - checks if profile HAS a guardian
-                    required: false, // ✅ Only profiles WITH guardians
+                    as: 'asIndividual',
+                    required: false,
                     attributes: ['id', 'guardian_id']
                 }
             ],
@@ -280,47 +347,96 @@ export const getExplore = async (req, res) => {
             limit: 100,
         });
 
-        // ✅ Apply preference matching
-        const profilesWithMatchFlag = allProfiles.map(profile => {
+        console.log('📊 Found', allProfiles.length, 'profiles before age filtering');
+
+        // ✅ Helper function to calculate age from date_of_birth
+        const calculateAge = (dateOfBirth) => {
+            if (!dateOfBirth) return null;
+            const today = new Date();
+            const birthDate = new Date(dateOfBirth);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        };
+
+        // ✅ Helper function to check if age is valid
+        const isValidAge = (age) => {
+            return age !== null && age !== undefined && age > 0 && age <= 120;
+        };
+
+        // ✅ Filter by age if minAge/maxAge specified
+        let filteredProfiles = allProfiles;
+
+        if (minAge || maxAge) {
+            filteredProfiles = allProfiles.filter(profile => {
+                let profileAge = profile.age;
+
+                if (profileAge === null || profileAge === undefined) {
+                    profileAge = calculateAge(profile.date_of_birth);
+                }
+
+                // If age is invalid, INCLUDE the profile anyway
+                if (!isValidAge(profileAge)) {
+                    console.log(`⚠️ Invalid age for ${profile.name} (age: ${profileAge}), including anyway`);
+                    return true;
+                }
+
+                // Check age range for valid ages
+                const min = minAge ? parseInt(minAge) : 0;
+                const max = maxAge ? parseInt(maxAge) : 999;
+
+                const inRange = profileAge >= min && profileAge <= max;
+
+                if (!inRange) {
+                    console.log(`❌ Filtered out ${profile.name}: age ${profileAge} not in range ${min}-${max}`);
+                } else {
+                    console.log(`✅ Included ${profile.name}: age ${profileAge} in range ${min}-${max}`);
+                }
+
+                return inRange;
+            });
+
+            console.log(`📊 After age filtering: ${filteredProfiles.length} profiles (from ${allProfiles.length})`);
+        }
+
+        // Rest of preference matching code stays the same...
+        const profilesWithMatchFlag = filteredProfiles.map(profile => {
             const profileData = profile.toJSON();
 
-            // No prefs set = show all
+            if (!profileData.age && profileData.date_of_birth) {
+                const calculatedAge = calculateAge(profileData.date_of_birth);
+                if (isValidAge(calculatedAge)) {
+                    profileData.age = calculatedAge;
+                }
+            }
+
             if (!prefs) {
                 return { ...profileData, noPrefsMatch: false };
             }
 
             let matches = true;
 
-            // ✅ Age range
-            if (prefs.pref_age_min && profile.age < prefs.pref_age_min) matches = false;
-            if (prefs.pref_age_max && profile.age > prefs.pref_age_max) matches = false;
+            if (!minAge && !maxAge) {
+                const profileAge = profileData.age || calculateAge(profileData.date_of_birth);
+                if (isValidAge(profileAge)) {
+                    if (prefs.pref_age_min && profileAge < prefs.pref_age_min) matches = false;
+                    if (prefs.pref_age_max && profileAge > prefs.pref_age_max) matches = false;
+                }
+            }
 
-            // ✅ Height range (in inches)
             if (prefs.pref_height_min_inches && profile.height_inches < prefs.pref_height_min_inches) matches = false;
             if (prefs.pref_height_max_inches && profile.height_inches > prefs.pref_height_max_inches) matches = false;
-
-            // ✅ City
-            if (prefs.pref_city && profile.city !== prefs.pref_city) matches = false;
-
-            // ✅ Religion
+            if (!city && prefs.pref_city && profile.city !== prefs.pref_city) matches = false;
             if (prefs.pref_religion && profile.religion !== prefs.pref_religion) matches = false;
-
-            // ✅ Religious practice level
             if (prefs.pref_religious_practice_level && profile.religious_practice_level !== prefs.pref_religious_practice_level) matches = false;
-
-            // ✅ Education
             if (prefs.pref_education && profile.education !== prefs.pref_education) matches = false;
-
-            // ✅ Monthly salary
             if (prefs.pref_monthly_salary && profile.monthly_salary < prefs.pref_monthly_salary) matches = false;
-
-            // ✅ Has children
             if (prefs.pref_has_children !== null && profile.has_children !== prefs.pref_has_children) matches = false;
-
-            // ✅ Willing to relocate
             if (prefs.pref_willing_to_relocate !== null && profile.willing_to_relocate !== prefs.pref_willing_to_relocate) matches = false;
 
-            // ✅ JSON array fields
             const checkJsonArray = (prefField, profileField) => {
                 if (!prefField) return true;
                 try {
@@ -334,7 +450,7 @@ export const getExplore = async (req, res) => {
 
             if (!checkJsonArray(prefs.pref_marital_status, profile.marital_status)) matches = false;
             if (!checkJsonArray(prefs.pref_nationality, profile.nationality)) matches = false;
-            if (!checkJsonArray(prefs.pref_country, profile.country)) matches = false;
+            if (!country && !countries && !checkJsonArray(prefs.pref_country, profile.country)) matches = false;
             if (!checkJsonArray(prefs.pref_sect, profile.sect)) matches = false;
             if (!checkJsonArray(prefs.pref_body_type, profile.body_type)) matches = false;
             if (!checkJsonArray(prefs.pref_caste, profile.caste)) matches = false;
@@ -347,24 +463,36 @@ export const getExplore = async (req, res) => {
             };
         });
 
-        // ✅ Sort: matching profiles first, then non-matching
         const sortedProfiles = profilesWithMatchFlag.sort((a, b) => {
             if (a.noPrefsMatch === b.noPrefsMatch) return 0;
             return a.noPrefsMatch ? 1 : -1;
         });
 
-        // Limit to 50
         const finalProfiles = sortedProfiles.slice(0, 50);
 
+        console.log('✅ Returning', finalProfiles.length, 'profiles');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         return res.json({
             success: true,
             profiles: finalProfiles,
-            applied_prefs: !!prefs
+            applied_prefs: !!prefs,
+            applied_filters: {
+                gender: gender || null,
+                city: city || null,
+                country: country || null,
+                countries: countries ? countries.split(',') : null,
+                minAge: minAge || null,
+                maxAge: maxAge || null,
+                isVerified: isVerified === '1',
+                isPremium: isPremium === '1',
+                isOnline: isOnline === '1'
+            }
         });
 
     } catch (err) {
-        console.error('getExplore error:', err);
+        console.error('❌ ERROR:', err);
+        console.error(err);
         return res.status(500).json({ error: 'Server error', message: err });
     }
 };

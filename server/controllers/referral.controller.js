@@ -1,7 +1,7 @@
 // controllers/referralController.js
 
 import db from '../models/index.js';
-const { User, Referral } = db;
+const { User, Referral, Setting } = db;
 
 
 /**
@@ -19,6 +19,8 @@ const { User, Referral } = db;
  * @param {number} subscriptionCredits - Credits from subscription (0 for signup only)
  * @param {boolean} isSignUp - True if this is signup, false if subscription purchase
  */
+
+
 export async function applyReferralReward(newUserId, referrerId, subscriptionCredits = 0, isSignUp = false) {
     // If no referrerId provided, skip referral creation
     if (!referrerId) {
@@ -29,10 +31,28 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
     const transaction = await db.sequelize.transaction();
 
     try {
+        // ✅ Fetch settings from database
+        const settings = await Setting.getAllSettings();
+
+        if (!settings) {
+            console.log('⚠️ Settings not found, using defaults');
+        }
+
+        // ✅ Get configuration from settings
+        const commissionPercentage = settings?.referral_commission_percentage || 10.00;
+        const signupBonusReferrer = settings?.referral_credits_referrer || 20;
+        const signupBonusReferee = settings?.referral_credits_referee || 10;
+
+        // ✅ Log fetched values
+        console.log('📋 Referral Settings Loaded:');
+        console.log(`   Commission Percentage: ${commissionPercentage}%`);
+        console.log(`   Signup Bonus (Referrer): ${signupBonusReferrer} credits`);
+        console.log(`   Signup Bonus (Referee): ${signupBonusReferee} credits`);
+
         // 1. Validate referrer exists
         const referrer = await User.findByPk(referrerId, { transaction });
         if (!referrer) {
-            console.log('Invalid referrer ID:', referrerId);
+            console.log('❌ Invalid referrer ID:', referrerId);
             await transaction.rollback();
             return null;
         }
@@ -40,21 +60,17 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
         // 2. Validate referred user exists
         const referredUser = await User.findByPk(newUserId, { transaction });
         if (!referredUser) {
-            console.log('Invalid new user ID:', newUserId);
+            console.log('❌ Invalid new user ID:', newUserId);
             await transaction.rollback();
             return null;
         }
 
         // 3. Prevent self-referral
         if (referrerId === newUserId) {
-            console.log('User cannot refer themselves');
+            console.log('❌ User cannot refer themselves');
             await transaction.rollback();
             return null;
         }
-
-        // Configuration
-        const commissionPercentage = 10.00; // 10% commission
-        const signupBonus = 50.00; // 50 credits signup bonus
 
         let referral;
         let totalCreditsAwarded = 0;
@@ -64,6 +80,7 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
         // SIGNUP FLOW - Create new referral record
         // ============================================
         if (isSignUp) {
+
             // 4. Check if user already has a referral
             const existingReferral = await Referral.findOne({
                 where: { referred_user_id: newUserId },
@@ -71,7 +88,7 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
             });
 
             if (existingReferral) {
-                console.log('User already has a referrer');
+                console.log('⚠️ User already has a referrer');
                 await transaction.rollback();
                 return null;
             }
@@ -80,8 +97,17 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
             const referralCode = `REF-${referrerId}-${newUserId}-${Date.now()}`;
 
             // Calculate signup bonus + subscription credits
-            totalCreditsAwarded = signupBonus + subscriptionCredits;
+            // Referred user gets their signup bonus + subscription credits
+            totalCreditsAwarded = signupBonusReferee + subscriptionCredits;
+
+            // Referrer gets commission on total credits awarded
             totalCommissionEarned = (totalCreditsAwarded * commissionPercentage) / 100;
+
+            console.log('💰 Signup Reward Calculation:');
+            console.log(`   Referee Signup Bonus: ${signupBonusReferee} credits`);
+            console.log(`   Subscription Credits: ${subscriptionCredits} credits`);
+            console.log(`   Total Credits to Referee: ${totalCreditsAwarded} credits`);
+            console.log(`   Referrer Commission (${commissionPercentage}%): ${totalCommissionEarned.toFixed(2)} rcredits`);
 
             // 6. Create the referral record
             referral = await Referral.create({
@@ -94,27 +120,42 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
                 activated_at: new Date()
             }, { transaction });
 
-            // 7. Award credits to new user
-            referredUser.credits = (parseFloat(referredUser.credits) || 0) + totalCreditsAwarded;
+            // 7. Award credits to new user (referee)
+            const oldRefereeCredits = parseFloat(referredUser.credits) || 0;
+            referredUser.credits = oldRefereeCredits + totalCreditsAwarded;
             await referredUser.save({ transaction });
 
-            // 8. Award commission to referrer's rcredits
-            referrer.rcredits = (parseFloat(referrer.rcredits) || 0) + totalCommissionEarned;
+            console.log(`✅ Referee Credits Updated: ${oldRefereeCredits} → ${referredUser.credits}`);
+
+            // 8. Award referrer their signup bonus + commission to rcredits
+            const oldReferrerRcredits = parseFloat(referrer.rcredits) || 0;
+            const oldReferrerCredits = parseFloat(referrer.credits) || 0;
+
+            // Referrer gets signup bonus as regular credits
+            referrer.credits = oldReferrerCredits + signupBonusReferrer;
+            // Referrer gets commission as rcredits
+            referrer.rcredits = oldReferrerRcredits + totalCommissionEarned;
             await referrer.save({ transaction });
+
+            console.log(`✅ Referrer Rewards:
+   - Credits: ${oldReferrerCredits} → ${referrer.credits} (+${signupBonusReferrer})
+   - RCredits: ${oldReferrerRcredits} → ${referrer.rcredits.toFixed(2)} (+${totalCommissionEarned.toFixed(2)})`);
 
             await transaction.commit();
 
-            console.log(`Signup Referral Created:
-                - New User (ID: ${newUserId}) received ${totalCreditsAwarded} credits (${signupBonus} signup + ${subscriptionCredits} subscription)
-                - Referrer (ID: ${referrerId}) received ${totalCommissionEarned.toFixed(2)} rcredits commission`);
+            console.log(`✅ Signup Referral Created Successfully:
+   - Referral ID: ${referral.id}
+   - Referee (ID: ${newUserId}) received ${totalCreditsAwarded} credits
+   - Referrer (ID: ${referrerId}) received ${signupBonusReferrer} credits + ${totalCommissionEarned.toFixed(2)} rcredits`);
 
             return {
                 success: true,
                 referral_id: referral.id,
-                signup_bonus: signupBonus,
+                referee_signup_bonus: signupBonusReferee,
+                referrer_signup_bonus: signupBonusReferrer,
                 subscription_credits: subscriptionCredits,
-                total_credits_awarded: totalCreditsAwarded,
-                commission_earned: totalCommissionEarned.toFixed(2),
+                total_credits_awarded_to_referee: totalCreditsAwarded,
+                commission_earned_by_referrer: totalCommissionEarned.toFixed(2),
                 type: 'signup'
             };
         }
@@ -129,14 +170,14 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
             });
 
             if (!referral) {
-                console.log('No existing referral found for subscription credits');
+                console.log('⚠️ No existing referral found for subscription credits');
                 await transaction.rollback();
                 return null;
             }
 
             // Verify the referrer matches
             if (referral.referrer_id !== referrerId) {
-                console.log('Referrer ID mismatch');
+                console.log('❌ Referrer ID mismatch');
                 await transaction.rollback();
                 return null;
             }
@@ -145,25 +186,39 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
             totalCreditsAwarded = subscriptionCredits;
             totalCommissionEarned = (subscriptionCredits * commissionPercentage) / 100;
 
+            console.log('💰 Subscription Reward Calculation:');
+            console.log(`   Subscription Credits: ${subscriptionCredits} credits`);
+            console.log(`   Referrer Commission (${commissionPercentage}%): ${totalCommissionEarned.toFixed(2)} rcredits`);
+
             // 5. Update referral record
-            referral.credits_earned_by_referred = parseFloat(referral.credits_earned_by_referred) + totalCreditsAwarded;
-            referral.commission_earned = parseFloat(referral.commission_earned) + totalCommissionEarned;
+            const oldTotalCredits = parseFloat(referral.credits_earned_by_referred);
+            const oldTotalCommission = parseFloat(referral.commission_earned);
+
+            referral.credits_earned_by_referred = oldTotalCredits + totalCreditsAwarded;
+            referral.commission_earned = oldTotalCommission + totalCommissionEarned;
             await referral.save({ transaction });
 
-            // 6. Award subscription credits to referred user
-            // referredUser.credits = (parseFloat(referredUser.credits) || 0) + totalCreditsAwarded;
-            // await referredUser.save({ transaction });
-            //it is credited already in webhook  method
+            console.log(`✅ Referral Record Updated:
+   - Total Credits by Referred: ${oldTotalCredits} → ${referral.credits_earned_by_referred}
+   - Total Commission: ${oldTotalCommission.toFixed(2)} → ${referral.commission_earned.toFixed(2)}`);
+
+            // 6. Subscription credits already awarded to referred user in webhook
+            console.log('ℹ️ Subscription credits already credited in webhook');
 
             // 7. Award commission to referrer's rcredits
-            referrer.rcredits = (parseFloat(referrer.rcredits) || 0) + totalCommissionEarned;
+            const oldReferrerRcredits = parseFloat(referrer.rcredits) || 0;
+            referrer.rcredits = oldReferrerRcredits + totalCommissionEarned;
             await referrer.save({ transaction });
+
+            console.log(`✅ Referrer RCredits Updated: ${oldReferrerRcredits.toFixed(2)} → ${referrer.rcredits.toFixed(2)}`);
 
             await transaction.commit();
 
-            console.log(`Subscription Referral Updated:
-                - Referred User (ID: ${newUserId}) received ${totalCreditsAwarded} subscription credits
-                - Referrer (ID: ${referrerId}) received ${totalCommissionEarned.toFixed(2)} rcredits commission`);
+            console.log(`✅ Subscription Referral Updated Successfully:
+   - Referred User (ID: ${newUserId}) purchased ${totalCreditsAwarded} credits
+   - Referrer (ID: ${referrerId}) earned ${totalCommissionEarned.toFixed(2)} rcredits commission
+   - Total earned by referee: ${referral.credits_earned_by_referred} credits
+   - Total commission earned: ${referral.commission_earned.toFixed(2)} rcredits`);
 
             return {
                 success: true,
@@ -171,18 +226,17 @@ export async function applyReferralReward(newUserId, referrerId, subscriptionCre
                 subscription_credits: totalCreditsAwarded,
                 commission_earned: totalCommissionEarned.toFixed(2),
                 total_credits_by_referred: referral.credits_earned_by_referred,
-                total_commission: referral.commission_earned,
+                total_commission: referral.commission_earned.toFixed(2),
                 type: 'subscription'
             };
         }
 
     } catch (error) {
         await transaction.rollback();
-        console.error('Error applying referral reward:', error);
+        console.error('❌ Error applying referral reward:', error);
         return null;
     }
 }
-
 /**
  * Create a new referral when user B signs up via user A's referral link
  */

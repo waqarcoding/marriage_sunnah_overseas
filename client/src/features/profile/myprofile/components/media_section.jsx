@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Camera, Video, Play, Trash2, GripVertical, Loader2 } from "lucide-react";
+import settings from "../../../../context/settings";
+
 
 export default function MediaSection({
     photos,
@@ -18,6 +20,10 @@ export default function MediaSection({
 }) {
     const [draggedIdx, setDraggedIdx] = useState(null);
     const [dragOverIdx, setDragOverIdx] = useState(null);
+
+    // ✅ Get dynamic costs from settings
+    const photoCost = settings.costUploadImage;
+    const videoCost = settings.costUploadVideo;
 
     const handleDragStart = (e, idx) => {
         setDraggedIdx(idx);
@@ -73,6 +79,7 @@ export default function MediaSection({
                     if (photo) {
                         return (
                             <motion.div
+                                onClick={() => onViewMedia(idx, "image")}
                                 key={idx}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{
@@ -97,7 +104,7 @@ export default function MediaSection({
                                     transition: "all 0.2s"
                                 }}>
                                 <img src={photo} alt={`Photo ${idx + 1}`}
-                                    onClick={() => onViewMedia(idx, "image")}
+
                                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
                                     loading="eager" />
                                 {isUploading && (
@@ -165,7 +172,7 @@ export default function MediaSection({
                                             {idx === 0 ? "Add Main" : `Photo ${idx + 1}`}
                                         </span>
                                         {idx <= photos.length && (
-                                            <span style={{ fontSize: 8, color: "var(--primary-foreground)", fontWeight: 600 }}>5 credits</span>
+                                            <span style={{ fontSize: 8, color: "#1B4D3E", fontWeight: 600 }}>{photoCost} credits</span>
                                         )}
                                     </>
                                 }
@@ -214,7 +221,9 @@ export default function MediaSection({
                                     </div>
                                 </div>
                                 {isPremium && (
-                                    <span style={{ fontSize: 9, color: "var(--primary-foreground)", fontWeight: 700 }}>20 credits</span>
+                                    <span style={{ fontSize: 9, color: "#fff", fontWeight: 700, backgroundColor: "rgba(255,255,255,0.2)", padding: "2px 6px", borderRadius: 4 }}>
+                                        {videoCost} credits
+                                    </span>
                                 )}
                             </>
                         )}
@@ -303,7 +312,9 @@ export default function MediaSection({
                                                 {!isPremium ? "🔒 Pro" : `Video ${idx + 1}`}
                                             </span>
                                             {isPremium && idx <= videos.length && (
-                                                <span style={{ fontSize: 8, color: "var(--primary-foreground)", fontWeight: 600 }}>20 credits</span>
+                                                <span style={{ fontSize: 8, color: "#fff", fontWeight: 600, backgroundColor: "rgba(255,255,255,0.2)", padding: "2px 6px", borderRadius: 4 }}>
+                                                    {videoCost} credits
+                                                </span>
                                             )}
                                         </>
                                     )}

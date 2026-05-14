@@ -1,5 +1,6 @@
 // src/features/auth/api/AuthApi.js
 import Api from "../../../api/Api";
+import settings from "../../../context/settings";
 import GuardianService from "../../guardian/services/GuardianService";
 import ProfileService from "../../profile/services/ProfileService";
 
@@ -46,8 +47,11 @@ class AuthApi {
             onSuccess: (res) => {
                 console.log("🔍 DEBUG: login success", res)
 
+
                 localStorage.setItem("isLoggedIn", "true")
                 localStorage.setItem("authData", JSON.stringify(res))
+                localStorage.setItem("user", JSON.stringify(res.user))
+
                 localStorage.setItem("jwtToken", res.token)
 
                 callbacks?.onSuccess?.(res)
@@ -70,39 +74,48 @@ class AuthApi {
     // ---------------- Check Profile ----------------
     async checkProfile(navigate) {
         const user = await ProfileService.getCurrentUser();
-        console.log("User Role:" + user.role);
 
-        if (user.role === 'guardian') {
-            navigate("/guardian", { replace: true });
-        } else if (user.role === 'individual') {
+
+        if (user.role === 'individual') {
             try {
                 const user = await ProfileService.getCurrentUser();
                 const isProfileCompleted = user?.profile?.is_profile_completed === 1;
                 const isVerified = user?.is_verified === true || user?.is_verified === 1;
                 const guardianData = await GuardianService.getMyGuardian();
-                console.log();
+
                 // ✅ Check for guardianUser instead of guardian
                 const isGuardianFound = guardianData.data != null ? true : false;
 
+                console.log("User Role:" + user.role);
+                console.log("isProfileCompleted:" + user?.profile?.is_profile_completed);
 
 
                 if (!isProfileCompleted) {
+                    console.log("navigating to setup:")
                     navigate("/profilesetup", { replace: true });
-                } else if (!isVerified) {
+                }
+
+                /*
+                else if (!isVerified) {
                     navigate("/verification", { replace: true });
                 } else if (!isGuardianFound) {
                     navigate("/individual/show-pin", { replace: true });
                 }
-                else {
-                    navigate("/individual/explore", { replace: true });
-                }
+                */
+
 
                 return { isProfileCompleted, isVerified };
             } catch {
                 navigate("/profilesetup", { replace: true });
                 return { isProfileCompleted: false, isVerified: false };
             }
+        } else if (user.role === 'guardian') {
+            navigate("/guardian", { replace: true });
         }
+        else if (user.role === 'admin' || user.role === 'staff') {
+            navigate("/admin/dashboard", { replace: true });
+        }
+
     }
 
     // ---------------- Verify OTP (registration flow — requires token) ----------------
@@ -150,10 +163,49 @@ class AuthApi {
     // ---------------- Logout ----------------
     logout() {
         console.log("LogOut");
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("authData");
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("isOtpVerified");
+
+        try {
+            // ✅ 1. Close any open modals/portals before clearing storage
+            const modals = document.querySelectorAll('[id$="-portal"]');
+            modals.forEach(modal => {
+                if (modal && modal.parentNode) {
+                    try {
+                        modal.parentNode.removeChild(modal);
+                    } catch (e) {
+                        console.warn("Modal cleanup warning:", e);
+                    }
+                }
+            });
+
+            // ✅ 2. Clear all localStorage items
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("authData");
+            localStorage.removeItem("jwtToken");
+            localStorage.removeItem("isOtpVerified");
+
+            // ✅ 3. Force close any Framer Motion AnimatePresence components
+            const animatedElements = document.querySelectorAll('[data-framer-portal-id]');
+            animatedElements.forEach(el => {
+                if (el && el.parentNode) {
+                    try {
+                        el.parentNode.removeChild(el);
+                    } catch (e) {
+                        console.warn("Animation cleanup warning:", e);
+                    }
+                }
+            });
+
+            // ✅ 4. Small delay to ensure cleanup completes before navigation
+            setTimeout(() => {
+                // Force full page reload to clear all React state
+                window.location.href = "/login";
+            }, 50);
+
+        } catch (error) {
+            console.error("Logout cleanup error:", error);
+            // Fallback: force navigation even if cleanup fails
+            window.location.href = "/login";
+        }
     }
 
     // ---------------- Get Current User ----------------

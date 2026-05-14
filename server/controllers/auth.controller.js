@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import db from '../models/index.js';
-const { sequelize, User, Profile, Match, Guardian, Interest, Message, Otp, Refferal } = db;
+const { sequelize, User, Profile, Match, Guardian, Interest, Message, Otp, Refferal, Setting } = db;
 import bcrypt from 'bcrypt';
 import { sendLoginOtpEmail, sendMail, sendOtpEmail, sendWelcomeEmail } from '../mail/service.js';
 import { otpTemplate } from '../mail/mailTemplates.js';
@@ -9,6 +9,9 @@ import jwt from 'jsonwebtoken';
 import { getUploadedUrl } from '../middlewares/upload.middleware.js';
 
 import { applyReferralReward } from './referral.controller.js';
+import setting from '../models/setting.js';
+
+
 /**
  * Helper: Generate and store OTP for a user
  */
@@ -86,6 +89,7 @@ export const signup = async (req, res) => {
         return res.json({ success: false, message: "Email already exists" });
       return res.json({ success: false, message: "Phone number already exists" });
     }
+    // Fetch application settings (assuming there's a Settings model or utility)
 
     const hashedPassword = await bcrypt.hash(password_hash, 10);
 
@@ -94,6 +98,7 @@ export const signup = async (req, res) => {
       email,
       mobile,
       avatar_url: photoPath,
+
       role: role?.trim() || "individual",
       password_hash: hashedPassword,
     }, { transaction: t });
@@ -139,6 +144,11 @@ export const signup = async (req, res) => {
     let referralResult = null;
     if (referrerId !== undefined && referrerId !== null && referrerId !== '' && !isNaN(Number(referrerId))) {
       referralResult = await applyReferralReward(user.id, referrerId, 0, true);
+    }
+    else {
+      // No referrer, apply signup free credits to user
+      const settings = await Setting.getAllSettings();
+      await user.update({ credits: settings.free_credits_on_signup });
     }
 
 

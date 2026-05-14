@@ -1,5 +1,5 @@
 import db from '../models/index.js';
-const { User, Profile, Guardian, Match, Message, Interest, Dislike, Preference, ContactReveal, sequelize } = db;
+const { User, Profile, Guardian, Match, Message, Interest, Dislike, Preference, ContactReveal, Setting, sequelize } = db;
 import { Op, Sequelize } from 'sequelize';
 import bcrypt from 'bcrypt';
 import { getUploadedUrl } from '../middlewares/upload.middleware.js';
@@ -398,7 +398,9 @@ export const uploadImage = async (req, res) => {
     if (!profile) return res.json({ success: false, message: "Profile not found" });
 
     // ✅ Deduct credits using utility, but do NOT deduct if uploading or replacing MAIN image (index 0)
-    const PHOTO_COST = 5;
+    const settings = await Setting.getAllSettings();
+
+    const PHOTO_COST = settings.cost_upload_image;
 
 
     let creditResult = { success: true }; // default: assume success if main image
@@ -471,7 +473,10 @@ export const uploadVideo = async (req, res) => {
     }
 
     // ✅ Deduct credits using utility
-    const VIDEO_COST = 20;
+    const settings = await Setting.getAllSettings();
+
+
+    const VIDEO_COST = settings.cost_upload_video;
     const creditResult = await deductCredits(userId, VIDEO_COST, 'Video upload');
 
     if (!creditResult.success) {

@@ -27,6 +27,7 @@ import guardianRoutes from "./routes/guardian.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import subscriptionRoutes from './routes/subscription.routes.js';
 import referralRoutes from './routes/referral.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 import { handleWebhook } from './controllers/subscription.controller.js'; // ✅ Direct import
 import { initSocket } from "./config/socket.js";
 
@@ -92,6 +93,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/uploads", express.static("uploads"));
 
 /* ---------------- API ROUTES (with /api prefix) ---------------- */
+
+
+app.use('/api/settings', settingsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/match", matchRoutes);
@@ -105,6 +109,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/referrals', referralRoutes);
 
 /* ---------------- API ROUTES (without /api prefix - for ingress stripping) ---------------- */
+app.use('/settings', settingsRoutes);
 app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
 app.use("/match", matchRoutes);

@@ -17,6 +17,7 @@ import {
     notifyGuardianRejected,
     createNotification
 } from '../config/socket.js';
+import setting from '../models/setting.js';
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -172,8 +173,9 @@ export const sendInterest = async (req, res) => {
         }
 
         // ✅ CHECK CREDITS
-        const creditCost = isSuperLike ? 10 : 1;
-        const hasCredits = await hasEnoughCredits(fromUserId, creditCost);
+
+        const settings = await Setting.getAllSettings();
+        const creditCost = isSuperLike ? settings.cost_super_like : settings.cost_send_interest;
 
         if (!hasCredits) {
             return res.json({

@@ -8,6 +8,8 @@ function BannerCanvas() {
 
     useEffect(() => {
         const canvas = canvasRef.current;
+        if (!canvas) return;
+
         const ctx = canvas.getContext("2d");
         let animId;
         let W, H;
@@ -28,26 +30,32 @@ function BannerCanvas() {
         }));
 
         const resize = () => {
-            W = canvas.width = canvas.offsetWidth;
-            H = canvas.height = canvas.offsetHeight;
+            W = canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            H = canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            canvas.style.width = canvas.offsetWidth + 'px';
+            canvas.style.height = canvas.offsetHeight + 'px';
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         };
         resize();
         window.addEventListener("resize", resize);
 
         const draw = (t) => {
             ctx.clearRect(0, 0, W, H);
+
+            // Base dark green background
             ctx.fillStyle = "#021a0e";
             ctx.fillRect(0, 0, W, H);
 
+            // Animated blobs
             blobs.forEach((b) => {
                 b.angle += b.speed;
                 const ox = Math.cos(b.angle) * 0.08;
                 const oy = Math.sin(b.angle * 0.8) * 0.06;
-                const gx = (b.x + ox) * W;
-                const gy = (b.y + oy) * H;
-                const gr = Math.min(W, H) * b.r;
+                const gx = (b.x + ox) * W / window.devicePixelRatio;
+                const gy = (b.y + oy) * H / window.devicePixelRatio;
+                const gr = Math.min(W, H) * b.r / window.devicePixelRatio;
                 const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-                grad.addColorStop(0, b.color + "bb");
+                grad.addColorStop(0, b.color + "dd");
                 grad.addColorStop(1, b.color + "00");
                 ctx.fillStyle = grad;
                 ctx.beginPath();
@@ -55,18 +63,27 @@ function BannerCanvas() {
                 ctx.fill();
             });
 
-            // dark overlay
-            ctx.fillStyle = "rgba(2,16,10,0.25)";
+            // Dark overlay for depth
+            ctx.fillStyle = "rgba(2,16,10,0.2)";
             ctx.fillRect(0, 0, W, H);
 
-            // fireflies
+            // Fireflies/particles
             particles.forEach((p) => {
-                p.x += p.vx; p.y += p.vy;
-                if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
-                if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = 1;
+                if (p.x > 1) p.x = 0;
+                if (p.y < 0) p.y = 1;
+                if (p.y > 1) p.y = 0;
                 const flicker = 0.5 + 0.5 * Math.sin(t * 0.0025 + p.x * 10);
                 ctx.beginPath();
-                ctx.arc(p.x * W, p.y * H, p.r, 0, Math.PI * 2);
+                ctx.arc(
+                    p.x * W / window.devicePixelRatio,
+                    p.y * H / window.devicePixelRatio,
+                    p.r,
+                    0,
+                    Math.PI * 2
+                );
                 ctx.fillStyle = `rgba(52,211,153,${p.alpha * flicker})`;
                 ctx.fill();
             });
@@ -103,11 +120,11 @@ export default function PremiumBanner({ onUpgrade }) {
             <div
                 className="relative overflow-hidden rounded-3xl w-full mx-auto"
                 style={{
-                    maxWidth: `calc(100vw - 20px)`,
-                    margin: "24px auto",
+                    maxWidth: `calc(100vw - 32px)`,
+                    margin: "24px 16px",
                     fontFamily: "'DM Sans', sans-serif",
                     minHeight: 220,
-
+                    background: "#021a0e",
                     boxShadow: "0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(52,211,153,0.1)",
                 }}
             >
@@ -125,36 +142,43 @@ export default function PremiumBanner({ onUpgrade }) {
                         className="absolute right-0 bottom-0 h-full object-cover object-top"
                         style={{
                             width: "55%",
-                            maskImage: "linear-gradient(to left, rgba(0,0,0,0.9) 0%, transparent 90%)",
-                            WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,0.5) 0%, transparent 90%)",
-                            mixBlendMode: "luminosity",
-                            opacity: 0.40,
+                            maskImage: "linear-gradient(to left, rgba(0,0,0,0.7) 0%, transparent 85%)",
+                            WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,0.7) 0%, transparent 85%)",
+                            opacity: 0.35,
                         }}
                     />
-                    {/* right edge fade */}
-                    <div className="absolute inset-y-0 right-0 w-1/3"
-                        style={{ background: "linear-gradient(to left, #021a0e, transparent)" }} />
+                    {/* Right edge fade */}
+                    <div
+                        className="absolute inset-y-0 right-0 w-1/3"
+                        style={{
+                            background: "linear-gradient(to left, rgba(2,26,14,0.9), transparent)",
+                            pointerEvents: "none"
+                        }}
+                    />
                 </div>
 
                 {/* Glowing border ring */}
-                <div className="absolute inset-0 rounded-3xl pointer-events-none"
-                    style={{ boxShadow: "inset 0 0 40px rgba(52,211,153,0.06)", zIndex: 2 }} />
+                <div
+                    className="absolute inset-0 rounded-3xl pointer-events-none"
+                    style={{
+                        boxShadow: "inset 0 0 40px rgba(52,211,153,0.08), inset 0 0 1px rgba(52,211,153,0.2)",
+                        zIndex: 2
+                    }}
+                />
 
                 {/* Content */}
                 <div className="relative z-10 flex flex-col justify-center h-full px-6 py-7">
 
-                    {/* Diamond icon */}
+                    {/* Crown icon */}
                     <motion.div
+                        className="inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-4"
                         style={{
-                            animation: "floatUp 3s ease-in-out infinite", background: "linear-gradient(135deg, #065f46, #34d399)",
+                            background: "linear-gradient(135deg, #065f46, #34d399)",
                             boxShadow: "0 0 24px rgba(52,211,153,0.45)",
-                            // @ts-ignore
                             animation: "floatUp 3s ease-in-out infinite",
                         }}
-                        className="inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-4"
-
                     >
-                        <Crown size={20} color="#021a0e" />
+                        <Crown size={20} color="#021a0e" strokeWidth={2.5} />
                     </motion.div>
 
                     {/* Heading */}
@@ -172,6 +196,7 @@ export default function PremiumBanner({ onUpgrade }) {
                                 backgroundSize: "200% auto",
                                 WebkitBackgroundClip: "text",
                                 WebkitTextFillColor: "transparent",
+                                backgroundClip: "text",
                                 animation: "shimmer 3s linear infinite",
                             }}
                         >
@@ -185,7 +210,7 @@ export default function PremiumBanner({ onUpgrade }) {
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
                         className="text-xs leading-relaxed mb-5 max-w-[200px]"
-                        style={{ color: "#6ee7b7", opacity: 0.85 }}
+                        style={{ color: "#6ee7b7" }}
                     >
                         See everyone who likes you and match instantly with Premium.
                     </motion.p>
@@ -210,7 +235,7 @@ export default function PremiumBanner({ onUpgrade }) {
                             fontFamily: "'Syne', sans-serif",
                         }}
                     >
-                        <Sparkles size={13} />
+                        <Sparkles size={13} strokeWidth={2.5} />
                         Upgrade to Premium
                     </motion.button>
                 </div>

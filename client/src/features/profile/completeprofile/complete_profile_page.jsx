@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "motion/react"
-
+// Add import at top
+import SelectOrInput from "../../../ui/select_or_input"
 import {
     ChevronLeft, ChevronDown, Check, Loader2, Shield, User, Baby,
     MapPin, BookOpen, Briefcase, Heart, Star, ChevronRight,
@@ -97,13 +98,17 @@ function CompleteScreen({ navigate }) {
             </motion.div>
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-card-foreground">Profile Complete!</h2>
-                <p className="text-muted-foreground text-sm leading-relaxed">Your profile is now live. Matches will be suggested based on your preferences.</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                    Congratulations! Your profile is complete. You are now live. Linking your guardian is recommended to access all features and improve your experience.
+                </p>
+
+
+
             </div>
             <div className="w-full max-w-xs space-y-3">
-                <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate("/individual/verification")}
+                <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate("/")}
                     className="w-full py-4 rounded-2xl text-primary-foreground font-semibold shadow-lg"
                     style={{ background: "var(--gradient-primary)" }}>View Matches</motion.button>
-                <button onClick={() => navigate("/profile")} className="w-full py-3 text-sm text-muted-foreground underline underline-offset-2">Edit Profile</button>
             </div>
         </motion.div>
     )
@@ -116,6 +121,9 @@ function AutoLocationCard({ form, setForm }) {
         const ctrl = new CompleteProfileController({ setForm })
         ctrl.requestLocation(setForm, setLocationError)
     }, [setForm])
+
+
+
     useEffect(() => {
         if (!requestedRef.current && !form.latitude && !form.longitude) { requestedRef.current = true; request() }
     }, [])
@@ -227,7 +235,7 @@ export default function CompleteProfile() {
                             education: !prev.education ? (educ.find(e => e === "Intermediate") ?? educ[4] ?? "") : prev.education,
                             employment_type: !prev.employment_type ? (employ.find(e => e === "Private") ?? employ[1] ?? "") : prev.employment_type,
                             // Step 6
-                            willing_to_relocate: !prev.willing_to_relocate ? "No" : prev.willing_to_relocate,
+                            willing_to_relocate: !prev.willing_to_relocate ? "Maybe" : prev.willing_to_relocate,
                         }
                     })
 
@@ -292,6 +300,8 @@ export default function CompleteProfile() {
     const setp = (k) => (v) => setPrefs(p => ({ ...p, [k]: v }))
     const age = ctrl.calcAge(form.date_of_birth)
     const ageOpts = Array.from({ length: 43 }, (_, i) => String(18 + i))
+
+
 
     // ── #2 Country change — auto city[0], nationality[0], tongue[0], salary[1] ──
     const handleCountryChange = (country) => {
@@ -441,8 +451,8 @@ export default function CompleteProfile() {
                                 {/* Contact hidden — default Hidden */}
                                 <ToggleGroup label="Hide Contact from Matches?" value={form.contact_hidden ?? "1"} onChange={set("contact_hidden")}
                                     options={[
-                                        { value: "0", label: "Visible", activeClass: "border-primary bg-secondary text-primary" },
-                                        { value: "1", label: "Hidden", activeClass: "border-border bg-muted text-muted-foreground" },
+                                        { value: "0", label: "Visible", activeClass: "border-primary bg-primary text-white" },
+                                        { value: "1", label: "Hidden", activeClass: "border-primary bg-primary text-white" },
                                     ]} />
                                 <AutoLocationCard form={form} setForm={setForm} />
                             </StepCard>
@@ -476,17 +486,37 @@ export default function CompleteProfile() {
                                     <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family Details</label>
 
                                     {/* Father Occupation */}
-                                    <RangeSelect label="Father's Occupation" value={form.father_occupation} onChange={set("father_occupation")}
+                                    <SelectOrInput
+                                        label="Father's Occupation"
+                                        value={form.father_occupation}
+                                        onChange={set("father_occupation")}
                                         placeholder="Select profession"
-                                        options={["Passed Away", ...(PROFESSIONS.length ? PROFESSIONS : ["Doctor", "Engineer", "Teacher", "Business Owner", "Other"])]}
-                                        note="Select 'Passed Away' if applicable" />
+                                        options={[
+                                            "Passed Away",
+                                            ...(PROFESSIONS.length
+                                                ? PROFESSIONS
+                                                : ["Doctor", "Engineer", "Teacher", "Business Owner"])
+                                        ]}
+                                        note="Select 'Passed Away' if applicable"
+                                    />
+
 
                                     {/* Mother Occupation */}
-                                    <RangeSelect label="Mother's Occupation" value={form.mother_occupation || "Housewife"}
+                                    <SelectOrInput
+                                        label="Mother's Occupation"
+                                        value={form.mother_occupation}
                                         onChange={set("mother_occupation")}
                                         placeholder="Select profession"
-                                        options={["Housewife", "Passed Away", ...(PROFESSIONS.length ? PROFESSIONS : ["Doctor", "Engineer", "Teacher", "Other"])]}
-                                        note="Default: Housewife" />
+                                        options={[
+                                            "Housewife",
+                                            "Passed Away",
+                                            ...(PROFESSIONS.length
+                                                ? PROFESSIONS
+                                                : ["Doctor", "Engineer", "Teacher"])
+                                        ]}
+                                        note="Default: Housewife"
+                                    />
+
 
                                     {/* Brothers & Sisters */}
                                     <div className="grid grid-cols-2 gap-3">
@@ -535,8 +565,14 @@ export default function CompleteProfile() {
                                 <RangeSelect label="Education Level" value={form.education} onChange={set("education")} placeholder="Select education"
                                     options={EDUCATION.length ? EDUCATION : ["High School", "Bachelor's", "Master's", "PhD", "Other"]} />
                                 {/* #10 Profession from options dropdown */}
-                                <RangeSelect label="Profession / Job Title" value={form.profession} onChange={set("profession")} placeholder="Select profession"
-                                    options={PROFESSIONS.length ? PROFESSIONS : ["Doctor", "Software Engineer", "Teacher", "Other"]} />
+                                <SelectOrInput
+                                    label="Profession / Job Title"
+                                    value={form.profession}
+                                    onChange={set("profession")}
+                                    placeholder="Select profession"
+                                    options={PROFESSIONS.length ? PROFESSIONS : ["Doctor", "Software Engineer", "Teacher"]}
+                                />
+
                                 {/* #11 Employment default Private */}
                                 <RangeSelect label="Employment Type" value={form.employment_type} onChange={set("employment_type")} placeholder="Select employment type"
                                     options={EMPLOYMENT.length ? EMPLOYMENT : ["Government", "Private", "Self-Employed", "Business Owner", "Student"]} />
@@ -578,9 +614,9 @@ export default function CompleteProfile() {
                                 {/* Willing to relocate — primary colour instead of red */}
                                 <ToggleGroup label="Willing to Relocate?" value={form.willing_to_relocate} onChange={set("willing_to_relocate")}
                                     options={[
-                                        { value: "Yes", label: "Yes", activeClass: "border-primary/5 bg-secondary text-primary" },
-                                        { value: "No", label: "No", activeClass: "border-primary/5 bg-secondary text-primary" },
-                                        { value: "Maybe", label: "Maybe", activeClass: "border-primary/5 bg-secondary text-primary" },
+                                        { value: "Yes", label: "Yes", activeClass: "border-primary/5 bg-primary text-white" },
+                                        { value: "No", label: "No", activeClass: "border-primary/5 bg-primary text-white" },
+                                        { value: "Maybe", label: "Maybe", activeClass: "border-primary/5 bg-primary text-white" },
                                     ]} />
                                 {/* Relationship intent — from DB opts */}
                                 <div>
@@ -604,7 +640,7 @@ export default function CompleteProfile() {
 
                         {/* ═══ STEP 7: Preferences ═══ */}
                         {step === 7 && !optsLoading && (
-                            <motion.div key="s7" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-4">
+                            <motion.div key="s7" initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-4">
                                 <div className="rounded-3xl p-5 text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
                                     <div className="flex items-center gap-2 mb-1">
                                         <Heart className="w-5 h-5" />
@@ -714,9 +750,9 @@ export default function CompleteProfile() {
                                     {/* Willing to relocate — primary colour */}
                                     <ToggleGroup label="Willing to Relocate" value={prefs.pref_willing_to_relocate || "No"} onChange={setp("pref_willing_to_relocate")} optional
                                         options={[
-                                            { value: "No Preference", label: "Any", activeClass: "border-border bg-muted text-muted-foreground" },
-                                            { value: "Yes", label: "Yes", activeClass: "border-primary/5 bg-secondary text-primary" },
-                                            { value: "No", label: "No", activeClass: "border-primary/5 bg-secondary text-primary" },
+                                            { value: "No Preference", label: "Any", activeClass: "border-primary/5 bg-primary text-white" },
+                                            { value: "Yes", label: "Yes", activeClass: "border-primary/5 bg-primary text-white" },
+                                            { value: "No", label: "No", activeClass: "border-primary/5 bg-primary text-white" },
                                         ]} />
                                 </StepCard>
                             </motion.div>
@@ -787,3 +823,4 @@ export default function CompleteProfile() {
         </div>
     )
 }
+

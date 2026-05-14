@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import settings from '../../context/settings';
+
 
 // Button component
 const Button = ({ children, variant = 'default', size = 'lg', className = '', onClick, ...props }) => {
@@ -50,10 +52,10 @@ export const AppBar = ({ onLogout, onSidebarLogout, isScrolled, isopacityon }) =
                     <img src="/logo.png" alt="Logo" className="h-12 w-12 md:h-16 md:w-16 rounded-full" />
 
                     <span className="text-white font-bold text-base md:text-xl hidden sm:inline">
-                        Marriage Sunna Overseas
+                        {settings.siteName}
                     </span>
                     <span className="text-white font-bold text-base md:text-sm sm:hidden">
-                        Marriage Sunna Overseas
+                        {settings.siteName}
                     </span>
                 </div>
 
