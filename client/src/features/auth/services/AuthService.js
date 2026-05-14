@@ -163,49 +163,10 @@ class AuthApi {
     // ---------------- Logout ----------------
     logout() {
         console.log("LogOut");
-
-        try {
-            // ✅ 1. Close any open modals/portals before clearing storage
-            const modals = document.querySelectorAll('[id$="-portal"]');
-            modals.forEach(modal => {
-                if (modal && modal.parentNode) {
-                    try {
-                        modal.parentNode.removeChild(modal);
-                    } catch (e) {
-                        console.warn("Modal cleanup warning:", e);
-                    }
-                }
-            });
-
-            // ✅ 2. Clear all localStorage items
-            localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("authData");
-            localStorage.removeItem("jwtToken");
-            localStorage.removeItem("isOtpVerified");
-
-            // ✅ 3. Force close any Framer Motion AnimatePresence components
-            const animatedElements = document.querySelectorAll('[data-framer-portal-id]');
-            animatedElements.forEach(el => {
-                if (el && el.parentNode) {
-                    try {
-                        el.parentNode.removeChild(el);
-                    } catch (e) {
-                        console.warn("Animation cleanup warning:", e);
-                    }
-                }
-            });
-
-            // ✅ 4. Small delay to ensure cleanup completes before navigation
-            setTimeout(() => {
-                // Force full page reload to clear all React state
-                window.location.href = "/login";
-            }, 50);
-
-        } catch (error) {
-            console.error("Logout cleanup error:", error);
-            // Fallback: force navigation even if cleanup fails
-            window.location.href = "/login";
-        }
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("authData");
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("isOtpVerified");
     }
 
     // ---------------- Get Current User ----------------
