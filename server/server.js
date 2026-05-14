@@ -236,6 +236,7 @@ const startServer = async () => {
       await db.syncDatabase();
       console.log("🛠️ DB sync completed (development only)");
     } else {
+
       console.log("🚫 Production mode: skipping DB sync");
     }
 

@@ -178,21 +178,7 @@ export default function FilterRow({ isOpen, onClose, onApply }) {
     const [showSuccess, setShowSuccess] = useState(false);
     const [saveError, setSaveError] = useState("");
     const [defaultCountry, setDefaultCountry] = useState("");
-    const [mounted, setMounted] = useState(false);
 
-    // ✅ Add mount/unmount tracking
-    useEffect(() => {
-        if (isOpen) {
-            setMounted(true);
-        } else {
-            // Delay unmount to allow exit animation
-            const timer = setTimeout(() => setMounted(false), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
-
-    // ✅ Don't render portal if not mounted
-    if (!mounted && !isOpen) return null;
     useEffect(() => {
         if (!isOpen) return;
 
