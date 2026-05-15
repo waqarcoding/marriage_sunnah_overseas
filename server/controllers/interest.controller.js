@@ -177,7 +177,7 @@ export const sendInterest = async (req, res) => {
         const settings = await Setting.getAllSettings();
         const creditCost = isSuperLike ? settings.cost_super_like : settings.cost_send_interest;
 
-        if (!hasCredits) {
+        if (!hasEnoughCredits(fromUser.id, fromUser.credits)) {
             return res.json({
                 success: false,
                 code: 'INSUFFICIENT_CREDITS',
