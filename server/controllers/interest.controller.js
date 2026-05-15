@@ -3,7 +3,7 @@
 import { deductCredits, hasEnoughCredits } from '../utils/credits.js';
 
 import db from '../models/index.js';
-const { User, Profile, Interest, Match, Guardian, Dislike } = db;
+const { User, Profile, Interest, Match, Guardian, Dislike, Setting } = db;
 import { Op } from 'sequelize';
 import {
     notifyInterestReceived,
