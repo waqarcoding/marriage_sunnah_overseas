@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SocketProvider } from './sockets/SocketContext.jsx';
 import AppBar, { INDIVIDUAL_TABS, GUARDIAN_TABS } from './ui/app_bar.jsx';
 
+// ✅ Import all components directly (no lazy loading - preloads everything)
 import ExplorePage from './features/explore/pages/explore_page.jsx';
 import Login from './features/auth/pages/login_page.jsx';
 import ReferralPage from './features/setting/pages/reffer_page.jsx';
@@ -28,9 +29,6 @@ import ShowPinPage from './features/profile/myprofile/pages/link_guardian_page.j
 import LinkWithPin from './features/guardian/pages/link_ward_page.jsx';
 import GuardianProfilePage from './features/guardian/pages/guardian_profile_page.jsx';
 import SubscriptionSuccess from './features/subscription/components/subscription_success.jsx';
-
-// ✅ Admin Panel Imports
-
 import AdminDashboard from './features/admin/pages/admin_dashboard_page.jsx';
 import UsersPage from './features/admin/pages/users_page.jsx';
 import VerificationQueue from './features/admin/pages/verification_queue.jsx';
@@ -69,27 +67,78 @@ const queryClient = new QueryClient({
   },
 });
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
 function isAuthenticated() {
-  return (
-    localStorage.getItem('isLoggedIn') === 'true' &&
-    localStorage.getItem('isOtpVerified') === 'true'
-  );
+  try {
+    return (
+      localStorage.getItem('isLoggedIn') === 'true' &&
+      localStorage.getItem('isOtpVerified') === 'true'
+    );
+  } catch (error) {
+    console.error('Auth check error:', error);
+    return false;
+  }
 }
 
-// ✅ Check if admin is authenticated
-
 function isAdminAuthenticated() {
-  const data = AuthService.getTokenData();
-  return data !== null && (data.role === 'admin' || data.role === 'staff');
+  try {
+    const data = AuthService.getTokenData();
+    return data !== null && (data.role === 'admin' || data.role === 'staff');
+  } catch (error) {
+    console.error('Admin auth check error:', error);
+    return false;
+  }
 }
 
 const logout = () => {
   AuthService.logout();
 };
 
+// ============================================
+// PORTAL CLEANUP ON ROUTE CHANGE
+// ============================================
 
+function PortalCleanup() {
+  const location = useLocation();
 
-// ── Error Boundary Component ──────────────────────────────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const bodyChildren = Array.from(document.body.children);
+        bodyChildren.forEach(child => {
+          if (
+            child.id !== 'root' &&
+            child.tagName !== 'SCRIPT' &&
+            child.tagName !== 'STYLE' &&
+            !child.classList.contains('Toaster')
+          ) {
+            try {
+              if (child.parentNode === document.body) {
+                document.body.removeChild(child);
+              }
+            } catch (e) {
+              // Ignore
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Portal cleanup error:', error);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  return null;
+}
+
+// ============================================
+// ERROR BOUNDARY
+// ============================================
+
 function ErrorBoundaryFallback() {
   return (
     <div className="flex items-center justify-center h-screen">
@@ -107,7 +156,10 @@ function ErrorBoundaryFallback() {
   );
 }
 
-// ── Role Access Denied Component ──────────────────────────────────────────────
+// ============================================
+// ROLE ACCESS DENIED
+// ============================================
+
 function RoleAccessDenied() {
   const navigate = useNavigate();
   const role = AuthService.getUserRole();
@@ -153,11 +205,29 @@ function RoleAccessDenied() {
   );
 }
 
-// ── Guards ────────────────────────────────────────────────────────────────────
-function RootGuard() {
-  if (!isAuthenticated()) return <Landing />;
+// ============================================
+// GUARDS - FIXED VERSION
+// ============================================
 
-  const role = AuthService.getUserRole();
+function RootGuard() {
+  const authenticated = isAuthenticated();
+
+  if (!authenticated) {
+    return <Landing />;
+  }
+
+  let role = null;
+  try {
+    role = AuthService.getUserRole();
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    try {
+      localStorage.clear();
+    } catch (e) {
+      // Ignore
+    }
+    return <Landing />;
+  }
 
   if (role === 'admin' || role === 'staff') {
     return <Navigate to="/admin/dashboard" replace />;
@@ -165,26 +235,41 @@ function RootGuard() {
   if (role === 'guardian') {
     return <Navigate to="/guardian" replace />;
   }
-  // individual (default)
   return <Navigate to="/individual/explore" replace />;
 }
+
 function ProtectedRoute({ children, requireRole = null }) {
-  if (localStorage.getItem('isLoggedIn') !== 'true') {
+  let isLoggedIn = false;
+  let isOtpVerified = false;
+  let userRole = null;
+
+  try {
+    isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    isOtpVerified = localStorage.getItem('isOtpVerified') === 'true';
+
+    if (requireRole) {
+      userRole = AuthService.getUserRole();
+    }
+  } catch (error) {
+    console.error('ProtectedRoute check error:', error);
     return <Navigate to="/login" replace />;
   }
-  if (localStorage.getItem('isOtpVerified') !== 'true') {
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isOtpVerified) {
     return <Navigate to="/otp" replace />;
   }
-  if (requireRole) {
-    const userRole = AuthService.getUserRole();
-    if (userRole !== requireRole) {
-      return <RoleAccessDenied />;
-    }
+
+  if (requireRole && userRole !== requireRole) {
+    return <RoleAccessDenied />;
   }
+
   return children;
 }
 
-// ✅ Admin Protected Route
 function AdminProtectedRoute({ children }) {
   if (!isAdminAuthenticated()) {
     return <Navigate to="/login" replace />;
@@ -194,10 +279,34 @@ function AdminProtectedRoute({ children }) {
 
 function LoginWrapper() {
   const navigate = useNavigate();
-  return <Login onLogin={() => navigate('/otp', { replace: true })} />;
+
+  const handleLoginSuccess = () => {
+    try {
+      const authData = JSON.parse(localStorage.getItem("authData") || '{}');
+      const role = authData?.user?.role;
+
+      if (role === 'individual') {
+        navigate('/individual/explore', { replace: true });
+      } else if (role === 'guardian') {
+        navigate('/guardian', { replace: true });
+      } else if (role === 'admin' || role === 'staff') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      navigate('/', { replace: true });
+    }
+  };
+
+  return <Login onLogin={handleLoginSuccess} />;
 }
 
-// ── Helper Component to Keep Components Mounted ──────────────────────────────
+// ============================================
+// CONDITIONAL CONTENT - Keeps components mounted
+// ============================================
+
 function ConditionalContent({ path, children }) {
   const location = useLocation();
   const isActive = location.pathname === path || location.pathname.startsWith(path + '/');
@@ -209,9 +318,13 @@ function ConditionalContent({ path, children }) {
   );
 }
 
-// ── Layouts ───────────────────────────────────────────────────────────────────
+// ============================================
+// LAYOUTS - FIXED VERSION
+// ============================================
+
 function IndividualLayout() {
   const navigate = useNavigate();
+
   const handleLogout = () => {
     logout();
     navigate('/', { replace: true });
@@ -244,7 +357,7 @@ function IndividualLayout() {
             <ProfileDetailPage />
           </ConditionalContent>
           <ConditionalContent path="/individual/myprofile">
-            <MyProfile onLogout={() => { logout(); }} />
+            <MyProfile onLogout={handleLogout} />
           </ConditionalContent>
           <ConditionalContent path="/individual/settings">
             <SettingsPage />
@@ -261,7 +374,6 @@ function IndividualLayout() {
           <ConditionalContent path="/individual/subscription">
             <SubscriptionPage />
           </ConditionalContent>
-          {/* ✅ Add verification here */}
           <ConditionalContent path="/individual/verification">
             <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
           </ConditionalContent>
@@ -295,7 +407,7 @@ function GuardianLayout() {
             <LinkWithPin />
           </ConditionalContent>
           <ConditionalContent path="/guardian/guardianprofile">
-            <GuardianProfilePage onLogout={() => { logout(); }} />
+            <GuardianProfilePage onLogout={handleLogout} />
           </ConditionalContent>
           <ConditionalContent path="/guardian/chats">
             <Chat />
@@ -315,7 +427,6 @@ function GuardianLayout() {
           <ConditionalContent path="/guardian/profile">
             <ProfileDetailPage />
           </ConditionalContent>
-          {/* ✅ Add verification here */}
           <ConditionalContent path="/guardian/verification">
             <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
           </ConditionalContent>
@@ -325,74 +436,21 @@ function GuardianLayout() {
   );
 }
 
-// ── Router ────────────────────────────────────────────────────────────────────
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <RootGuard />,
-    errorElement: <ErrorBoundaryFallback />
-  },
-  { path: '/login', element: <LoginWrapper /> },
-  { path: '/register', element: <Register onRegister={() => { }} /> },
-  { path: '/otp', element: <OtpPage onSuccess={() => { }} /> },
-  { path: '/how', element: <HowItWorks /> },
-  { path: '/forget-password', element: <ForgotPassword /> },
-  { path: '/change-password', element: <ChangePassword /> },
+// ============================================
+// ADMIN LAYOUT
+// ============================================
 
-  { path: '/subscription', element: <ProtectedRoute><SubscriptionPage /></ProtectedRoute> },
-  { path: '/subscription/success', element: <ProtectedRoute><SubscriptionSuccess /></ProtectedRoute> },
-
-  { path: '/profilesetup', element: <ProtectedRoute><CompleteProfile /></ProtectedRoute> },
-
-  {
-    path: '/guardian/*',
-    element: <ProtectedRoute requireRole="guardian"><GuardianLayout /></ProtectedRoute>,
-    errorElement: <ErrorBoundaryFallback />,
-  },
-  // ✅ REMOVED - verification is now inside individual and guardian layouts
-  // {
-  //   path: '/verification',
-  //   element: (
-  //     <ProtectedRoute>
-  //       <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
-  //     </ProtectedRoute>
-  //   )
-  // },
-  {
-    path: '/individual/*',
-    element: <ProtectedRoute requireRole="individual"><IndividualLayout /></ProtectedRoute>,
-    errorElement: <ErrorBoundaryFallback />,
-  },
-
-  // ✅ ── Admin Routes ────────────────────────────────────────────────────────
-  {
-    path: '/admin/login',
-    element: < LoginWrapper />
-  },
-  {
-    path: '/admin',
-    element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
-    errorElement: <ErrorBoundaryFallback />,
-    children: [
-      { path: 'dashboard', element: <AdminDashboard /> },
-      { path: 'users', element: <UsersPage /> },
-      { path: 'verifications', element: <VerificationQueue /> },
-      { path: 'subscriptions', element: <SubscriptionsPage /> },
-      { path: 'transactions', element: <TransactionsPage /> },
-      { path: 'messages', element: <MessagesPage /> },
-      { path: 'settings', element: <AdminSettingsPage /> },
-    ]
-  },
-]);
-
-
-
-// ✅ ── Admin Layout ─────────────────────────────────────────────────────────── 
 function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  let adminUser = {};
+  try {
+    adminUser = JSON.parse(localStorage.getItem('user') || '{}');
+  } catch (error) {
+    console.error('Error parsing admin user:', error);
+  }
 
   const handleLogout = () => {
     logout();
@@ -416,6 +474,7 @@ function AdminLayout() {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      <PortalCleanup />
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
@@ -425,7 +484,7 @@ function AdminLayout() {
         />
       )}
 
-      {/* Sidebar - Mobile Drawer & Desktop Fixed */}
+      {/* Sidebar */}
       <div
         className={`
           fixed lg:static inset-y-0 left-0 z-50
@@ -436,11 +495,8 @@ function AdminLayout() {
         `}
         style={{ boxShadow: '2px 0 12px rgba(0, 0, 0, 0.03)' }}
       >
-        {/* Logo Section */}
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between mb-3">
-
-            {/* Mobile Close Button */}
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-all"
@@ -449,7 +505,6 @@ function AdminLayout() {
             </button>
           </div>
 
-          {/* User Info */}
           <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
             <img
               src={adminUser.avatar_url || "/default-avatar.png"}
@@ -473,7 +528,6 @@ function AdminLayout() {
           </div>
         </div>
 
-        {/* Navigation Menu */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map(item => {
             const isActive = location.pathname === item.path;
@@ -502,7 +556,6 @@ function AdminLayout() {
           })}
         </nav>
 
-        {/* Logout Button */}
         <div className="p-4 border-t border-gray-100">
           <button
             onClick={handleLogout}
@@ -514,10 +567,8 @@ function AdminLayout() {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
-        {/* Mobile Header */}
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
@@ -534,10 +585,9 @@ function AdminLayout() {
             </div>
             <span className="text-sm font-bold text-gray-900">Admin Panel</span>
           </div>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <div className="w-10" />
         </div>
 
-        {/* Page Content */}
         <div className="flex-1 overflow-auto">
           <Outlet />
         </div>
@@ -546,8 +596,59 @@ function AdminLayout() {
   );
 }
 
+// ============================================
+// ROUTER
+// ============================================
 
-// ── Root app ──────────────────────────────────────────────────────────────────
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootGuard />,
+    errorElement: <ErrorBoundaryFallback />
+  },
+  { path: '/login', element: <LoginWrapper /> },
+  { path: '/register', element: <Register onRegister={() => { }} /> },
+  { path: '/otp', element: <OtpPage onSuccess={() => { }} /> },
+  { path: '/how', element: <HowItWorks /> },
+  { path: '/forget-password', element: <ForgotPassword /> },
+  { path: '/change-password', element: <ChangePassword /> },
+  { path: '/subscription', element: <ProtectedRoute><SubscriptionPage /></ProtectedRoute> },
+  { path: '/subscription/success', element: <ProtectedRoute><SubscriptionSuccess /></ProtectedRoute> },
+  { path: '/profilesetup', element: <ProtectedRoute><CompleteProfile /></ProtectedRoute> },
+  {
+    path: '/guardian/*',
+    element: <ProtectedRoute requireRole="guardian"><GuardianLayout /></ProtectedRoute>,
+    errorElement: <ErrorBoundaryFallback />,
+  },
+  {
+    path: '/individual/*',
+    element: <ProtectedRoute requireRole="individual"><IndividualLayout /></ProtectedRoute>,
+    errorElement: <ErrorBoundaryFallback />,
+  },
+  {
+    path: '/admin/login',
+    element: <LoginWrapper />
+  },
+  {
+    path: '/admin',
+    element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
+    errorElement: <ErrorBoundaryFallback />,
+    children: [
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'users', element: <UsersPage /> },
+      { path: 'verifications', element: <VerificationQueue /> },
+      { path: 'subscriptions', element: <SubscriptionsPage /> },
+      { path: 'transactions', element: <TransactionsPage /> },
+      { path: 'messages', element: <MessagesPage /> },
+      { path: 'settings', element: <AdminSettingsPage /> },
+    ]
+  },
+]);
+
+// ============================================
+// ROOT APP
+// ============================================
+
 function AppRoot() {
   const user = AuthService.getTokenData();
   const userId = user?.id ?? null;
@@ -559,6 +660,10 @@ function AppRoot() {
     </SocketProvider>
   );
 }
+
+// ============================================
+// RENDER
+// ============================================
 
 settings.load().then(() => {
   createRoot(document.getElementById('root')).render(

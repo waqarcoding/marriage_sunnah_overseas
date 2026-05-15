@@ -1,81 +1,118 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { LogOut, Settings, CreditCard, Shield, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 
 export default function ProfileDropdown({ avatar, name, role, onLogout, menuItems }) {
     const [isOpen, setIsOpen] = useState(false);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
     const dropdownRef = useRef(null);
+    const isMountedRef = useRef(true);
 
-    // Close dropdown when clicking outside
+    // ✅ Cleanup on unmount
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    // ✅ Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
+                if (isMountedRef.current) {
+                    setIsOpen(false);
+                }
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-
-
-
-
     const handleMenuClick = (item) => {
+        if (!isMountedRef.current) return;
+
         if (item.action === "logout") {
             setShowLogoutDialog(true);
             setIsOpen(false);
         } else if (item.path) {
             window.location.href = item.path;
             setIsOpen(false);
+        } else if (item.onClick) {
+            item.onClick();
+            setIsOpen(false);
         }
     };
 
     const handleLogout = () => {
+        if (!isMountedRef.current) return;
+
         setShowLogoutDialog(false);
-        onLogout();
+        if (onLogout) {
+            onLogout();
+        }
+    };
+
+    const handleToggle = () => {
+        if (isMountedRef.current) {
+            setIsOpen(!isOpen);
+        }
     };
 
     return (
         <>
-            <div ref={dropdownRef} style={{ position: "relative" }}>
+            <div ref={dropdownRef} className="relative">
                 {/* Profile Button */}
                 <motion.div
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={handleToggle}
                     className="flex items-center gap-2 pr-3 border-r cursor-pointer"
                     style={{ borderColor: "rgba(27, 77, 62, 0.15)" }}
                 >
-                    <span
-                        className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold select-none bg-[var(--primary)]"
+                    {/* Avatar */}
+                    <div
+                        className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold select-none overflow-hidden"
                         style={{
-                            background: "var(--primary)",
-                            color: "var(--primary-foreground)"
+                            background: "var(--primary, #1B4D3E)",
+                            color: "#fff"
                         }}
                     >
-                        {(avatar && (
+                        {avatar ? (
                             <img
                                 src={avatar}
-                                alt={name}
+                                alt={name || "User"}
                                 className="h-8 w-8 rounded-full object-cover"
-                            />
-                        )) || (name?.[0] || "U").toUpperCase()}
-                    </span>
+                                onError={(e) => {
+                                    const target = e.target;
+                                    if (target instanceof HTMLImageElement && target.parentElement) {
+                                        target.style.display = 'none';
+                                        target.parentElement.textContent = (name?.[0] || "U").toUpperCase();
+                                    }
+                                }}
 
-                    <div>
-                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--background)" }}>
-                            {name}
+                            />
+                        ) : (
+                            (name?.[0] || "U").toUpperCase()
+                        )}
+                    </div>
+
+                    {/* Name and Role */}
+                    <div className="hidden sm:block">
+                        <p className="text-sm font-semibold leading-tight" style={{ color: "var(--background, #fff)" }}>
+                            {name || "User"}
                         </p>
-                        <p className="text-xs capitalize leading-tight" style={{ color: "var(--accent)", opacity: 0.6 }}>
-                            {role}
+                        <p className="text-xs capitalize leading-tight" style={{ color: "var(--accent, #fff)", opacity: 0.7 }}>
+                            {role || "Member"}
                         </p>
                     </div>
+
+                    {/* Chevron */}
                     <motion.div
                         animate={{ rotate: isOpen ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
+                        className="hidden sm:block"
                     >
-                        <ChevronDown style={{ width: 16, height: 16, color: "var(--background)", opacity: 0.6 }} />
+                        <ChevronDown className="w-4 h-4" style={{ color: "var(--background, #fff)", opacity: 0.6 }} />
                     </motion.div>
                 </motion.div>
 
@@ -87,62 +124,55 @@ export default function ProfileDropdown({ avatar, name, role, onLogout, menuItem
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -10, scale: 0.95 }}
                             transition={{ duration: 0.2 }}
+                            className="absolute top-full right-0 mt-2 min-w-[220px] bg-white rounded-xl shadow-xl border overflow-hidden"
                             style={{
-                                position: "absolute",
-                                top: "calc(100% + 8px)",
-                                right: 0,
-                                minWidth: 220,
-                                backgroundColor: "#fff",
-                                borderRadius: 12,
-                                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-                                border: "1px solid rgba(27, 77, 62, 0.1)",
-                                overflow: "hidden",
+                                borderColor: "rgba(27, 77, 62, 0.1)",
                                 zIndex: 1000,
                             }}
                         >
-                            {/* User Info */}
-                            <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #f0f5f3" }}>
-                                <p style={{ fontSize: 14, fontWeight: 700, color: "#1B4D3E", marginBottom: 2 }}>
-                                    {name}
+                            {/* User Info Header */}
+                            <div className="p-4 pb-3 border-b border-gray-100">
+                                <p className="text-sm font-bold text-gray-900 mb-0.5">
+                                    {name || "User"}
                                 </p>
-                                <p style={{ fontSize: 12, color: "#1B4D3E", opacity: 0.6, textTransform: "capitalize" }}>
-                                    {role}
+                                <p className="text-xs text-gray-500 capitalize">
+                                    {role || "Member"}
                                 </p>
                             </div>
 
                             {/* Menu Items */}
-                            <div style={{ padding: "8px 0" }}>
-                                {menuItems.map((item, idx) => (
-                                    <motion.button
-                                        key={idx}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleMenuClick(item)}
-                                        style={{
-                                            width: "100%",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 12,
-                                            padding: "12px 16px",
-                                            border: "none",
-                                            background: "transparent",
-                                            cursor: "pointer",
-                                            transition: "all 0.2s",
-                                            borderTop: item.action === "logout" ? "1px solid #f0f5f3" : "none",
-                                            marginTop: item.action === "logout" ? 4 : 0,
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = "#f0f5f3";
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = "transparent";
-                                        }}
-                                    >
-                                        <item.icon style={{ width: 18, height: 18, color: item.color }} />
-                                        <span style={{ fontSize: 14, fontWeight: 500, color: item.color }}>
-                                            {item.label}
-                                        </span>
-                                    </motion.button>
-                                ))}
+                            <div className="py-2">
+                                {menuItems && menuItems.length > 0 ? (
+                                    menuItems.map((item, idx) => (
+                                        <motion.button
+                                            key={idx}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => handleMenuClick(item)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                                            style={{
+                                                borderTop: item.action === "logout" ? "1px solid #f3f4f6" : "none",
+                                                marginTop: item.action === "logout" ? 4 : 0,
+                                            }}
+                                        >
+                                            {item.icon && (
+                                                <item.icon
+                                                    className="w-[18px] h-[18px]"
+                                                    style={{ color: item.color || "#6b7280" }}
+                                                />
+                                            )}
+                                            <span
+                                                className="text-sm font-medium"
+                                                style={{ color: item.color || "#374151" }}
+                                            >
+                                                {item.label}
+                                            </span>
+                                        </motion.button>
+                                    ))
+                                ) : (
+                                    <div className="px-4 py-3 text-sm text-gray-400">
+                                        No menu items
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -156,15 +186,10 @@ export default function ProfileDropdown({ avatar, name, role, onLogout, menuItem
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                         style={{
-                            position: "fixed",
-                            inset: 0,
                             backgroundColor: "rgba(0, 0, 0, 0.5)",
                             backdropFilter: "blur(4px)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 9999,
                         }}
                         onClick={() => setShowLogoutDialog(false)}
                     >
@@ -173,107 +198,41 @@ export default function ProfileDropdown({ avatar, name, role, onLogout, menuItem
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            style={{
-                                backgroundColor: "#fff",
-                                borderRadius: 20,
-                                padding: 32,
-                                maxWidth: 400,
-                                width: "90%",
-                                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-                            }}
+                            className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
                         >
                             {/* Icon */}
                             <div
+                                className="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center"
                                 style={{
-                                    width: 64,
-                                    height: 64,
-                                    borderRadius: "50%",
                                     background: "linear-gradient(135deg, #fee2e2, #fecaca)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    margin: "0 auto 20px",
                                 }}
                             >
-                                <LogOut style={{ width: 28, height: 28, color: "#ef4444" }} />
+                                <LogOut className="w-7 h-7 text-red-500" />
                             </div>
 
                             {/* Title */}
-                            <h3
-                                style={{
-                                    fontSize: 22,
-                                    fontWeight: 700,
-                                    color: "#1B4D3E",
-                                    textAlign: "center",
-                                    marginBottom: 8,
-                                }}
-                            >
+                            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
                                 Confirm Logout
                             </h3>
 
                             {/* Message */}
-                            <p
-                                style={{
-                                    fontSize: 14,
-                                    color: "#6b7280",
-                                    textAlign: "center",
-                                    lineHeight: 1.6,
-                                    marginBottom: 28,
-                                }}
-                            >
+                            <p className="text-sm text-gray-600 text-center leading-relaxed mb-7">
                                 Are you sure you want to log out? You'll need to sign in again to access your account.
                             </p>
 
                             {/* Buttons */}
-                            <div style={{ display: "flex", gap: 12 }}>
+                            <div className="flex gap-3">
                                 <motion.button
                                     whileTap={{ scale: 0.97 }}
                                     onClick={() => setShowLogoutDialog(false)}
-                                    style={{
-                                        flex: 1,
-                                        padding: "12px 24px",
-                                        borderRadius: 12,
-                                        border: "1.5px solid #f0f5f3",
-                                        background: "#fff",
-                                        color: "#1B4D3E",
-                                        fontSize: 14,
-                                        fontWeight: 600,
-                                        cursor: "pointer",
-                                        transition: "all 0.2s",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = "#f0f5f3";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = "#fff";
-                                    }}
+                                    className="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
                                 </motion.button>
                                 <motion.button
                                     whileTap={{ scale: 0.97 }}
                                     onClick={handleLogout}
-                                    style={{
-                                        flex: 1,
-                                        padding: "12px 24px",
-                                        borderRadius: 12,
-                                        border: "none",
-                                        background: "#ef4444",
-                                        color: "#fff",
-                                        fontSize: 14,
-                                        fontWeight: 600,
-                                        cursor: "pointer",
-                                        transition: "all 0.2s",
-                                        boxShadow: "0 2px 8px rgba(239, 68, 68, 0.3)",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = "#dc2626";
-                                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.4)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = "#ef4444";
-                                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(239, 68, 68, 0.3)";
-                                    }}
+                                    className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:shadow-red-500/40"
                                 >
                                     Logout
                                 </motion.button>
@@ -284,5 +243,4 @@ export default function ProfileDropdown({ avatar, name, role, onLogout, menuItem
             </AnimatePresence>
         </>
     );
-
 }

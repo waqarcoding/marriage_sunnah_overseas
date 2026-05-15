@@ -36,48 +36,174 @@ export default function Landing() {
                 <AppBar onLogout={() => { }} onSidebarLogout={() => { }} isScrolled={true} isopacityon={true} />
 
                 {/* ── Hero ─── */}
-                <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0">
-                        <img src="/hero-banner.png" alt="Marriage Sunna Overseas" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/92 via-emerald-900/72 to-emerald-800/45" />
-                    </div>
-                    <div className="absolute top-20 right-10 w-32 h-32 rounded-full bg-amber-300/10 blur-3xl" />
-                    <div className="absolute bottom-32 left-10 w-40 h-40 rounded-full bg-emerald-300/10 blur-3xl" />
+                <section className="relative min-h-screen flex items-center overflow-hidden">
 
-                    <div className="relative z-10 container mx-auto px-4 py-20">
-                        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-sm mb-6 border border-white/20">
-                                <Star className="h-4 w-4 text-amber-400" /> Halal & Family-Centric Matchmaking
-                            </div>
-                            <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
-                                Find Your Partner <br />
-                                <span className="text-emerald-300">with Dignity & Sunna</span>
-                            </h1>
-                            <p className="text-lg md:text-xl text-white/80 max-w-xl leading-relaxed mb-10">
+                    {/* ── Background image ── */}
+                    <div className="absolute inset-0">
+                        <img
+                            src="/hero-section.png"
+                            alt="Marriage Sunna Overseas"
+                            className="
+                h-full w-full object-cover
+                object-[83%_top] sm:object-[85%_center] md:object-right
+            "
+                        />
+
+                        {/* MOBILE: strong dark gradient bottom-up so text dominates */}
+                        <div className="absolute inset-0 md:hidden bg-gradient-to-b from-[#1B4D3E]/40 via-[#1B4D3E]/85 to-[#0d2a23]/95" />
+
+                        {/* DESKTOP: side gradient (left dark, right transparent) */}
+                        <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#1B4D3E]/90 via-[#1B4D3E]/55 to-transparent" />
+                        <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-[#0d2a23]/40 via-transparent to-transparent" />
+                    </div>
+
+                    {/* Decorative glows — desktop only */}
+                    <div className="hidden md:block absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-amber-300/8 blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-32 left-10 w-40 h-40 rounded-full bg-emerald-300/10 blur-3xl pointer-events-none" />
+
+                    {/* Subtle ornament — desktop only */}
+                    <svg
+                        className="absolute top-1/2 left-[42%] -translate-y-1/2 w-[420px] h-[420px] opacity-[0.06] pointer-events-none hidden lg:block"
+                        viewBox="0 0 200 200" fill="none" aria-hidden="true">
+                        <circle cx="100" cy="100" r="98" stroke="#fbbf24" strokeWidth="0.5" />
+                        <circle cx="100" cy="100" r="80" stroke="#fbbf24" strokeWidth="0.5" />
+                        <circle cx="100" cy="100" r="62" stroke="#fbbf24" strokeWidth="0.5" />
+                        <path d="M100 2 L130 100 L100 198 L70 100 Z" stroke="#fbbf24" strokeWidth="0.5" fill="none" />
+                        <path d="M2 100 L100 70 L198 100 L100 130 Z" stroke="#fbbf24" strokeWidth="0.5" fill="none" />
+                    </svg>
+
+                    {/* ── Content ── */}
+                    <div className="relative z-10 container mx-auto px-5 sm:px-6 pt-20 pb-12 md:py-24">
+
+                        {/* MOBILE: faded couple peek at top (decorative, smaller) */}
+                        {/* — handled by image positioning — couple is at top on mobile */}
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                            className="max-w-3xl"
+                        >
+                            {/* Eyebrow pill */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/10 backdrop-blur-md text-white/95 text-xs sm:text-sm mb-5 sm:mb-6 border border-white/20"
+                            >
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                                </span>
+                                <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
+                                <span className="whitespace-nowrap">Halal & Family-Centric</span>
+                            </motion.div>
+
+                            {/* Headline — responsive sizes */}
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="font-serif font-bold text-white leading-[1.05] mb-5 sm:mb-6 text-[40px] sm:text-5xl md:text-6xl lg:text-7xl"
+                                style={{ letterSpacing: "-0.02em" }}
+                            >
+                                Find Your<br className="sm:hidden" /> Partner <br />
+                                <span className="bg-gradient-to-r from-emerald-200 via-emerald-300 to-amber-200 bg-clip-text text-transparent">
+                                    with Dignity & Sunna
+                                </span>
+                            </motion.h1>
+
+                            {/* Description — slightly smaller on mobile */}
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="text-[15px] sm:text-lg md:text-xl text-white/85 max-w-xl leading-relaxed mb-8 sm:mb-10"
+                            >
                                 Marriage Sunna Overseas connects Muslim families across borders.
-                                We prioritize privacy, guardian involvement, and Islamic values to help you complete half your deen.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                                <Button variant="default" size="lg" className="h-14 px-10 text-lg bg-white text-emerald-900 hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" onClick={() => go("/register")}>
-                                    Start Your Journey<ArrowRight className="ml-2 h-5 w-5" />
+                                We prioritize privacy, guardian involvement, and Islamic values.
+                            </motion.p>
+
+                            {/* CTAs — full width on mobile */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4 }}
+                                className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-10"
+                            >
+                                <Button
+                                    variant="default"
+                                    size="lg"
+                                    className="h-13 sm:h-14 px-6 sm:px-10 text-base sm:text-lg bg-white text-emerald-900 hover:bg-white/95 shadow-2xl shadow-black/30 hover:-translate-y-0.5 transition-all font-semibold group w-full sm:w-auto"
+                                    onClick={() => go("/register")}
+                                >
+                                    Start Your Journey
+                                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                                 </Button>
-                                <Button variant="outline" size="lg" className="h-14 px-10 text-lg border-white/30 text-white hover:bg-white/5 bg-white/10 backdrop-blur-sm" onClick={handleLearnHowItWorks}>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="h-13 sm:h-14 px-6 sm:px-10 text-base sm:text-lg border-white/30 text-white hover:bg-white/10 bg-white/5 backdrop-blur-md hover:border-white/50 transition-all w-full sm:w-auto"
+                                    onClick={handleLearnHowItWorks}
+                                >
                                     Learn How It Works
                                 </Button>
-                            </div>
-                            <AppDownloadRow comingSoon={comingSoon} />
+                            </motion.div>
 
-                            {/* Trust badges */}
-                            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-white/70 text-sm">
-                                <span className="flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-emerald-300" /> Verified Profiles</span>
-                                <span className="flex items-center gap-1.5"><Lock className="h-4 w-4 text-emerald-300" /> Encrypted Data</span>
-                                <span className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-emerald-300" /> Family Trusted</span>
-                            </div>
+                            {/* App download */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                            >
+                                <AppDownloadRow comingSoon={comingSoon} />
+                            </motion.div>
+
+                            {/* Trust badges — wrap nicely on mobile */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.6 }}
+                                className="mt-8 sm:mt-10 grid grid-cols-3 sm:flex sm:flex-wrap sm:items-center gap-x-3 sm:gap-x-6 gap-y-2 sm:gap-y-3 text-white/75 text-xs sm:text-sm"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <BadgeCheck className="h-4 w-4 text-emerald-300 shrink-0" />
+                                    <span className="truncate">Verified</span>
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Lock className="h-4 w-4 text-emerald-300 shrink-0" />
+                                    <span className="truncate">Encrypted</span>
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Shield className="h-4 w-4 text-emerald-300 shrink-0" />
+                                    <span className="truncate">Trusted</span>
+                                </span>
+                            </motion.div>
                         </motion.div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
-                </section>
 
+                    {/* Scroll indicator — desktop only */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1.2 }}
+                        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 hidden md:flex flex-col items-center gap-2 text-white/50"
+                    >
+                        <span className="text-[10px] uppercase tracking-[0.2em]">Scroll</span>
+                        <div className="w-px h-10 bg-gradient-to-b from-white/50 to-transparent">
+                            <motion.div
+                                animate={{ y: [0, 30, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                className="w-1 h-1 rounded-full bg-amber-300 -ml-0.5"
+                            />
+                        </div>
+                    </motion.div>
+
+
+                    {/* Bottom fade — softer on mobile */}
+                    <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-40 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+
+                </section>
                 {/* ── Stats ─── */}
                 <section className="py-14 bg-primary/5 border-y border-primary/10">
                     <div className="container mx-auto px-4">
@@ -546,7 +672,7 @@ function AppDownloadRow({ comingSoon }) {
             <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-white/60 mb-3">Also Available On</p>
             <div className="flex flex-col sm:flex-row gap-3">
                 <button type="button" onClick={() => comingSoon("App Store")}
-                    className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/80 hover:bg-black border border-white/15 transition-all hover:-translate-y-0.5 hover:shadow-xl">
+                    className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/20 hover:bg-black border border-white/15 transition-all hover:-translate-y-0.5 hover:shadow-xl">
                     <svg viewBox="0 0 384 512" className="h-8 w-8 fill-white shrink-0" aria-hidden="true">
                         <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
                     </svg>
@@ -556,7 +682,7 @@ function AppDownloadRow({ comingSoon }) {
                     </span>
                 </button>
                 <button type="button" onClick={() => comingSoon("Google Play")}
-                    className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/80 hover:bg-black border border-white/15 transition-all hover:-translate-y-0.5 hover:shadow-xl">
+                    className="group inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/20 hover:bg-black border border-white/15 transition-all hover:-translate-y-0.5 hover:shadow-xl">
                     <svg viewBox="0 0 512 512" className="h-8 w-8 shrink-0" aria-hidden="true">
                         <defs>
                             <linearGradient id="gp-blue" x1="105" y1="59" x2="291" y2="246" gradientUnits="userSpaceOnUse"><stop offset="0" stopColor="#00a0ff" /><stop offset="1" stopColor="#00e2ff" /></linearGradient>

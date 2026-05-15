@@ -3,7 +3,6 @@ import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 import ChatService from "../services/ChatService";
-
 import NewMatches from "../components/new_matches";
 import ConversationsList from "../components/conversations_list";
 import ConversationSkeleton from "../components/converstaion_skeleton";
@@ -12,22 +11,31 @@ import MessageBubble from "../components/message_bubble";
 import TypingIndicator from "../components/typing_indicator";
 import MessageInput from "../components/message_input";
 import { useSocket } from "../../../sockets/SocketContext";
-import ExploreService from "../../explore/services/ExploreService";
 import AuthService from "../../auth/services/AuthService";
 import PageHeader from "../../../ui/page_header";
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
 function getSenderId() {
     try {
-        return JSON.parse(atob(localStorage.getItem("jwtToken").split(".")[1])).id;
-    } catch {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) return null;
+        return JSON.parse(atob(token.split(".")[1])).id;
+    } catch (error) {
+        console.error('Error getting sender ID:', error);
         return null;
     }
 }
 
 function getUserRole() {
     try {
-        return JSON.parse(atob(localStorage.getItem("jwtToken").split(".")[1])).role;
-    } catch {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) return null;
+        return JSON.parse(atob(token.split(".")[1])).role;
+    } catch (error) {
+        console.error('Error getting user role:', error);
         return null;
     }
 }
@@ -44,6 +52,10 @@ function useIsMobile() {
     return isMobile;
 }
 
+// ============================================
+// MAIN CHAT PAGE COMPONENT
+// ============================================
+
 export default function ChatPage() {
     const [searchParams] = useSearchParams();
     const { state } = useLocation();
@@ -51,16 +63,39 @@ export default function ChatPage() {
     const isMobile = useIsMobile();
     const socketCtx = useSocket();
 
-    // Get the current user's role
     const [currentUserRole, setCurrentUserRole] = useState(getUserRole());
+    const [conversations, setConversations] = useState([]);
+    const [matches, setMatches] = useState([]);
+    const [loadingConvs, setLoadingConvs] = useState(true);
+    const [receiverInfo, setReceiverInfo] = useState(state?.receiver || null);
+    const [currentUser, setUser] = useState(null);
 
+    const receiverId = searchParams.get("receiver_id");
+
+    // ✅ Add cleanup ref
+    const isMountedRef = useRef(true);
+
+    // ✅ Cleanup on unmount
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    // ✅ Fetch current user role
     useEffect(() => {
         async function fetchUser() {
             try {
                 const user = await AuthService.getCurrentUser();
-                setCurrentUserRole(user?.role || null);
+                if (isMountedRef.current) {
+                    setCurrentUserRole(user?.role || null);
+                }
             } catch (err) {
-                setCurrentUserRole(null);
+                console.error('Error fetching user:', err);
+                if (isMountedRef.current) {
+                    setCurrentUserRole(null);
+                }
             }
         }
         fetchUser();
@@ -68,26 +103,23 @@ export default function ChatPage() {
 
     // ✅ Helper function to get role-based path
     const getRolePath = useCallback((path) => {
-        const role = currentUserRole || getUserRole();
-        const prefix = role === 'guardian' ? '/guardian' : '/individual';
-        return `${prefix}${path}`;
+        try {
+            const role = currentUserRole || getUserRole();
+            const prefix = role === 'guardian' ? '/guardian' : '/individual';
+            return `${prefix}${path}`;
+        } catch (error) {
+            console.error('Error getting role path:', error);
+            return `/individual${path}`; // Fallback
+        }
     }, [currentUserRole]);
 
-    const receiverId = searchParams.get("receiver_id");
-
-    const [conversations, setConversations] = useState([]);
-    const [matches, setMatches] = useState([]);
-    const [loadingConvs, setLoadingConvs] = useState(true);
-    const [receiverInfo, setReceiverInfo] = useState(state?.receiver || null);
-    const [currentUser, setUser] = useState(null);
-
-    // When user lands on a chat, clear their unread count by calling the backend endpoint.
+    // ✅ Clear unread count when landing on a chat
     useEffect(() => {
         const clearUnreadCount = async () => {
             if (!receiverId) return;
             try {
                 await ChatService.clearUnreadCount();
-                if (socketCtx) {
+                if (socketCtx && isMountedRef.current) {
                     socketCtx.setChatCount(0);
                 }
             } catch (err) {
@@ -99,39 +131,43 @@ export default function ChatPage() {
     }, [receiverId, socketCtx]);
 
     // ✅ Extracted fetch function so it can be reused
-    const fetchConversations = async () => {
+    const fetchConversations = useCallback(async () => {
         try {
             const res = await ChatService.getConversationUsers();
             console.log('📊 Full API response:', res);
             console.log('📊 Conversations received:', res.data);
-            console.log('📊 Unread counts:', res.data?.map(c => ({
-                name: c.name,
-                unread_count: c.unread_count,
-                unread: c.unread
-            })));
 
-            if (res.success) setConversations(res.data);
+            if (!isMountedRef.current) return;
+
+            if (res.success) {
+                setConversations(res.data);
+            }
         } catch (err) {
             console.error('Error loading conversations:', err);
         } finally {
-            setLoadingConvs(false);
+            if (isMountedRef.current) {
+                setLoadingConvs(false);
+            }
         }
-    };
+    }, []);
 
     // ✅ Initial load
     useEffect(() => {
         fetchConversations();
-    }, []);
+    }, [fetchConversations]);
 
     // ✅ Update unread count when entering a chat
     useEffect(() => {
         if (!receiverId) return;
-        if (socketCtx) socketCtx.setChatCount(0);
+
+        if (socketCtx) {
+            socketCtx.setChatCount(0);
+        }
 
         const fetchUnreadCount = async () => {
             try {
                 const response = await ChatService.getUnreadCount();
-                if (response.success && socketCtx) {
+                if (response.success && socketCtx && isMountedRef.current) {
                     socketCtx.setChatCount(response.data?.count || 0);
                 }
             } catch (error) {
@@ -163,7 +199,7 @@ export default function ChatPage() {
             setTimeout(() => {
                 ChatService.getConversationUsers()
                     .then(res => {
-                        if (res.success && res.data) {
+                        if (res.success && res.data && isMountedRef.current) {
                             console.log('✅ Conversations updated:', res.data.length);
                             setConversations([...res.data]);
                         }
@@ -179,7 +215,7 @@ export default function ChatPage() {
                 setTimeout(() => {
                     ChatService.getConversationUsers()
                         .then(res => {
-                            if (res.success && res.data) {
+                            if (res.success && res.data && isMountedRef.current) {
                                 console.log('✅ Conversations updated from notification');
                                 setConversations([...res.data]);
                             }
@@ -197,21 +233,24 @@ export default function ChatPage() {
 
         return () => {
             console.log('🔇 Removing conversation list listeners');
-            socketCtx.socket.off('notification', handleNotification);
-            socketCtx.socket.off('new_message', handleMessage);
-            socketCtx.socket.off('receive_message', handleMessage);
+            if (socketCtx?.socket) {
+                socketCtx.socket.off('notification', handleNotification);
+                socketCtx.socket.off('new_message', handleMessage);
+                socketCtx.socket.off('receive_message', handleMessage);
+            }
         };
     }, [socketCtx?.socket, socketCtx?.connected, receiverId]);
 
     const handleDeleteConversation = async (conversation) => {
         console.log("🗑️ Deleting conversation:", conversation.id);
 
+        // ✅ Optimistic update
         setConversations((prev) =>
             prev.filter((c) => String(c.id) !== String(conversation.id))
         );
 
         if (String(receiverId) === String(conversation.other_user_id)) {
-            navigate(getRolePath("/chats")); // ✅ Role-based path
+            navigate(getRolePath("/chats"));
         }
 
         try {
@@ -219,28 +258,46 @@ export default function ChatPage() {
             console.log("✅ Delete successful");
         } catch (err) {
             console.error("Delete failed, rolling back:", err);
-            setConversations((prev) => [conversation, ...prev]);
+            if (isMountedRef.current) {
+                setConversations((prev) => [conversation, ...prev]);
+            }
         }
     };
 
     const openChat = async (conv) => {
-        const info = {
-            id: conv.other_user_id,
-            name: conv.name,
-            avatar: conv.avatar,
-            online: conv.is_online,
-            location: conv.location,
-            is_blurred_images: conv.is_blurred_images,
-            is_show_last_seen: conv.is_show_last_seen,
-        };
-        setReceiverInfo(info);
-        navigate(`${getRolePath("/chats")}?receiver_id=${conv.other_user_id}`, { state: { receiver: info } }); // ✅ Role-based path
+        try {
+            const info = {
+                id: conv.other_user_id,
+                name: conv.name,
+                avatar: conv.avatar,
+                online: conv.is_online,
+                location: conv.location,
+                is_blurred_images: conv.is_blurred_images,
+                is_show_last_seen: conv.is_show_last_seen,
+            };
+            setReceiverInfo(info);
+            navigate(`${getRolePath("/chats")}?receiver_id=${conv.other_user_id}`, {
+                state: { receiver: info }
+            });
+        } catch (error) {
+            console.error('Error opening chat:', error);
+        }
     };
 
     const openMatchChat = (match) => {
-        const info = { id: match.id, name: match.name, avatar: match.photo };
-        setReceiverInfo(info);
-        navigate(getRolePath("/profile"), { state: { profile: match } }); // ✅ Role-based path
+        try {
+            const info = {
+                id: match.id,
+                name: match.name,
+                avatar: match.photo
+            };
+            setReceiverInfo(info);
+            navigate(getRolePath("/profile"), {
+                state: { profile: match }
+            });
+        } catch (error) {
+            console.error('Error opening match chat:', error);
+        }
     };
 
     return (
@@ -255,13 +312,12 @@ export default function ChatPage() {
                     flexDirection: "column",
                     width: isMobile ? "100%" : "360px",
                     borderRight: "0.5px solid rgba(27,77,62,0.08)",
-
                 }}>
                     <PageHeader
                         title="Chats"
-                        subtitle="Your halal conversations and connections" icon={undefined}
+                        subtitle="Your halal conversations and connections"
+                        icon={undefined}
                     />
-
 
                     {loadingConvs ? (
                         <ConversationSkeleton count={6} />
@@ -281,7 +337,6 @@ export default function ChatPage() {
                     flex: 1,
                     display: "flex",
                     flexDirection: "column",
-
                 }}>
                     <AnimatePresence mode="wait">
                         {receiverId ? (
@@ -295,10 +350,8 @@ export default function ChatPage() {
                                 <MessageView
                                     receiverId={receiverId}
                                     receiverInfo={receiverInfo}
-                                    onBack={() => navigate(getRolePath("/chats"))} // ✅ Role-based path
-                                    //  onViewProfile={() => navigate(getRolePath("/profile"), { state: { profile: currentUser } })} // ✅ Role-based path
+                                    onBack={() => navigate(getRolePath("/chats"))}
                                     onViewProfile={() => { }}
-
                                     isMobile={isMobile}
                                     currentUserRole={currentUserRole}
                                 />
@@ -342,8 +395,18 @@ export default function ChatPage() {
     );
 }
 
-// ════════════════════════════════════════════════
-function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, onViewProfile, isMobile, currentUserRole }) {
+// ============================================
+// MESSAGE VIEW COMPONENT
+// ============================================
+
+function MessageView({
+    receiverId,
+    receiverInfo: initialReceiverInfo,
+    onBack,
+    onViewProfile,
+    isMobile,
+    currentUserRole
+}) {
     const senderId = getSenderId();
     const { socket } = useSocket();
 
@@ -353,37 +416,76 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
     const [connected, setConnected] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [receiverInfo, setReceiverInfo] = useState(initialReceiverInfo);
+
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const typingTimerRef = useRef(null);
+    const isMountedRef = useRef(true);
 
-    const formatTime = (ts) =>
-        new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    // ✅ Cleanup on unmount
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current);
+            }
+        };
+    }, []);
 
-    const showTimestamp = (idx) =>
-        idx === 0 ||
-        // @ts-ignore
-        new Date(messages[idx].created_at) - new Date(messages[idx - 1].created_at) > 5 * 60 * 1000;
+    const formatTime = (ts) => {
+        try {
+            return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        } catch (error) {
+            console.error('Error formatting time:', error);
+            return '';
+        }
+    };
+
+    const showTimestamp = (idx) => {
+        try {
+            return idx === 0 ||
+                // @ts-ignore
+                new Date(messages[idx].created_at) - new Date(messages[idx - 1].created_at) > 5 * 60 * 1000;
+        } catch (error) {
+            console.error('Error checking timestamp:', error);
+            return false;
+        }
+    };
 
     const fetchMessages = useCallback(async () => {
         try {
             const data = await ChatService.getMessages({ receiverId });
-            if (data.success) setMessages(data.data);
+            if (data.success && isMountedRef.current) {
+                setMessages(data.data);
+            }
         } catch (err) {
             console.error('Error fetching messages:', err);
         }
     }, [receiverId]);
 
+    // ✅ Socket connection status
     useEffect(() => {
         if (!socket) return;
 
-        const handleConnect = () => setConnected(true);
-        const handleDisconnect = () => setConnected(false);
+        const handleConnect = () => {
+            if (isMountedRef.current) {
+                setConnected(true);
+            }
+        };
+
+        const handleDisconnect = () => {
+            if (isMountedRef.current) {
+                setConnected(false);
+            }
+        };
 
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
 
-        if (socket.connected) setConnected(true);
+        if (socket.connected && isMountedRef.current) {
+            setConnected(true);
+        }
 
         return () => {
             socket.off("connect", handleConnect);
@@ -391,6 +493,7 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         };
     }, [socket]);
 
+    // ✅ Fetch messages and setup socket listeners
     useEffect(() => {
         if (!socket || !receiverId || !senderId) return;
 
@@ -403,7 +506,7 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
                 (String(msg.sender_id) === String(receiverId) && String(msg.receiver_id) === String(senderId)) ||
                 (String(msg.sender_id) === String(senderId) && String(msg.receiver_id) === String(receiverId));
 
-            if (isRelevant) {
+            if (isRelevant && isMountedRef.current) {
                 setMessages(prev => {
                     if (prev.some(m => m.id === msg.id)) return prev;
                     return [...prev, msg];
@@ -413,6 +516,8 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         };
 
         const handleSeen = () => {
+            if (!isMountedRef.current) return;
+
             setMessages(prev =>
                 prev.map(m =>
                     String(m.sender_id) === String(senderId) ? { ...m, is_seen: true } : m
@@ -421,13 +526,13 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         };
 
         const handleTypingStart = ({ from }) => {
-            if (String(from) === String(receiverId)) {
+            if (String(from) === String(receiverId) && isMountedRef.current) {
                 setIsTyping(true);
             }
         };
 
         const handleTypingStop = ({ from }) => {
-            if (String(from) === String(receiverId)) {
+            if (String(from) === String(receiverId) && isMountedRef.current) {
                 setIsTyping(false);
             }
         };
@@ -445,26 +550,34 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
         };
     }, [socket, receiverId, senderId, fetchMessages]);
 
+    // ✅ Auto-scroll to bottom
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isTyping]);
 
     const handleTypingChange = (e) => {
+        if (!isMountedRef.current) return;
+
         setInput(e.target.value);
 
         if (socket) {
             socket.emit("typing", { to: receiverId, from: senderId });
 
-            clearTimeout(typingTimerRef.current);
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current);
+            }
+
             typingTimerRef.current = setTimeout(() => {
-                socket.emit("stop_typing", { to: receiverId, from: senderId });
+                if (socket && isMountedRef.current) {
+                    socket.emit("stop_typing", { to: receiverId, from: senderId });
+                }
             }, 1500);
         }
     };
 
     const sendMessage = async () => {
         const text = input.trim();
-        if (!text || sending) return;
+        if (!text || sending || !isMountedRef.current) return;
 
         const tempId = `tmp_${Date.now()}`;
         const optimistic = {
@@ -486,6 +599,9 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
 
         try {
             const data = await ChatService.sendMessage({ receiverId, message: text });
+
+            if (!isMountedRef.current) return;
+
             if (data.success) {
                 setMessages(p => p.map(m => m.id === tempId ? data.data : m));
             } else {
@@ -493,9 +609,13 @@ function MessageView({ receiverId, receiverInfo: initialReceiverInfo, onBack, on
             }
         } catch (err) {
             console.error('Error sending message:', err);
-            setMessages(p => p.filter(m => m.id !== tempId));
+            if (isMountedRef.current) {
+                setMessages(p => p.filter(m => m.id !== tempId));
+            }
         } finally {
-            setSending(false);
+            if (isMountedRef.current) {
+                setSending(false);
+            }
         }
     };
 

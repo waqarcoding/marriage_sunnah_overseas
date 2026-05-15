@@ -1,22 +1,34 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SlidersHorizontal, Search, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import ExploreService from "../services/ExploreService";
-import InterestService from "../../interest/services/InterestService";
 import { useNavigate } from "react-router-dom";
 import FilterRow from "../components/filter_card";
-import AuthApi from "../../auth/services/AuthService";
-import ProfileCard from "../components/match_card";
 import AuthService from "../../auth/services/AuthService";
+import ProfileCard from "../components/match_card";
 
 const isOnline = (d) => d && (Date.now() - new Date(d)) / 1000 < 3600;
 
-const FILTER_CHIPS = ["All", "Online", "Premium", "Verified", "UAE", "UK", "USA", "Saudi Arabia", "Qatar", "Pakistan",];
+const FILTER_CHIPS = [
+    "All",
+    "Online",
+    "Premium",
+    "Verified",
+    "UAE",
+    "UK",
+    "USA",
+    "Saudi Arabia",
+    "Qatar",
+    "Pakistan"
+];
 
-// ── Filter bar ────────────────────────────────────────────────────────────────
+// ============================================
+// FILTER BAR COMPONENT
+// ============================================
+
 function FilterBar({ active, onToggle, onSettings, search, onSearch }) {
     return (
         <div style={{
@@ -145,7 +157,10 @@ function FilterBar({ active, onToggle, onSettings, search, onSearch }) {
     );
 }
 
-// ── Empty state (no more profiles) ────────────────────────────────────────────
+// ============================================
+// EMPTY STATE COMPONENT
+// ============================================
+
 function EmptyState({ onRefresh }) {
     return (
         <div style={{
@@ -209,7 +224,10 @@ function EmptyState({ onRefresh }) {
     );
 }
 
-// ✅ No matches found state
+// ============================================
+// NO MATCHES STATE COMPONENT
+// ============================================
+
 function NoMatchesState({ onAdjustFilters }) {
     return (
         <div style={{
@@ -277,12 +295,15 @@ function NoMatchesState({ onAdjustFilters }) {
     );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ============================================
+// MAIN EXPLORE PAGE COMPONENT
+// ============================================
+
 export default function ExplorePage() {
     const [profiles, setProfiles] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false); // ✅ NEW: Separate refresh state
+    const [refreshing, setRefreshing] = useState(false);
     const [direction, setDirection] = useState(0);
     const [activeFilters, setActiveFilters] = useState(["All"]);
     const [search, setSearch] = useState("");
@@ -290,14 +311,39 @@ export default function ExplorePage() {
     const [ageRange, setAgeRange] = useState([18, 55]);
     const [filterCity, setFilterCity] = useState("");
     const [interestedIn, setInterestedIn] = useState("");
-    const [isOtherUserPro, setisOtherUserPro] = useState(false);
 
     const navigate = useNavigate();
     const qc = useQueryClient();
 
-    useEffect(() => {
+    // ✅ Add refs for cleanup
+    const isMountedRef = useRef(true);
+    const fetchAbortControllerRef = useRef(null);
+    const filterChangeTimeoutRef = useRef(null);
 
+    // ✅ Initial mount and cleanup
+    useEffect(() => {
+        isMountedRef.current = true;
+        // AuthService.checkProfile(navigate);
         fetchProfiles();
+
+        return () => {
+            isMountedRef.current = false;
+
+            // Close filter modal if open
+            if (showFilters) {
+                setShowFilters(false);
+            }
+
+            // Cancel any ongoing fetch
+            if (fetchAbortControllerRef.current) {
+                fetchAbortControllerRef.current.abort();
+            }
+
+            // Clear filter timeout
+            if (filterChangeTimeoutRef.current) {
+                clearTimeout(filterChangeTimeoutRef.current);
+            }
+        };
     }, []);
 
     const buildFiltersForAPI = () => {
@@ -331,6 +377,14 @@ export default function ExplorePage() {
     };
 
     const fetchProfiles = async (isRefresh = false) => {
+        // ✅ Abort previous fetch if still running
+        if (fetchAbortControllerRef.current) {
+            fetchAbortControllerRef.current.abort();
+        }
+        fetchAbortControllerRef.current = new AbortController();
+
+        if (!isMountedRef.current) return;
+
         // ✅ Use different loading states
         if (isRefresh) {
             setRefreshing(true);
@@ -343,6 +397,10 @@ export default function ExplorePage() {
             console.log('🔍 Fetching profiles with filters:', filters);
 
             const res = await ExploreService.getExplore(filters);
+
+            // ✅ Check if still mounted
+            if (!isMountedRef.current) return;
+
             console.log("explore::::", res);
 
             let users = res?.profiles || res?.data?.profiles || [];
@@ -359,27 +417,52 @@ export default function ExplorePage() {
             // ✅ Small delay for smooth transition
             await new Promise(resolve => setTimeout(resolve, 300));
 
+            // ✅ Check again before setting state
+            if (!isMountedRef.current) return;
+
             setProfiles(users);
             setCurrentIndex(0);
         } catch (err) {
+            if (err.name === 'AbortError') {
+                console.log('Fetch aborted');
+                return;
+            }
             console.error("Failed to fetch profiles:", err);
-            toast.error("Failed to load profiles");
+            if (isMountedRef.current) {
+                toast.error("Failed to load profiles");
+            }
         } finally {
-            setLoading(false);
-            setRefreshing(false);
+            if (isMountedRef.current) {
+                setLoading(false);
+                setRefreshing(false);
+            }
         }
     };
 
-    // ✅ Refetch when activeFilters change
+    // ✅ Debounced filter change
     useEffect(() => {
-        console.log('🔄 Active filters changed:', activeFilters);
-        fetchProfiles(true); // ✅ Pass true for refresh
+        // Clear previous timeout
+        if (filterChangeTimeoutRef.current) {
+            clearTimeout(filterChangeTimeoutRef.current);
+        }
+
+        // Debounce filter changes
+        filterChangeTimeoutRef.current = setTimeout(() => {
+            console.log('🔄 Active filters changed:', activeFilters);
+            fetchProfiles(true);
+        }, 100);
+
+        return () => {
+            if (filterChangeTimeoutRef.current) {
+                clearTimeout(filterChangeTimeoutRef.current);
+            }
+        };
     }, [activeFilters]);
 
     // ✅ Handler for when filter preferences are saved
     const handleFilterApply = async (preferences, isPreview = false) => {
         console.log('🔄 Filters applied:', { preferences, isPreview });
-        await fetchProfiles(true); // ✅ Pass true for refresh
+        await fetchProfiles(true);
     };
 
     const toggleFilter = (f) => {
@@ -406,15 +489,15 @@ export default function ExplorePage() {
     });
 
     const current = filtered[currentIndex];
-    const remaining = filtered.length - currentIndex - 1;
-
     const hasProfilesButFilteredOut = profiles.length === 0 && !loading && !refreshing;
 
     const advance = (dir) => {
         setDirection(dir);
         setTimeout(() => {
-            setCurrentIndex(i => i + 1);
-            setDirection(0);
+            if (isMountedRef.current) {
+                setCurrentIndex(i => i + 1);
+                setDirection(0);
+            }
         }, 280);
     };
 
@@ -480,8 +563,36 @@ export default function ExplorePage() {
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
-
-
+            {/* ✅ Refresh overlay */}
+            <AnimatePresence>
+                {refreshing && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: "rgba(255, 255, 255, 0.85)",
+                            backdropFilter: "blur(6px)",
+                            zIndex: 50,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            pointerEvents: "none"
+                        }}
+                    >
+                        <div style={{ textAlign: "center" }}>
+                            <Loader2 style={{ width: "32px", height: "32px", color: "#1B4D3E", margin: "0 auto" }} className="animate-spin" />
+                            <p style={{ marginTop: "12px", color: "#6b7280", fontSize: "13px", fontWeight: "500" }}>Updating results...</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Filter bar */}
             <motion.div
@@ -498,12 +609,14 @@ export default function ExplorePage() {
                 />
             </motion.div>
 
-            {/* Advanced filters */}
-            <FilterRow
-                isOpen={showFilters}
-                onClose={() => setShowFilters(false)}
-                onApply={handleFilterApply}
-            />
+            {/* ✅ Advanced filters - NO AnimatePresence wrapper, conditional render */}
+            {showFilters && (
+                <FilterRow
+                    isOpen={showFilters}
+                    onClose={() => setShowFilters(false)}
+                    onApply={handleFilterApply}
+                />
+            )}
 
             {/* Card area */}
             <motion.div
@@ -575,6 +688,6 @@ export default function ExplorePage() {
                     </AnimatePresence>
                 </div>
             </motion.div>
-        </div >
+        </div>
     );
 }

@@ -22,7 +22,10 @@ class AuthApi {
                 localStorage.setItem("jwtToken", res.token)
                 localStorage.setItem("authData", JSON.stringify(res))
 
-                callbacks?.onSuccess?.(res)
+                // ✅ FIX: Call callback WITHOUT passing the response object
+                if (typeof callbacks?.onSuccess === 'function') {
+                    callbacks.onSuccess(); // ✅ No parameter
+                }
             },
 
             onFailed: (err) => {
@@ -35,10 +38,13 @@ class AuthApi {
                     err?.message ||
                     "Registration failed"
 
-                callbacks?.onFailed?.({ message })
+                if (typeof callbacks?.onFailed === 'function') {
+                    callbacks.onFailed({ message });
+                }
             },
         })
     }
+
     // ---------------- Login ----------------
     login(data, callbacks) {
         return Api.post(`${this.base}/login`, data, {
@@ -47,14 +53,15 @@ class AuthApi {
             onSuccess: (res) => {
                 console.log("🔍 DEBUG: login success", res)
 
-
                 localStorage.setItem("isLoggedIn", "true")
                 localStorage.setItem("authData", JSON.stringify(res))
                 localStorage.setItem("user", JSON.stringify(res.user))
-
                 localStorage.setItem("jwtToken", res.token)
 
-                callbacks?.onSuccess?.(res)
+                // ✅ FIX: Call callback WITHOUT passing the response object
+                if (typeof callbacks?.onSuccess === 'function') {
+                    callbacks.onSuccess(); // ✅ No parameter
+                }
             },
 
             onFailed: (err) => {
@@ -66,11 +73,13 @@ class AuthApi {
                     err?.message ||
                     "Login failed"
 
-                callbacks?.onFailed?.({ message })
+                // ✅ Pass normalized error object
+                if (typeof callbacks?.onFailed === 'function') {
+                    callbacks.onFailed({ message });
+                }
             },
         })
     }
-
     // ---------------- Check Profile ----------------
     async checkProfile(navigate) {
         const user = await ProfileService.getCurrentUser();
@@ -164,14 +173,37 @@ class AuthApi {
     }
 
     // ---------------- Logout ----------------
+    // ---------------- Logout ----------------
     logout() {
         console.log("LogOut");
-        localStorage.removeItem("isLoggedIn");
-        localStorage.removeItem("authData");
-        localStorage.removeItem("jwtToken");
-        localStorage.removeItem("isOtpVerified");
-    }
 
+        try {
+            // ✅ Close any open modals/portals before clearing storage
+            const modals = document.querySelectorAll('[id$="-portal"]');
+            modals.forEach(modal => {
+                if (modal && modal.parentNode) {
+                    try {
+                        modal.parentNode.removeChild(modal);
+                    } catch (e) {
+                        console.warn("Modal cleanup warning:", e);
+                    }
+                }
+            });
+
+            // ✅ Clear localStorage
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("authData");
+            localStorage.removeItem("jwtToken");
+            localStorage.removeItem("isOtpVerified");
+            localStorage.removeItem("user");
+
+
+
+        } catch (error) {
+            console.error("Logout cleanup error:", error);
+
+        }
+    }
     // ---------------- Get Current User ----------------
     getCurrentUser() {
 

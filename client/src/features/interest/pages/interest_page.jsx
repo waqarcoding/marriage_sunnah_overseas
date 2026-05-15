@@ -13,8 +13,9 @@ import AuthService from "../../auth/services/AuthService";
 import { useSocket } from "../../../sockets/SocketContext";
 import PageHeader from "../../../ui/page_header";
 
-
-
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 
 async function isSubscribed() {
     return await AuthService.isPro();
@@ -54,7 +55,10 @@ function formatLastSeen(dateStr) {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
-// ── EmptyState ────────────────────────────────────────────────────────────────
+// ============================================
+// EMPTY STATE COMPONENT
+// ============================================
+
 function EmptyState({ tab, onExplore }) {
     const config = {
         Received: {
@@ -149,7 +153,10 @@ function EmptyState({ tab, onExplore }) {
     );
 }
 
-// ── Skeleton Loader ───────────────────────────────────────────────────────────
+// ============================================
+// SKELETON LOADER
+// ============================================
+
 function SkeletonGrid() {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -174,7 +181,10 @@ function SkeletonGrid() {
     );
 }
 
-// ── Confirm Dialog ────────────────────────────────────────────────────────────
+// ============================================
+// CONFIRM DIALOG
+// ============================================
+
 function ConfirmDialog({ dialog, onConfirm, onCancel }) {
     if (!dialog) return null;
     const isAccept = dialog.type === "accept";
@@ -235,7 +245,10 @@ function ConfirmDialog({ dialog, onConfirm, onCancel }) {
     );
 }
 
-// ── Two-Tab Switcher ──────────────────────────────────────────────────────────
+// ============================================
+// TWO-TAB SWITCHER
+// ============================================
+
 function TwoTabSwitcher({ activeTab, onSelect, sentCount, receivedCount, isPro }) {
     return (
         <div className="px-4 pt-4 pb-2">
@@ -306,24 +319,54 @@ function TwoTabSwitcher({ activeTab, onSelect, sentCount, receivedCount, isPro }
     );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ============================================
+// MAIN INTEREST PAGE COMPONENT
+// ============================================
+
 export default function InterestPage() {
     const [isPro, setIsPro] = useState(null);
     const navigate = useNavigate();
-    const currentUserId = AuthService.getTokenData().id;
     const socketCtx = useSocket();
 
     const [activeTab, setActiveTab] = useState("Sent");
     const [tabData, setTabData] = useState({ sent: [], received: [], matches: [], rejected: [] });
     const [loading, setLoading] = useState(false);
     const [dialog, setDialog] = useState(null);
+
     const cachedUrlsRef = useRef(new Set());
+    const isMountedRef = useRef(true);
+    const currentUserIdRef = useRef(null);
+
+    // ✅ Get current user ID safely
+    useEffect(() => {
+        try {
+            const tokenData = AuthService.getTokenData();
+            currentUserIdRef.current = tokenData?.id;
+        } catch (error) {
+            console.error('Error getting user ID:', error);
+        }
+    }, []);
+
+    const currentUserId = currentUserIdRef.current;
 
     // ✅ Helper to get role-based paths
     const getRolePath = useCallback((path) => {
-        const role = AuthService.getUserRole();
-        const prefix = role === 'guardian' ? '/guardian' : '/individual';
-        return `${prefix}${path}`;
+        try {
+            const role = AuthService.getUserRole();
+            const prefix = role === 'guardian' ? '/guardian' : '/individual';
+            return `${prefix}${path}`;
+        } catch (error) {
+            console.error('Error getting role path:', error);
+            return `/individual${path}`; // Fallback
+        }
+    }, []);
+
+    // ✅ Cleanup on unmount
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
     }, []);
 
     // ✅ Fetch Pro status
@@ -331,9 +374,14 @@ export default function InterestPage() {
         const fetchIsPro = async () => {
             try {
                 const res = await AuthService.isPro();
-                setIsPro(res);
-            } catch {
-                setIsPro(false);
+                if (isMountedRef.current) {
+                    setIsPro(res);
+                }
+            } catch (error) {
+                console.error('Error fetching pro status:', error);
+                if (isMountedRef.current) {
+                    setIsPro(false);
+                }
             }
         };
         fetchIsPro();
@@ -341,12 +389,14 @@ export default function InterestPage() {
 
     // ✅ Clear interest badge on mount
     useEffect(() => {
-        if (socketCtx) socketCtx.setInterestCount(0);
+        if (socketCtx) {
+            socketCtx.setInterestCount(0);
+        }
 
         const fetchCount = async () => {
             try {
                 const response = await InterestService.pendingInterestCount();
-                if (response.success && socketCtx) {
+                if (response.success && socketCtx && isMountedRef.current) {
                     socketCtx.setInterestCount(response.data?.count || 0);
                 }
             } catch (error) {
@@ -360,9 +410,14 @@ export default function InterestPage() {
 
     // ✅ Single source of truth - fetch function
     const fetchData = useCallback(async () => {
+        if (!isMountedRef.current) return;
+
         setLoading(true);
         try {
             const res = await InterestService.getallInterests();
+
+            if (!isMountedRef.current) return;
+
             const data = res?.data || {};
             setTabData({
                 sent: Array.isArray(data.sent) ? data.sent : [],
@@ -371,9 +426,14 @@ export default function InterestPage() {
                 rejected: Array.isArray(data.rejected) ? data.rejected : [],
             });
         } catch (err) {
-            toast.error(err?.message || "Failed to load interests");
+            console.error('Error fetching interests:', err);
+            if (isMountedRef.current) {
+                toast.error(err?.message || "Failed to load interests");
+            }
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) {
+                setLoading(false);
+            }
         }
     }, []);
 
@@ -413,7 +473,9 @@ export default function InterestPage() {
 
         return () => {
             console.log('🔇 Removing interest page listeners');
-            socketCtx.socket.off('notification', handleNotification);
+            if (socketCtx?.socket) {
+                socketCtx.socket.off('notification', handleNotification);
+            }
         };
     }, [socketCtx?.socket, socketCtx?.connected, fetchData]);
 
@@ -426,6 +488,7 @@ export default function InterestPage() {
             ...(tabData.matches || []).map(i => i.from_user === currentUserId ? i.toProfile : i.fromProfile),
             ...(tabData.rejected || []).map(i => i.from_user === currentUserId ? i.toProfile : i.fromProfile),
         ].forEach(profile => {
+            if (!profile) return;
             parseImages(profile?.images).forEach(url => {
                 if (url && !cachedUrlsRef.current.has(url)) {
                     cachedUrlsRef.current.add(url);
@@ -437,7 +500,10 @@ export default function InterestPage() {
     }, [tabData, currentUserId]);
 
     const handleOpenProfile = (profile) => {
-        if (!profile) { console.warn("handleOpenProfile: No profile supplied"); return; }
+        if (!profile) {
+            console.warn("handleOpenProfile: No profile supplied");
+            return;
+        }
         try {
             navigate(getRolePath("/profile"), { state: { profile }, replace: false });
         } catch (e) {
@@ -446,7 +512,10 @@ export default function InterestPage() {
     };
 
     const handleStartChat = async (profile) => {
-        if (!profile?.individual_id) { toast.error("Invalid profile"); return; }
+        if (!profile?.individual_id) {
+            toast.error("Invalid profile");
+            return;
+        }
 
         try {
             await ChatService.addConversationUser(profile.individual_id);
@@ -467,6 +536,8 @@ export default function InterestPage() {
         const { type, interestId, interest } = dialog;
         setDialog(null);
 
+        if (!isMountedRef.current) return;
+
         // ✅ OPTIMISTIC UPDATE
         if (type === "accept") {
             setTabData(prev => ({
@@ -485,17 +556,24 @@ export default function InterestPage() {
         try {
             if (type === "accept") {
                 await InterestService.accept(interestId);
-                toast.success("Interest accepted! 🎉");
+                if (isMountedRef.current) {
+                    toast.success("Interest accepted! 🎉");
+                }
             } else {
                 await InterestService.decline(interestId);
-                toast.success("Interest declined.");
+                if (isMountedRef.current) {
+                    toast.success("Interest declined.");
+                }
             }
             // ✅ Silent refresh to confirm server state
             fetchData();
         } catch (err) {
-            toast.error(err?.message || "Action failed");
-            // ✅ ROLLBACK on failure
-            fetchData();
+            console.error('Error handling interest:', err);
+            if (isMountedRef.current) {
+                toast.error(err?.message || "Action failed");
+                // ✅ ROLLBACK on failure
+                fetchData();
+            }
         }
     };
 
@@ -518,7 +596,9 @@ export default function InterestPage() {
 
     // If non-pro tries to land on Received, snap back to Sent
     useEffect(() => {
-        if (!isPro && activeTab === "Received") setActiveTab("Sent");
+        if (!isPro && activeTab === "Received") {
+            setActiveTab("Sent");
+        }
     }, [isPro, activeTab]);
 
     return (
@@ -528,12 +608,10 @@ export default function InterestPage() {
                 subtitle="Souls seeking halal connection with you"
             />
 
-
-            {/* ── Two-Tab Switcher (sticky) ── */}
+            {/* Two-Tab Switcher (sticky) */}
             <div
                 className="sticky top-0 z-20"
                 style={{
-
                     boxShadow: "0 1px 0 0 rgba(27,77,62,0.06)",
                 }}
             >
@@ -546,7 +624,7 @@ export default function InterestPage() {
                 />
             </div>
 
-            {/* ── Content ── */}
+            {/* Content */}
             <div style={{ flex: 1, overflow: "auto" }}>
                 {/* Premium Banner */}
                 {isPro === false && (

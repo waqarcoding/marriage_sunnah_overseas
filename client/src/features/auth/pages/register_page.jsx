@@ -316,7 +316,7 @@ export default function Register({ onRegister }) {
                                             onChange={e => setMobile(e.target.value)}
                                             placeholder="+447700100001" required autoComplete="tel" />
 
-                                        <Select label="Gender" value={gender} onChange={setGender}
+                                        <Select searchable={false} label="Gender" value={gender} onChange={setGender}
                                             placeholder="Select gender"
                                             options={[
                                                 { value: "male", label: "Male" },

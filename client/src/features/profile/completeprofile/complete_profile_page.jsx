@@ -437,16 +437,16 @@ export default function CompleteProfile() {
                             <StepCard key="s2" icon={MapPin} title="Location & Contact" subtitle="Where are you based?" variant="muted">
                                 <InputField label="Phone Number" value={form.phone} onChange={set("phone")} placeholder="+92 300 0000000" type="tel" optional max={20} />
                                 {/* Country — default Pakistan */}
-                                <RangeSelect label="Country of Residence" value={form.country || "Pakistan"} onChange={handleCountryChange} placeholder="Select country"
+                                <SelectOption customOption={true} label="Country of Residence" value={form.country || "Pakistan"} onChange={handleCountryChange} placeholder="Select country"
                                     options={COUNTRY_LIST.length ? COUNTRY_LIST : ["Pakistan", "UAE", "UK", "USA", "Canada"]} />
                                 {/* City — default Islamabad (first index) */}
                                 {(form.country || "Pakistan") && CITIES.length > 0 ? (
-                                    <RangeSelect label="City" value={form.city || CITIES[0]} onChange={set("city")} placeholder="Select city" options={CITIES} />
+                                    <SelectOption customOption={true} label="City" value={form.city || CITIES[0]} onChange={set("city")} placeholder="Select city" options={CITIES} />
                                 ) : (
                                     <InputField label="City" value={form.city} onChange={set("city")} placeholder="e.g. Lahore, London" max={255} />
                                 )}
                                 {/* Nationality — default Pakistani (first index) */}
-                                <RangeSelect label="Nationality" value={form.nationality || NATIONALITIES[0] || "Pakistani"} onChange={set("nationality")} placeholder="Select nationality"
+                                <SelectOption customOption={true} label="Nationality" value={form.nationality || NATIONALITIES[0] || "Pakistani"} onChange={set("nationality")} placeholder="Select nationality"
                                     options={NATIONALITIES.length ? NATIONALITIES : ALL_NATS} />
                                 {/* Contact hidden — default Hidden */}
                                 <ToggleGroup label="Hide Contact from Matches?" value={form.contact_hidden ?? "1"} onChange={set("contact_hidden")}
@@ -468,25 +468,25 @@ export default function CompleteProfile() {
                                     options={RELIGIONS.length ? RELIGIONS : ["Muslim", "Christian", "Hindu", "Other"]} />
                                 {/* Sect — show only if Muslim, default Sunni */}
                                 {(form.religion || "Muslim") === "Muslim" && (
-                                    <RangeSelect label="Sect" value={form.sect || "Sunni"} onChange={set("sect")} placeholder="Select sect" optional
+                                    <SelectOption label="Sect" value={form.sect || "Sunni"} onChange={set("sect")} placeholder="Select sect" optional
                                         options={SECTS.length ? SECTS : ["Sunni", "Shia", "Deobandi", "Barelvi", "Other"]} />
                                 )}
                                 {/* Practice level — default Moderately Religious (index 1) */}
                                 <RangeSelect label="Religious Practice Level" value={form.religious_practice_level || (PRACTICE_LVLS[1] ?? "Moderately Religious")}
                                     onChange={set("religious_practice_level")} placeholder="Select level"
                                     options={PRACTICE_LVLS.length ? PRACTICE_LVLS : ["Very Religious", "Moderately Religious", "Somewhat Religious", "Not Religious"]} />
-                                <RangeSelect label="Caste / Biradari" value={form.caste} onChange={set("caste")} placeholder="Select caste" optional
+                                <SelectOption customOption={true} label="Caste / Biradari" value={form.caste} onChange={set("caste")} placeholder="Select caste" optional
                                     note="Optional — many families consider this"
                                     options={CASTES.length ? CASTES : []} />
                                 {/* Mother tongue — default Punjabi or first from country list */}
-                                <RangeSelect label="Mother Tongue" value={form.mother_tongue || (COUNTRY_TONGUES.find(t => t === "Punjabi") ?? COUNTRY_TONGUES[0] ?? "")} onChange={set("mother_tongue")} placeholder="Select language" optional
+                                <SelectOption customOption={true} label="Mother Tongue" value={form.mother_tongue || (COUNTRY_TONGUES.find(t => t === "Punjabi") ?? COUNTRY_TONGUES[0] ?? "")} onChange={set("mother_tongue")} placeholder="Select language" optional
                                     options={COUNTRY_TONGUES.length ? COUNTRY_TONGUES : ALL_TONGUES} />
                                 {/* ── Family Details ── */}
                                 <div className="space-y-3">
                                     <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Family Details</label>
 
                                     {/* Father Occupation */}
-                                    <SelectOrInput
+                                    <SelectOption customOption={true}
                                         label="Father's Occupation"
                                         value={form.father_occupation}
                                         onChange={set("father_occupation")}
@@ -502,7 +502,7 @@ export default function CompleteProfile() {
 
 
                                     {/* Mother Occupation */}
-                                    <SelectOrInput
+                                    <SelectOption customOption={true}
                                         label="Mother's Occupation"
                                         value={form.mother_occupation}
                                         onChange={set("mother_occupation")}
