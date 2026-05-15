@@ -24,70 +24,80 @@ const PAYMENT_PROCESSORS = {
 let PLANS = {}; // ✅ Keep PLANS variable for other functions to use
 
 
+// ✅ Internal helper function (no req/res)
+// At the top of your file
+
+
+const fetchPlansFromSettings = async () => {
+    const settings = await Setting.getAllSettings();
+
+    if (!settings) {
+        throw new Error('Settings not found');
+    }
+
+    const plans = {};  // ✅ Changed from array to object
+
+    // ✅ Basic Plan
+    if (settings.basic_plan_enabled) {
+        plans.basic = {
+            id: 'basic',
+            type: 'basic',
+            name: settings.basic_plan_name,
+            credits: settings.basic_plan_credits,
+            durationDays: settings.basic_plan_duration_days,
+            priceUSD: parseFloat(settings.basic_plan_price_usd) || 0,
+            pricePKR: parseFloat(settings.basic_plan_price_pkr) || 0,
+            priceAED: parseFloat(settings.basic_plan_price_aed) || 0,
+            popular: settings.basic_plan_popular,
+            stripePriceId: process.env.STRIPE_WEEKLY_PRICE_ID,
+        };
+    }
+
+    // ✅ Premium Plan
+    if (settings.premium_plan_enabled) {
+        plans.premium = {
+            id: 'premium',
+            type: 'premium',
+            name: settings.premium_plan_name,
+            credits: settings.premium_plan_credits,
+            durationDays: settings.premium_plan_duration_days,
+            priceUSD: parseFloat(settings.premium_plan_price_usd) || 0,
+            pricePKR: parseFloat(settings.premium_plan_price_pkr) || 0,
+            priceAED: parseFloat(settings.premium_plan_price_aed) || 0,
+            popular: settings.premium_plan_popular,
+            stripePriceId: process.env.STRIPE_MONTHLY_PRICE_ID,
+        };
+    }
+
+    // ✅ Platinum Plan
+    if (settings.platinum_plan_enabled) {
+        plans.platinum = {
+            id: 'platinum',
+            type: 'platinum',
+            name: settings.platinum_plan_name,
+            credits: settings.platinum_plan_credits,
+            durationDays: settings.platinum_plan_duration_days,
+            priceUSD: parseFloat(settings.platinum_plan_price_usd) || 0,
+            pricePKR: parseFloat(settings.platinum_plan_price_pkr) || 0,
+            priceAED: parseFloat(settings.platinum_plan_price_aed) || 0,
+            popular: settings.platinum_plan_popular,
+            stripePriceId: process.env.STRIPE_YEARLY_PRICE_ID,
+        };
+    }
+
+    console.log('✅ Plans loaded from settings:', Object.keys(plans));
+
+    // ✅ Update global PLANS
+    PLANS = plans;
+
+    return plans;
+};
+
+// ✅ HTTP endpoint handler
 export const getPlans = async (req, res) => {
     try {
-        // ✅ Get all settings from database
-        const settings = await Setting.getAllSettings();
-
-        if (!settings) {
-            return res.status(404).json({
-                success: false,
-                error: 'Settings not found'
-            });
-        }
-
-        const plans = [];
-
-        // ✅ Basic Plan
-        if (settings.basic_plan_enabled) {
-            plans.push({
-                id: 'basic',
-                type: 'basic',
-                name: settings.basic_plan_name,
-                credits: settings.basic_plan_credits,
-                durationDays: settings.basic_plan_duration_days,
-                priceUSD: parseFloat(settings.basic_plan_price_usd),
-                pricePKR: parseFloat(settings.basic_plan_price_pkr),
-                priceAED: parseFloat(settings.basic_plan_price_aed),
-                popular: settings.basic_plan_popular,
-                stripePriceId: process.env.STRIPE_WEEKLY_PRICE_ID, // From env
-            });
-        }
-
-        // ✅ Premium Plan
-        if (settings.premium_plan_enabled) {
-            plans.push({
-                id: 'premium',
-                type: 'premium',
-                name: settings.premium_plan_name,
-                credits: settings.premium_plan_credits,
-                durationDays: settings.premium_plan_duration_days,
-                priceUSD: parseFloat(settings.premium_plan_price_usd),
-                pricePKR: parseFloat(settings.premium_plan_price_pkr),
-                priceAED: parseFloat(settings.premium_plan_price_aed),
-                popular: settings.premium_plan_popular,
-                stripePriceId: process.env.STRIPE_MONTHLY_PRICE_ID, // From env
-            });
-        }
-
-        // ✅ Platinum Plan
-        if (settings.platinum_plan_enabled) {
-            plans.push({
-                id: 'platinum',
-                type: 'platinum',
-                name: settings.platinum_plan_name,
-                credits: settings.platinum_plan_credits,
-                durationDays: settings.platinum_plan_duration_days,
-                priceUSD: parseFloat(settings.platinum_plan_price_usd),
-                pricePKR: parseFloat(settings.platinum_plan_price_pkr),
-                priceAED: parseFloat(settings.platinum_plan_price_aed),
-                popular: settings.platinum_plan_popular,
-                stripePriceId: process.env.STRIPE_YEARLY_PRICE_ID, // From env
-            });
-        }
-
-        console.log('✅ Plans loaded from settings:', plans.map(p => p.name));
-
+        const plans = await fetchPlansFromSettings();
+        console.log(plans);
         res.json({
             success: true,
             data: plans
@@ -502,7 +512,7 @@ export const createPaymentSession = async (req, res) => {
         // Load plans if empty
         if (Object.keys(PLANS).length === 0) {
             console.log('⚠️ PLANS empty, loading...');
-            await getPlans();
+            await fetchPlansFromSettings();
         }
 
         console.log('📋 Available plans:', Object.keys(PLANS));
@@ -595,7 +605,7 @@ export const handleWebhook = async (req, res) => {
 
 async function handleCheckoutCompleted(session) {
     try {
-        await getPlans();
+        await fetchPlansFromSettings();
         const userId = parseInt(session.metadata.userId);
         const planType = session.metadata.planType;
         const credits = parseInt(session.metadata.credits);
@@ -813,7 +823,7 @@ export const getMySubscriptions = async (req, res) => {
 // ── Handle Recurring Payment Succeeded ────────────────────────────────────────
 async function handlePaymentSucceeded(invoice) {
     try {
-        await getPlans();
+        await fetchPlansFromSettings();
         if (!invoice.subscription) {
             console.log('⚠️ Invoice has no subscription, skipping');
             return;

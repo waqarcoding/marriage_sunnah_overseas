@@ -286,9 +286,13 @@ export const sendInterest = async (req, res) => {
             getGuardianOf(toUserId),
         ]);
 
-        console.log('👨‍👧 Guardian info:', {
-            from: fromGuardian,
-            to: toGuardian
+        console.log('🔍 Guardian Debug:', {
+            fromUserId,
+            toUserId,
+            fromGuardian,
+            toGuardian,
+            fromGuardianId: fromGuardian?.id,
+            toGuardianId: toGuardian?.id
         });
 
         // Create interest

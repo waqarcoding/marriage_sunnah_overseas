@@ -339,7 +339,7 @@ export const getExplore = async (req, res) => {
                 {
                     model: Guardian,
                     as: 'asIndividual',
-                    required: false,
+                    required: true,  //true if guardian required to live profile
                     attributes: ['id', 'guardian_id']
                 }
             ],
