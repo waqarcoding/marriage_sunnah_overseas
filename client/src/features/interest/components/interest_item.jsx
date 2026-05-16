@@ -525,8 +525,9 @@ export default function InterestItem({ interest, profile, images, activeTab, onO
                             <p className="m-0 text-[15px] font-semibold leading-snug overflow-hidden text-ellipsis whitespace-nowrap tracking-tight">
                                 {profile?.name}{profile?.age ? `, ${profile.age}` : ""}
                             </p>
-
-                            {(profile?.city || profile?.country) && (
+                            {/* Profile info
+    
+       {(profile?.city || profile?.country) && (
                                 <p className="flex items-center gap-1 mt-1 text-xs text-white/80 overflow-hidden text-ellipsis whitespace-nowrap m-0">
                                     <MapPin className="w-3 h-3 shrink-0" />
                                     <span className="overflow-hidden text-ellipsis">
@@ -541,6 +542,8 @@ export default function InterestItem({ interest, profile, images, activeTab, onO
                                     <span className="overflow-hidden text-ellipsis">{profile.education}</span>
                                 </p>
                             )}
+    */}
+
 
                             {/* Chat button */}
                             {item.status === "accepted" && (

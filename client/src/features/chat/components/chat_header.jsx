@@ -35,6 +35,7 @@ export default function ChatHeader({
     return (
         <div className="px-4 py-3 flex-shrink-0 border-b"
             style={{
+                flexShrink: 0,
                 backgroundColor: "var(--background)",
                 borderColor: "var(--border)",
                 boxShadow: "0 1px 6px rgba(0,0,0,0.04)",

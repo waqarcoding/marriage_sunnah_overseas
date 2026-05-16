@@ -636,6 +636,7 @@ function MessageView({
             <div style={{
                 flex: 1,
                 overflowY: "auto",
+                minHeight: 0,
                 padding: "20px 16px 24px",
                 display: "flex",
                 flexDirection: "column",

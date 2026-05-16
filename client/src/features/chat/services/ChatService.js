@@ -19,27 +19,51 @@ class ChatService {
     }
 
     async startChat({ item, activeTab }) {
+        console.log('🚀 startChat called with:', {
+            activeTab,
+            item,
+            hasToProfile: !!item?.toProfile,
+            hasFromProfile: !!item?.fromProfile,
+            toProfileIndividualId: item?.toProfile?.individual_id,
+            fromProfileIndividualId: item?.fromProfile?.individual_id
+        });
+
         let receiverId;
+        let receiverProfile;
 
         if (activeTab.toLowerCase() === "sent") {
-            receiverId = item.toProfile?.individual_id;
+            receiverId = item?.toProfile?.individual_id;
+            receiverProfile = item?.toProfile;
         } else if (activeTab.toLowerCase() === "received") {
-            receiverId = item.fromProfile?.individual_id;
+            receiverId = item?.fromProfile?.individual_id;
+            receiverProfile = item?.fromProfile;
         } else {
-            receiverId = item.toProfile?.individual_id || item.fromProfile?.individual_id;
+            // Fallback: try both
+            receiverId = item?.toProfile?.individual_id || item?.fromProfile?.individual_id;
+            receiverProfile = item?.toProfile || item?.fromProfile;
         }
 
+        console.log('🔍 Resolved:', { receiverId, receiverProfile });
+
         if (!receiverId) {
-            console.error("Receiver ID not found");
-            return null;
+            console.error("❌ Receiver ID not found", {
+                activeTab,
+                itemStructure: {
+                    hasToProfile: !!item?.toProfile,
+                    hasFromProfile: !!item?.fromProfile,
+                    toProfile: item?.toProfile,
+                    fromProfile: item?.fromProfile
+                }
+            });
+            throw new Error('Receiver ID not found. Please check the interest data.');
         }
 
         await this.addConversationUser(receiverId);
 
         return {
             id: receiverId,
-            name: item.toProfile?.name || item.fromProfile?.name,
-            avatar: item.toProfile?.image || item.fromProfile?.image,
+            name: receiverProfile?.name || 'Unknown User',
+            avatar: receiverProfile?.image || receiverProfile?.avatar || '/default-avatar.png',
         };
     }
 

@@ -511,23 +511,27 @@ export default function InterestPage() {
         }
     };
 
-    const handleStartChat = async (profile) => {
-        if (!profile?.individual_id) {
-            toast.error("Invalid profile");
+    const handleStartChat = async (interest, activeTab = "sent") => {
+        if (!interest) {
+            toast.error("Invalid interest");
             return;
         }
 
+        // Use the interest object directly as the item for ChatService.startChat
+        let receiver;
         try {
-            await ChatService.addConversationUser(profile.individual_id);
-        } catch (err) {
-            if (err?.response?.status !== 409) {
-                toast.error("Failed to start chat");
+            receiver = await ChatService.startChat({ item: interest, activeTab });
+            if (!receiver) {
+                toast.error("Failed to start chat (receiver not found)");
                 return;
             }
+        } catch (err) {
+            toast.error("Failed to start chat");
+            return;
         }
 
-        navigate(`${getRolePath("/chats")}?receiver_id=${profile.individual_id}`, {
-            state: { receiver: { id: profile.individual_id, name: profile.name } },
+        navigate(`${getRolePath("/chats")}?receiver_id=${receiver.id}`, {
+            state: { receiver },
         });
     };
 
@@ -664,8 +668,8 @@ export default function InterestPage() {
                                             profile={profile}
                                             images={parseImages(profile.images)}
                                             activeTab={activeTab}
-                                            onOpenProfile={() => handleOpenProfile(profile)}
-                                            onStartChat={handleStartChat}
+                                            onOpenProfile={() => handleOpenProfile({ ...profile, images: parseImages(profile.images) })}
+                                            onStartChat={() => handleStartChat(item, activeTab)}
                                             onAccept={(id, name) => setDialog({
                                                 type: "accept",
                                                 interestId: id,
@@ -681,6 +685,7 @@ export default function InterestPage() {
                                             isPro={isPro}
                                             index={i}
                                         />
+
                                     );
                                 })}
                             </div>
