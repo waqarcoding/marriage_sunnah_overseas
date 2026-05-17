@@ -320,13 +320,16 @@ export default function ProfileDetailPage({ onLike }) {
                     />
 
                     {/* 3 — Compatibility match section */}
-                    <ProfileMatchSection
-                        profile={compatibilityPair?.otherPerson || profile}
-                        myProfile={compatibilityPair?.myWard || myProfile}
-                        matchPct={matchPct}
-                        photos={photos}
-                        role={currentUserRole}
-                    />
+                    {currentUserRole === 'individual' && (
+                        <ProfileMatchSection
+                            profile={compatibilityPair?.otherPerson || profile}
+                            myProfile={compatibilityPair?.myWard || myProfile}
+                            matchPct={matchPct}
+                            photos={photos}
+                            role={currentUserRole}
+                        />
+                    )}
+
                 </div>
             </div>
         </>

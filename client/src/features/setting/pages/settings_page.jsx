@@ -223,14 +223,14 @@ export default function SettingsPage() {
                 <div className="pt-4">
 
                     {/* ── Pro banner — non-pro only ── */}
-                    {!isPro || tokenData?.role === "guardian" && (
+                    {!isPro && tokenData?.role === "individual" && (
                         <div
                             tabIndex={0}
                             role="button"
-                            onClick={() => navigate("/subscription-detail")}
+                            onClick={() => navigate("individual/subscription")}
                             onKeyPress={e => {
                                 if (e.key === "Enter" || e.key === " ") {
-                                    navigate("/subscription-detail");
+                                    navigate("individual/subscription");
                                 }
                             }}
                             className="mx-4 mb-4 rounded-2xl p-4 flex items-center gap-4 cursor-pointer outline-none"
