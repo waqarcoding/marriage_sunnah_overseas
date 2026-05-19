@@ -379,7 +379,7 @@ export default function SubscriptionDetailPage() {
                 {/* Tab content */}
                 <AnimatePresence mode="wait">
                     {tab === "Overview" && (
-                        <motion.div key="overview"
+                        <motion.div key="overview" className="pb-5"
                             initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
 
                             {/* Features list */}
@@ -411,18 +411,7 @@ export default function SubscriptionDetailPage() {
                                 ))}
                             </SectionCard>
 
-                            {/* Upgrade CTA if no active sub */}
-                            {!activeSub && (
-                                <div className="mx-4 mb-4">
-                                    <motion.button whileTap={{ scale: 0.97 }}
-                                        onClick={() => navigate("/subscription/plans")}
-                                        className="w-full h-12 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2"
-                                        style={{ background: "var(--primary,#1B4D3E)", border: "none", cursor: "pointer" }}>
-                                        <Crown className="w-4 h-4 text-yellow-300" />
-                                        View Plans & Upgrade
-                                    </motion.button>
-                                </div>
-                            )}
+
                         </motion.div>
                     )}
 

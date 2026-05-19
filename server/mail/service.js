@@ -806,6 +806,391 @@ export const sendPasswordResetEmail = async (user, resetToken) => {
         html: content
     });
 };
+export const sendMeetingInvitationEmail = async (data) => {
+    const {
+        attendees,
+        proposer_name,
+        other_name,
+        meeting_datetime,
+        startDateTime,
+        duration_minutes,
+        duration,
+        timezone,
+        meeting_type,
+        meeting_link,
+        agenda
+    } = data;
+
+    // Extract emails from attendees array
+    const recipientEmails = attendees.map(a => a.email).filter(Boolean);
+
+    console.log('📧 Sending to:', recipientEmails);
+
+    if (recipientEmails.length === 0) {
+        console.error('❌ No valid email addresses found in attendees:', attendees);
+        throw new Error('No valid recipient emails');
+    }
+
+    // To use generateICSFile and transporter, ensure proper context, e.g. import or define them above
+    const icsContent = generateICSFile({
+        summary: `Meeting: ${proposer_name} & ${other_name}`,
+        description: agenda || 'Marriage discussion meeting',
+        startDateTime: startDateTime || meeting_datetime,
+        duration: duration || duration_minutes,
+        meetingLink: meeting_link,
+        attendees: recipientEmails
+    });
+
+    // Format date for email display
+    const meetingDate = new Date(startDateTime || meeting_datetime);
+    const formattedDate = meetingDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = meetingDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: timezone
+    });
+
+    // Email HTML template
+    const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%); padding: 30px; border-radius: 10px; color: white;">
+                <h2>📅 Meeting Invitation</h2>
+                <p style="font-size: 18px; margin: 10px 0;">
+                    ${proposer_name} has proposed a meeting with ${other_name}
+                </p>
+            </div>
+            
+            <div style="padding: 30px; background: #f9f9f9; margin-top: 20px; border-radius: 10px;">
+                <p><strong>📆 Date:</strong> ${formattedDate}</p>
+                <p><strong>⏰ Time:</strong> ${formattedTime} (${timezone})</p>
+                <p><strong>⏱️ Duration:</strong> ${duration || duration_minutes} minutes</p>
+                <p><strong>📍 Type:</strong> ${meeting_type === 'video_call' ? '🎥 Video Call' : meeting_type === 'phone' ? '📞 Phone Call' : '🤝 In Person'}</p>
+                ${agenda ? `<p><strong>📝 Agenda:</strong> ${agenda}</p>` : ''}
+                
+                <div style="margin: 30px 0;">
+                    <a href="${meeting_link}" 
+                       style="display: inline-block; background: #1B4D3E; color: white; padding: 15px 40px; 
+                              text-decoration: none; border-radius: 8px; font-weight: bold;">
+                        🎥 Join Meeting
+                    </a>
+                </div>
+                
+                <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                    Or copy this link: <a href="${meeting_link}" style="color: #1B4D3E;">${meeting_link}</a>
+                </p>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #999; text-align: center;">
+                Calendar file is attached. Click to add to your calendar.
+            </p>
+        </div>
+    `;
+
+    const mailOptions = {
+        from: process.env.MAIL_USER || 'noreply@marriagesunnah.com',
+        to: recipientEmails.join(', '),
+        subject: `Meeting Invitation: ${proposer_name} & ${other_name}`,
+        html: emailHtml,
+        attachments: [{
+            filename: 'meeting.ics',
+            content: icsContent,
+            contentType: 'text/calendar'
+        }]
+    };
+
+    console.log('📧 Mail options:', {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject
+    });
+
+    // The transporter should be imported or created at the module level, e.g., using nodemailer
+    return await transporter.sendMail(mailOptions);
+};
+/**
+ * Send meeting confirmation email (when both parties confirm)
+ * @param {Object} confirmationData - Confirmation data
+ */
+export const sendMeetingConfirmationEmail = async (confirmationData) => {
+    const {
+        attendees,
+        meetingLink,
+        meetingDateTime,
+        duration,
+        user1Name,
+        user2Name
+    } = confirmationData;
+
+    const meetingDate = new Date(meetingDateTime);
+    const formattedDate = meetingDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = meetingDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    });
+
+    const content = `
+        <h1>✅ Meeting Confirmed!</h1>
+        <p>Both parties have confirmed the meeting</p>
+        
+        <div style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: white; padding: 30px; border-radius: 12px; text-align: center; margin: 20px 0;">
+            <div style="font-size: 48px; margin-bottom: 10px;">✓</div>
+            <div style="font-size: 20px; font-weight: 700;">Meeting is Confirmed</div>
+        </div>
+ 
+        <div class="info-box">
+            <p><strong>📆 Date:</strong> ${formattedDate}</p>
+            <p><strong>⏰ Time:</strong> ${formattedTime}</p>
+            <p><strong>⏱️ Duration:</strong> ${duration} minutes</p>
+        </div>
+ 
+        <a href="${meetingLink}" class="button">🎥 Join Google Meet</a>
+ 
+        <div class="info-box">
+            <p><strong>⏰ Reminders:</strong></p>
+            <p>You'll receive reminders:</p>
+            <p>• 24 hours before the meeting</p>
+            <p>• 1 hour before the meeting</p>
+        </div>
+ 
+        <div class="info-box">
+            <p><strong>💡 Tips for a Successful Meeting:</strong></p>
+            <p>• Test your camera and microphone beforehand</p>
+            <p>• Find a quiet, well-lit space</p>
+            <p>• Be respectful and professional</p>
+            <p>• If guardians are attending, ensure they're ready</p>
+            <p>• Have your questions prepared</p>
+        </div>
+ 
+        <p>May Allah make this meeting beneficial for both of you!</p>
+        <p><strong>The Marriage Sunna Team</strong></p>
+    `;
+
+    const emailPromises = attendees.map(email => {
+        return transporter.sendMail({
+            from: `"Marriage Sunna" <${process.env.MAIL_USER}>`,
+            to: email,
+            subject: `✅ Meeting Confirmed: ${user1Name} & ${user2Name}`,
+            html: getEmailTemplate(content)
+        });
+    });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+};
+
+/**
+ * Send meeting reminder email (24h or 1h before)
+ * @param {Object} reminderData - Reminder data
+ */
+export const sendMeetingReminderEmail = async (reminderData) => {
+    const {
+        attendeeEmail,
+        attendeeName,
+        user1Name,
+        user2Name,
+        meetingDateTime,
+        meetingLink,
+        duration,
+        timeBeforeMeeting // '24h' or '1h'
+    } = reminderData;
+
+    const meetingDate = new Date(meetingDateTime);
+    const formattedTime = meetingDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const urgencyStyle = timeBeforeMeeting === '1h'
+        ? 'background: #FFA500; color: white;'
+        : 'background: #1B4D3E; color: white;';
+
+    const content = `
+        <div style="${urgencyStyle} padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
+            <div style="font-size: 36px; margin-bottom: 10px;">⏰</div>
+            <h1 style="color: white; margin: 0;">Meeting Reminder</h1>
+            <p style="color: white; opacity: 0.9; margin: 10px 0 0 0;">
+                ${timeBeforeMeeting === '1h' ? 'Starting in 1 hour!' : 'Tomorrow at this time'}
+            </p>
+        </div>
+ 
+        <p>Assalamu Alaikum ${attendeeName},</p>
+        <p>This is a reminder about your upcoming meeting with <strong>${user1Name === attendeeName ? user2Name : user1Name}</strong>.</p>
+ 
+        <div class="info-box">
+            <p><strong>⏰ Meeting Time:</strong> ${formattedTime}</p>
+            <p><strong>⏱️ Duration:</strong> ${duration} minutes</p>
+            ${timeBeforeMeeting === '1h' ? '<p style="color: #FFA500; font-weight: 700;">⚠️ Starting in 1 HOUR!</p>' : ''}
+        </div>
+ 
+        <a href="${meetingLink}" class="button">🎥 Join Meeting</a>
+ 
+        ${timeBeforeMeeting === '1h' ? `
+        <div class="info-box">
+            <p><strong>🎯 Last-Minute Checklist:</strong></p>
+            <p>✓ Test your camera and microphone</p>
+            <p>✓ Find a quiet, well-lit space</p>
+            <p>✓ Have your questions ready</p>
+            <p>✓ Take a deep breath and relax</p>
+        </div>
+        ` : ''}
+ 
+        <p>May Allah bless your meeting!</p>
+        <p><strong>The Marriage Sunna Team</strong></p>
+    `;
+
+    return await transporter.sendMail({
+        from: `"Marriage Sunna" <${process.env.MAIL_USER}>`,
+        to: attendeeEmail,
+        subject: timeBeforeMeeting === '1h'
+            ? `⏰ Meeting in 1 HOUR - ${user1Name} & ${user2Name}`
+            : `📅 Meeting Tomorrow - ${user1Name} & ${user2Name}`,
+        html: getEmailTemplate(content)
+    });
+};
+
+/**
+ * Send meeting cancellation email
+ * @param {Object} cancellationData - Cancellation data
+ */
+export const sendMeetingCancellationEmail = async (cancellationData) => {
+    const {
+        attendeeEmail,
+        attendeeName,
+        cancelledByName,
+        user1Name,
+        user2Name,
+        meetingDateTime,
+        reason
+    } = cancellationData;
+
+    const meetingDate = new Date(meetingDateTime);
+    const formattedDate = meetingDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = meetingDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const content = `
+        <h1>❌ Meeting Cancelled</h1>
+        <p>Assalamu Alaikum ${attendeeName},</p>
+        <p>The meeting between <strong>${user1Name}</strong> and <strong>${user2Name}</strong> has been cancelled by <strong>${cancelledByName}</strong>.</p>
+ 
+        <div class="info-box">
+            <p><strong>📅 Original Meeting:</strong></p>
+            <p>${formattedDate} at ${formattedTime}</p>
+            ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+        </div>
+ 
+        <div class="info-box">
+            <p><strong>💡 Next Steps:</strong></p>
+            <p>• You can propose a new meeting time</p>
+            <p>• Continue your conversation in chat</p>
+            <p>• Reschedule when both parties are available</p>
+        </div>
+ 
+        <a href="${process.env.CLIENT_URL}/messages" class="button">Go to Messages</a>
+ 
+        <p><strong>The Marriage Sunna Team</strong></p>
+    `;
+
+    return await transporter.sendMail({
+        from: `"Marriage Sunna" <${process.env.MAIL_USER}>`,
+        to: attendeeEmail,
+        subject: `❌ Meeting Cancelled - ${user1Name} & ${user2Name}`,
+        html: getEmailTemplate(content)
+    });
+};
+
+
+export function generateICSFile(meetingData) {
+    const {
+        summary,
+        description,
+        startDateTime,
+        duration,
+        meetingLink,
+        attendees = []
+    } = meetingData;
+
+    // ✅ FIX: Validate and convert startDateTime
+    let startDate;
+    if (startDateTime instanceof Date) {
+        startDate = startDateTime;
+    } else {
+        startDate = new Date(startDateTime);
+    }
+
+    // ✅ FIX: Check if date is valid
+    if (isNaN(startDate.getTime())) {
+        console.error('Invalid startDateTime in generateICSFile:', startDateTime);
+        throw new Error('Invalid meeting start date');
+    }
+
+    const endDate = new Date(startDate.getTime() + duration * 60000);
+
+    // Format dates for ICS (YYYYMMDDTHHmmssZ)
+    const formatICSDate = (date) => {
+        // ✅ FIX: Validate date before formatting
+        if (!(date instanceof Date) || isNaN(date.getTime())) {
+            console.error('Invalid date in formatICSDate:', date);
+            throw new Error('Invalid date for ICS formatting');
+        }
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Marriage Sunnah//Meeting//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:REQUEST',
+        'BEGIN:VEVENT',
+        `DTSTART:${formatICSDate(startDate)}`,
+        `DTEND:${formatICSDate(endDate)}`,
+        `DTSTAMP:${formatICSDate(new Date())}`,
+        `SUMMARY:${summary}`,
+        `DESCRIPTION:${description || 'Meeting'}\\n\\nJoin meeting: ${meetingLink}`,
+        `LOCATION:${meetingLink}`,
+        `URL:${meetingLink}`,
+        'STATUS:CONFIRMED',
+        `UID:${Date.now()}@marriagesunnah.com`,
+        ...attendees.map(email => `ATTENDEE;CN=${email};RSVP=TRUE:mailto:${email}`),
+        'BEGIN:VALARM',
+        'TRIGGER:-PT24H',
+        'ACTION:EMAIL',
+        'DESCRIPTION:Meeting reminder - 24 hours',
+        'END:VALARM',
+        'BEGIN:VALARM',
+        'TRIGGER:-PT1H',
+        'ACTION:DISPLAY',
+        'DESCRIPTION:Meeting starting in 1 hour',
+        'END:VALARM',
+        'BEGIN:VALARM',
+        'TRIGGER:-PT15M',
+        'ACTION:DISPLAY',
+        'DESCRIPTION:Meeting starting in 15 minutes',
+        'END:VALARM',
+        'END:VEVENT',
+        'END:VCALENDAR'
+    ].join('\r\n');
+
+    return icsContent;
+}
 
 export default {
     sendMail,
@@ -820,4 +1205,8 @@ export default {
     sendSubscriptionEmail,
     sendPasswordResetEmail,
     sendGuardianMutualInterestEmail,
+    sendMeetingInvitationEmail,
+    sendMeetingConfirmationEmail,
+    sendMeetingReminderEmail,
+    sendMeetingCancellationEmail,
 };

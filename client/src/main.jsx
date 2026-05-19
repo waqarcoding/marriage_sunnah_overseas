@@ -8,6 +8,8 @@ import { SocketProvider } from './sockets/SocketContext.jsx';
 import AppBar, { INDIVIDUAL_TABS, GUARDIAN_TABS } from './ui/app_bar.jsx';
 
 // ✅ Import all components directly (no lazy loading - preloads everything)
+
+
 import ExplorePage from './features/explore/pages/explore_page.jsx';
 import Login from './features/auth/pages/login_page.jsx';
 import ReferralPage from './features/setting/pages/reffer_page.jsx';
@@ -50,9 +52,15 @@ import AuthService from './features/auth/services/AuthService.js';
 import settings from './context/settings.jsx';
 import {
   LayoutDashboard, Users, CheckCircle, Crown,
-  DollarSign, MessageCircle, Settings, LogOut, Shield,
-  Menu, X
+  DollarSign, MessageCircle, Settings, LogOut, Shield, AlertCircle, Calendar,
+  Menu, X, Heart
 } from 'lucide-react';
+import UserDetailPage from './features/admin/pages/user_detail_page.jsx';
+import MatchesPage from './features/admin/pages/matches_page.jsx';
+import PendingInterestsPage from './features/admin/pages/pending_interests_page.jsx';
+import MyMeetingsPage from './features/meeting/pages/my_meetings_page.jsx';
+import AdminMeetingsPage from './features/admin/pages/meeting_page.jsx';
+import AddStaffPage from './features/admin/pages/add_staff_page.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -374,6 +382,10 @@ function IndividualLayout() {
           <ConditionalContent path="/individual/subscription">
             <SubscriptionPage />
           </ConditionalContent>
+          <ConditionalContent path="/individual/meetings">
+            <MyMeetingsPage />
+          </ConditionalContent>
+
           <ConditionalContent path="/individual/verification">
             <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
           </ConditionalContent>
@@ -427,6 +439,9 @@ function GuardianLayout() {
           <ConditionalContent path="/guardian/profile">
             <ProfileDetailPage />
           </ConditionalContent>
+          <ConditionalContent path="/guardian/meetings">
+            <MyMeetingsPage />
+          </ConditionalContent>
           <ConditionalContent path="/guardian/verification">
             <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
           </ConditionalContent>
@@ -460,10 +475,35 @@ function AdminLayout() {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: Users, label: 'Users', path: '/admin/users' },
+
+
+    // Add to your admin sidebar menu items:
+    {
+      path: '/admin/matches',
+      icon: Heart,
+      label: 'Connected'
+    },
+    {
+      path: '/admin/chats',
+      icon: MessageCircle,
+      label: 'Chats'
+    },
+    {
+      path: '/admin/interests/pending',
+      icon: AlertCircle,
+      label: 'Interests'
+    },
+    {
+      path: '/admin/meetings',
+      icon: Calendar,
+
+      label: 'Meetings'
+    },
     { icon: CheckCircle, label: 'Verifications', path: '/admin/verifications' },
     { icon: Crown, label: 'Subscriptions', path: '/admin/subscriptions' },
     { icon: DollarSign, label: 'Transactions', path: '/admin/transactions' },
     { icon: MessageCircle, label: 'Messages', path: '/admin/messages' },
+    { icon: Shield, label: 'Add Staff', path: '/admin/addstaff' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
 
@@ -488,29 +528,31 @@ function AdminLayout() {
       <div
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-72 lg:w-64 bg-white border-r border-gray-200
+          w-72 lg:w-64 border-r border-gray-200
           transform transition-transform duration-300 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           flex flex-col
         `}
-        style={{ boxShadow: '2px 0 12px rgba(0, 0, 0, 0.03)' }}
+        style={{
+          background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)",
+          boxShadow: '2px 0 12px rgba(0, 0, 0, 0.1)'
+        }}
       >
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-all"
+              className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-all"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} className="text-white" />
             </button>
           </div>
 
-          <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+          <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
             <img
               src={adminUser.avatar_url || "/default-avatar.png"}
               alt="Admin Avatar"
-              className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-              style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
+              className="w-10 h-10 rounded-lg object-cover bg-white/20"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = "/default-avatar.png";
@@ -518,10 +560,10 @@ function AdminLayout() {
             />
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
+              <p className="text-sm font-semibold text-white truncate">
                 {adminUser.name || 'Admin'}
               </p>
-              <p className="text-xs text-gray-500 capitalize">
+              <p className="text-xs text-white/70 capitalize">
                 {adminUser.role || 'staff'}
               </p>
             </div>
@@ -537,10 +579,8 @@ function AdminLayout() {
                 onClick={() => handleMenuClick(item.path)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group"
                 style={{
-                  background: isActive
-                    ? "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)"
-                    : "transparent",
-                  color: isActive ? "white" : "#4b5563",
+                  background: isActive ? "white" : "transparent",
+                  color: isActive ? "#1B4D3E" : "white",
                 }}
               >
                 <item.icon
@@ -549,17 +589,17 @@ function AdminLayout() {
                 />
                 <span className="text-sm font-medium">{item.label}</span>
                 {isActive && (
-                  <div className="ml-auto w-2 h-2 rounded-full bg-white/30" />
+                  <div className="ml-auto w-2 h-2 rounded-full bg-[#1B4D3E]/30" />
                 )}
               </button>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-4 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-red-600 hover:bg-red-50 border border-red-200"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-white hover:bg-white/10 border border-white/20"
           >
             <LogOut size={20} />
             <span className="text-sm font-medium">Logout</span>
@@ -636,9 +676,25 @@ const router = createBrowserRouter([
     children: [
       { path: 'dashboard', element: <AdminDashboard /> },
       { path: 'users', element: <UsersPage /> },
+      { path: 'users/:userId', element: <UserDetailPage /> },
       { path: 'verifications', element: <VerificationQueue /> },
       { path: 'subscriptions', element: <SubscriptionsPage /> },
       { path: 'transactions', element: <TransactionsPage /> },
+      { path: '/admin/chats', element: <Chat /> },
+      { path: '/admin/chat', element: <Chat /> },
+      {
+        path: 'matches',
+        element: <MatchesPage />
+      },
+      { path: '/admin/chats', element: <Chat /> },
+      { path: '/admin/meetings', element: <AdminMeetingsPage /> },
+      {
+        path: 'interests/pending',
+        element: <PendingInterestsPage />
+      },
+      { path: '/admin/addstaff', element: <AddStaffPage /> },
+
+      ,
       { path: 'messages', element: <MessagesPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
     ]

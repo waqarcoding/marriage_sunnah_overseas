@@ -1,5 +1,5 @@
 import db from '../models/index.js';
-const { User, Profile, Subscription, Transaction, Referral, Interest, Match, Message, ContactReveal, Notification, Guardian, Setting, Option, Dislike, Preference } = db;
+const { User, Profile, Subscription, Transaction, Referral, Meeting, Interest, Match, Message, ContactReveal, Notification, Guardian, Setting, Option, Dislike, Preference } = db;
 import { Op } from 'sequelize';
 
 import bcrypt from 'bcrypt';
@@ -515,7 +515,95 @@ export const adjustCredits = async (req, res) => {
         res.status(500).json({ success: false, error: 'Failed to adjust credits' });
     }
 };
+// Add this method to your admin.controller.js
 
+export const getPendingInterests = async (req, res) => {
+    try {
+        const {
+            page = 1,
+            limit = 20,
+            search = '',
+            status = '',
+            guardianStatus = ''
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+
+        // Build where clause
+        const where = {};
+
+        if (status) {
+            where.status = status;
+        }
+
+        if (guardianStatus) {
+            where[Op.or] = [
+                { from_guardian_status: guardianStatus },
+                { to_guardian_status: guardianStatus }
+            ];
+        }
+
+        // Build user search where clause
+        let userWhere = {};
+        if (search) {
+            userWhere = {
+                [Op.or]: [
+                    { name: { [Op.like]: `%${search}%` } },
+                    { email: { [Op.like]: `%${search}%` } }
+                ]
+            };
+        }
+
+        // Get interests with user details
+        const { count, rows } = await Interest.findAndCountAll({
+            where,
+            include: [
+                {
+                    model: User,
+                    as: 'fromUser',
+                    attributes: ['id', 'name', 'email', 'avatar_url', 'is_verified', 'is_pro'],
+                    where: search ? userWhere : undefined,
+                    required: search ? true : false
+                },
+                {
+                    model: User,
+                    as: 'toUser',
+                    attributes: ['id', 'name', 'email', 'avatar_url', 'is_verified', 'is_pro'],
+                    where: search ? userWhere : undefined,
+                    required: search ? true : false
+                }
+            ],
+            attributes: [
+                'id', 'status', 'from_guardian_status', 'to_guardian_status',
+                'both_guardians_approved', 'both_users_approved',
+                'is_super_like', 'is_mutual', 'is_seen', 'created_at'
+            ],
+            limit: parseInt(limit),
+            // @ts-ignore
+            offset: parseInt(offset),
+
+            order: [['created_at', 'DESC']]
+        });
+
+        res.json({
+            success: true,
+            data: {
+                interests: rows,
+                total: count,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(count / limit)
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Get pending interests error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch pending interests'
+        });
+    }
+};
 export const adjustSubscription = async (req, res) => {
     try {
         const { id } = req.params;
@@ -1303,18 +1391,50 @@ export const deleteInterest = async (req, res) => {
     }
 };
 
+// Add these methods to your admin.controller.js
+
 export const getMatches = async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
+        const {
+            page = 1,
+            limit = 20,
+            search = ''
+        } = req.query;
+
         const offset = (page - 1) * limit;
 
+        // Build where clause for search
+        let userWhere = {};
+        if (search) {
+            userWhere = {
+                [Op.or]: [
+                    { name: { [Op.like]: `%${search}%` } },
+                    { email: { [Op.like]: `%${search}%` } }
+                ]
+            };
+        }
+
+        // Get matches with user details
         const { count, rows } = await Match.findAndCountAll({
             include: [
-                { model: User, as: 'user_one', attributes: ['id', 'name', 'email'] },
-                { model: User, as: 'user_two', attributes: ['id', 'name', 'email'] }
+                {
+                    model: User,
+                    as: 'user_one',
+                    attributes: ['id', 'name', 'email', 'avatar_url', 'is_verified', 'is_pro'],
+                    where: search ? userWhere : undefined,
+                    required: search ? true : false
+                },
+                {
+                    model: User,
+                    as: 'user_two',
+                    attributes: ['id', 'name', 'email', 'avatar_url', 'is_verified', 'is_pro'],
+                    where: search ? userWhere : undefined,
+                    required: search ? true : false
+                }
             ],
             limit: parseInt(limit),
-            offset,
+            offset: Number(offset),
+
             order: [['created_at', 'DESC']]
         });
 
@@ -1324,12 +1444,17 @@ export const getMatches = async (req, res) => {
                 matches: rows,
                 total: count,
                 page: parseInt(page),
+                limit: parseInt(limit),
                 totalPages: Math.ceil(count / limit)
             }
         });
+
     } catch (error) {
-        console.error('Get matches error:', error);
-        res.status(500).json({ success: false, error: 'Failed to fetch matches' });
+        console.error('❌ Get matches error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch matches'
+        });
     }
 };
 
@@ -1371,8 +1496,8 @@ export const getMessages = async (req, res) => {
         const { count, rows } = await Message.findAndCountAll({
             where,
             include: [
-                { model: User, as: 'sender', attributes: ['id', 'name', 'email'] },
-                { model: User, as: 'receiver', attributes: ['id', 'name', 'email'] }
+                { model: User, as: 'sender', attributes: ['id', 'name', 'email', 'avatar_url'] },
+                { model: User, as: 'receiver', attributes: ['id', 'name', 'email', 'avatar_url'] }
             ],
             limit: parseInt(limit),
             offset,
@@ -2243,7 +2368,8 @@ export const deleteAdmin = async (req, res) => {
 // Get user complete details with profile, media, and linked users
 export const getUserDetailsByAdmin = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = req.params.id;  // CORRECT
+        console.log(userId);
 
         // Get user with profile
         const user = await User.findByPk(userId, {
@@ -2252,16 +2378,13 @@ export const getUserDetailsByAdmin = async (req, res) => {
                 as: 'profile',
                 required: false
             }],
-            attributes: [
-                'id', 'name', 'email', 'mobile', 'role', 'is_verified', 'is_pro',
-                'credits', 'rcredits', 'is_suspended', 'created_at', 'frontid_url', 'backid_url'
-            ]
+
         });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                error: 'User not found'
+                error: 'User not found ' + userId
             });
         }
 
@@ -2284,8 +2407,8 @@ export const getUserDetailsByAdmin = async (req, res) => {
                 where: { individual_id: userId },
                 include: [{
                     model: User,
-                    as: 'guardian', // Make sure this alias matches your Guardian model association
-                    attributes: ['id', 'name', 'email', 'mobile']
+                    as: 'guardianUser', // Make sure this alias matches your Guardian model association
+
                 }]
             });
             guardians = guardianLinks.map(link => link.guardian);
@@ -2299,7 +2422,7 @@ export const getUserDetailsByAdmin = async (req, res) => {
                 include: [{
                     model: User,
                     as: 'individual', // Make sure this alias matches your Guardian model association
-                    attributes: ['id', 'name', 'email', 'mobile']
+
                 }]
             });
             wards = wardLinks.map(link => link.individual);
@@ -2319,7 +2442,7 @@ export const getUserDetailsByAdmin = async (req, res) => {
         console.error('❌ Get user details error:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to get user details'
+            error: 'Failed to get user details '
         });
     }
 };
@@ -2526,6 +2649,306 @@ export const removeWard = async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to remove ward link'
+        });
+    }
+};
+
+// UPDATED: server/controllers/meeting.controller.js
+
+/**
+ * Admin: Get all meetings with filters
+ * - Super Admin: Sees ALL meetings
+ * - Staff/Admin: Only sees meetings where platform_team_attending = true
+ */
+export const adminGetAllMeetings = async (req, res) => {
+    try {
+        const { status, from_date, to_date, user_id, page = 1, limit = 20 } = req.query;
+        const adminRole = req.user.role; // From JWT token
+
+        const whereClause = {};
+
+        // ✅ Role-based filtering
+        if (adminRole === 'staff' || adminRole === 'admin') {
+            // Staff and Admin only see meetings they're moderating
+            whereClause.platform_team_attending = true;
+        }
+        // Super Admin sees all meetings (no additional filter)
+
+        // ✅ Hide expired meetings - only show future or ongoing meetings
+        const now = new Date();
+        whereClause.meeting_datetime = {
+            [Op.gte]: now  // Only meetings >= current time
+        };
+
+        // Filter by status
+        if (status && status !== 'all') {
+            whereClause.status = status;
+        }
+
+        // Filter by date range (override the default future filter if provided)
+        if (from_date && to_date) {
+            // @ts-ignore
+            whereClause.meeting_datetime = {
+                [Op.between]: [new Date(from_date), new Date(to_date)]
+            };
+        } else if (from_date) {
+            // @ts-ignore
+            whereClause.meeting_datetime = {
+                [Op.and]: [
+                    { [Op.gte]: new Date(from_date) },
+                    { [Op.gte]: now }  // Still enforce future filter
+                ]
+            };
+        } else if (to_date) {
+            // @ts-ignore
+            whereClause.meeting_datetime = {
+                [Op.and]: [
+                    { [Op.lte]: new Date(to_date) },
+                    { [Op.gte]: now }  // Still enforce future filter
+                ]
+            };
+        }
+
+        // Filter by user (either participant)
+        if (user_id) {
+            whereClause[Op.or] = [
+                { user1_id: user_id },
+                { user2_id: user_id }
+            ];
+        }
+
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+
+        const { count, rows: meetings } = await Meeting.findAndCountAll({
+            where: whereClause,
+            include: [
+                { model: User, as: 'user1', attributes: ['id', 'name', 'email'] },
+                { model: User, as: 'user2', attributes: ['id', 'name', 'email'] },
+                { model: User, as: 'user1Guardian', attributes: ['id', 'name', 'email'], required: false },
+                { model: User, as: 'user2Guardian', attributes: ['id', 'name', 'email'], required: false }
+            ],
+            order: [['meeting_datetime', 'ASC']],  // ✅ Changed to ASC (earliest first)
+            limit: parseInt(limit),
+            offset: offset
+        });
+
+        res.json({
+            success: true,
+            data: meetings,
+            pagination: {
+                total: count,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total_pages: Math.ceil(count / parseInt(limit))
+            },
+            role_info: {
+                role: adminRole,
+                viewing: adminRole === 'super_admin' ? 'all_meetings' : 'moderated_meetings_only'
+            }
+        });
+
+    } catch (error) {
+        console.error('Admin get all meetings error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch meetings'
+        });
+    }
+};
+/**
+ * Admin: Get meeting statistics
+ * - Super Admin: Stats for ALL meetings
+ * - Staff/Admin: Stats for moderated meetings only
+ */
+export const adminGetMeetingStats = async (req, res) => {
+    try {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const adminRole = req.user.role;
+
+        // ✅ Base filter for role
+        const roleFilter = {};
+        if (adminRole === 'staff' || adminRole === 'admin') {
+            roleFilter.platform_team_attending = true;
+        }
+
+        // Total meetings
+        const totalMeetings = await Meeting.count({ where: roleFilter });
+
+        // Meetings by status
+        const proposed = await Meeting.count({
+            where: { ...roleFilter, status: 'proposed' }
+        });
+        const confirmed = await Meeting.count({
+            where: { ...roleFilter, status: 'confirmed' }
+        });
+        const completed = await Meeting.count({
+            where: { ...roleFilter, status: 'completed' }
+        });
+        const cancelled = await Meeting.count({
+            where: { ...roleFilter, status: 'cancelled' }
+        });
+
+        // Upcoming meetings
+        const upcoming = await Meeting.count({
+            where: {
+                ...roleFilter,
+                status: {
+                    [Op.in]: ['proposed', 'confirmed']
+                },
+                meeting_datetime: {
+                    [Op.gt]: now
+                }
+            }
+        });
+
+        // Meetings in last 30 days
+        const recentMeetings = await Meeting.count({
+            where: {
+                ...roleFilter,
+                created_at: {
+                    [Op.gte]: thirtyDaysAgo
+                }
+            }
+        });
+
+        // Meetings with platform team (always 100% for staff/admin)
+        const withPlatformTeam = await Meeting.count({
+            where: { ...roleFilter, platform_team_attending: true }
+        });
+
+        // Meetings with guardians
+        const withGuardians = await Meeting.count({
+            where: {
+                ...roleFilter,
+                [Op.or]: [
+                    { user1_guardian_attending: true },
+                    { user2_guardian_attending: true }
+                ]
+            }
+        });
+
+        res.json({
+            success: true,
+            data: {
+                total: totalMeetings,
+                by_status: {
+                    proposed,
+                    confirmed,
+                    completed,
+                    cancelled
+                },
+                upcoming,
+                recent_30_days: recentMeetings,
+                with_platform_team: withPlatformTeam,
+                with_guardians: withGuardians
+            },
+            role_info: {
+                role: adminRole,
+                scope: adminRole === 'super_admin' ? 'all_meetings' : 'moderated_meetings_only'
+            }
+        });
+
+    } catch (error) {
+        console.error('Admin get meeting stats error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch meeting statistics'
+        });
+    }
+};
+
+/**
+ * Admin: Update meeting status
+ * - Super Admin: Can update ANY meeting
+ * - Staff/Admin: Can only update meetings they're moderating
+ */
+export const adminUpdateMeetingStatus = async (req, res) => {
+    try {
+        const { meeting_id } = req.params;
+        const { status, admin_notes } = req.body;
+        const adminRole = req.user.role;
+
+        const whereClause = { id: meeting_id };
+
+        // ✅ Staff/Admin can only update their moderated meetings
+        if (adminRole === 'staff' || adminRole === 'admin') {
+            whereClause.platform_team_attending = true;
+        }
+
+        const meeting = await Meeting.findOne({ where: whereClause });
+
+        if (!meeting) {
+            return res.status(404).json({
+                success: false,
+                error: adminRole === 'super_admin'
+                    ? 'Meeting not found'
+                    : 'Meeting not found or you are not a moderator'
+            });
+        }
+
+        meeting.status = status;
+        if (admin_notes) {
+            meeting.admin_notes = admin_notes;
+        }
+
+        await meeting.save();
+
+        res.json({
+            success: true,
+            data: meeting,
+            message: 'Meeting status updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Admin update meeting status error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update meeting status'
+        });
+    }
+};
+
+/**
+ * Admin: Delete meeting
+ * - Super Admin: Can delete ANY meeting
+ * - Staff/Admin: Can only delete meetings they're moderating
+ */
+export const adminDeleteMeeting = async (req, res) => {
+    try {
+        const { meeting_id } = req.params;
+        const adminRole = req.user.role;
+
+        const whereClause = { id: meeting_id };
+
+        // ✅ Staff/Admin can only delete their moderated meetings
+        if (adminRole === 'staff' || adminRole === 'admin') {
+            whereClause.platform_team_attending = true;
+        }
+
+        const meeting = await Meeting.findOne({ where: whereClause });
+
+        if (!meeting) {
+            return res.status(404).json({
+                success: false,
+                error: adminRole === 'super_admin'
+                    ? 'Meeting not found'
+                    : 'Meeting not found or you are not a moderator'
+            });
+        }
+
+        await meeting.destroy();
+
+        res.json({
+            success: true,
+            message: 'Meeting deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Admin delete meeting error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete meeting'
         });
     }
 };

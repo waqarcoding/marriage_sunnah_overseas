@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, UserCheck, UserX, Shield, ChevronLeft, ChevronRight, Eye, Plus, X } from "lucide-react";
+import { Search, Filter, UserCheck, UserX, Shield, ChevronLeft, ChevronRight, Eye, Plus, X, Crown } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminService from "./services/AdminService";
 
@@ -229,20 +229,34 @@ export default function UsersPage() {
                                     </thead>
                                     <tbody>
                                         {users.map(user => (
+                                            // Find the user row in your UsersPage and update it like this:
+
                                             <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-3">
+                                                        {/* ✅ CLICKABLE AVATAR */}
                                                         <div
-                                                            className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold text-white"
+                                                            onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                            className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold text-white cursor-pointer hover:scale-105 transition-transform overflow-hidden"
                                                             style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
                                                         >
-                                                            {user.name?.charAt(0)?.toUpperCase() || "U"}
+                                                            {user.avatar_url ? (
+                                                                <img
+                                                                    src={user.avatar_url}
+                                                                    alt={user.name}
+                                                                    className="w-full h-full object-cover rounded-xl"
+                                                                />
+                                                            ) : (
+                                                                user.name?.charAt(0)?.toUpperCase() || "U"
+                                                            )}
                                                         </div>
+
                                                         <div>
                                                             <div className="flex items-center gap-2">
                                                                 <span className="font-semibold text-gray-900">{user.name}</span>
                                                                 {user.is_verified && <UserCheck size={16} className="text-green-500" />}
-                                                                {user.is_pro && <Shield size={16} className="text-amber-500" />}
+                                                                {user.is_pro && <Crown size={16} className="text-amber-500" />}
+
                                                             </div>
                                                             <div className="text-xs text-gray-500">ID: {user.id}</div>
                                                         </div>
@@ -280,6 +294,7 @@ export default function UsersPage() {
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        {/* ✅ VIEW ICON (already working) */}
                                                         <button
                                                             onClick={() => navigate(`/admin/users/${user.id}`)}
                                                             className="p-2 rounded-lg hover:bg-blue-50 transition-all"

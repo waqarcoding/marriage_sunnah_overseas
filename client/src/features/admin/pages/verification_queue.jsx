@@ -99,18 +99,7 @@ export default function VerificationQueue() {
                     </div>
                 </div>
 
-                {/* Stats Banner */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                            <Award size={32} />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-xl font-bold mb-1">Verification Rewards</h3>
-                            <p className="text-white/90">Each approved verification grants users bonus credits automatically</p>
-                        </div>
-                    </div>
-                </div>
+
 
                 {/* Verification List */}
                 {verifications.length === 0 ? (

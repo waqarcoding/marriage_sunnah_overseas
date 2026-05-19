@@ -12,6 +12,8 @@ export const sendMessage = async (req, res, next) => {
         const { receiver_id, message, interest_id } = req.body;
         const receiverIdNum = Number(receiver_id);
 
+
+
         // ✅ VALIDATION 1: Check if interest exists and is accepted
         let interest = null;
         let isGuardianMessage = false;

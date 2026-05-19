@@ -28,6 +28,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import subscriptionRoutes from './routes/subscription.routes.js';
 import referralRoutes from './routes/referral.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
+
 import { handleWebhook } from './controllers/subscription.controller.js'; // ✅ Direct import
 import { initSocket } from "./config/socket.js";
 
@@ -38,6 +39,7 @@ import {
   notifyExpiringSubscriptions,
   markExpiredSubscriptions
 } from './config/cronjobs.js';
+import meetingRoutes from "./routes/meeting.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -107,7 +109,7 @@ app.use("/api/guardian", guardianRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/referrals', referralRoutes);
-
+app.use('/api/meetings', meetingRoutes);
 /* ---------------- API ROUTES (without /api prefix - for ingress stripping) ---------------- */
 app.use('/settings', settingsRoutes);
 app.use("/auth", authRoutes);
@@ -121,7 +123,7 @@ app.use("/guardian", guardianRoutes);
 app.use('/subscription', subscriptionRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/referrals', referralRoutes);
-
+app.use('/meetings', meetingRoutes);
 /* ---------------- HEALTH CHECK ---------------- */
 app.get("/api/health", (req, res) => res.json({
   status: "ok",

@@ -69,7 +69,7 @@ export default function ChatPage() {
     const [loadingConvs, setLoadingConvs] = useState(true);
     const [receiverInfo, setReceiverInfo] = useState(state?.receiver || null);
     const [currentUser, setUser] = useState(null);
-
+    const [matchId, setMatchId] = useState(null);
     const receiverId = searchParams.get("receiver_id");
 
     // ✅ Add cleanup ref
@@ -105,7 +105,17 @@ export default function ChatPage() {
     const getRolePath = useCallback((path) => {
         try {
             const role = currentUserRole || getUserRole();
-            const prefix = role === 'guardian' ? '/guardian' : '/individual';
+            let prefix;
+            if (role === 'guardian') {
+                prefix = '/guardian';
+            } else if (role === 'staff') {
+                prefix = '/admin';
+            } else if (role === 'admin' || role === 'super_admin') {
+                prefix = '/admin';
+            } else {
+                prefix = '/individual';
+            }
+
             return `${prefix}${path}`;
         } catch (error) {
             console.error('Error getting role path:', error);
@@ -140,7 +150,9 @@ export default function ChatPage() {
             if (!isMountedRef.current) return;
 
             if (res.success) {
+
                 setConversations(res.data);
+                setMatchId(res.data?.match_id);
             }
         } catch (err) {
             console.error('Error loading conversations:', err);
@@ -353,8 +365,7 @@ export default function ChatPage() {
                                     onBack={() => navigate(getRolePath("/chats"))}
                                     onViewProfile={() => { }}
                                     isMobile={isMobile}
-                                    currentUserRole={currentUserRole}
-                                />
+                                    currentUserRole={currentUserRole} matchid={matchId} />
                             </motion.div>
                         ) : (
                             <div style={{
@@ -399,7 +410,7 @@ export default function ChatPage() {
 // MESSAGE VIEW COMPONENT
 // ============================================
 
-function MessageView({
+function MessageView({ matchid,
     receiverId,
     receiverInfo: initialReceiverInfo,
     onBack,
@@ -628,6 +639,8 @@ function MessageView({
                 isTyping={isTyping}
                 onBack={onBack}
                 onViewProfile={onViewProfile}
+
+                // @ts-ignore
                 onPhone={undefined}
                 onVideo={undefined}
                 onInfo={undefined}
@@ -664,6 +677,7 @@ function MessageView({
                 inputRef={inputRef}
                 onKeyDown={undefined}
             />
+
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate, isAdmin, isSuperAdmin } from '../middlewares/auth.middleware.js';
 import * as AdminController from '../controllers/admin.controller.js';
+import * as MeetingController from '../controllers/meeting.controller.js'
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get('/dashboard/recent-activity', AdminController.getRecentActivity);
 // USER MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════
 router.get('/users', AdminController.getUsers);
-router.get('/users/:id', AdminController.getUserDetails);
+router.get('/users/:id', AdminController.getUserDetailsByAdmin);
 router.put('/users/:id', AdminController.updateUser);
 router.delete('/users/:id', AdminController.deleteUser);
 router.post('/users/:id/ban', AdminController.banUser);
@@ -146,12 +147,25 @@ router.put('/admins/:id', isSuperAdmin, AdminController.updateAdmin);
 router.delete('/admins/:id', isSuperAdmin, AdminController.deleteAdmin);
 // Add these routes to your admin.routes.js
 
-
+// ═══════════════════════════════════════════════════════════════════════════
+router.get('/matches', AdminController.getMatches);
+router.get('/interests/pending', AdminController.getPendingInterests);
+// ═══════════════════════════════════════════════════════════════════════════
 // User detail routes
-router.get('/users/:userId', authenticate, isAdmin, AdminController.getUserDetailsByAdmin);
 router.put('/users/:userId/profile', authenticate, isAdmin, AdminController.updateUserProfile);
 router.delete('/users/:userId/image', authenticate, isAdmin, AdminController.deleteUserImage);
 router.delete('/users/:userId/video', authenticate, isAdmin, AdminController.deleteUserVideo);
 router.delete('/users/:userId/guardian/:guardianId', authenticate, isAdmin, AdminController.removeGuardianByAdmin);
 router.delete('/users/:userId/ward/:wardId', authenticate, isAdmin, AdminController.removeWard);
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MEETINGS MANAGEMENT (READ/WRITE: admin)
+// ═══════════════════════════════════════════════════════════════════════════
+router.get('/meetings', AdminController.adminGetAllMeetings);
+router.get('/meetings/stats', AdminController.adminGetMeetingStats);
+router.get('/meetings/:meeting_id', MeetingController.getMeetingDetails);
+router.patch('/meetings/:meeting_id/status', AdminController.adminUpdateMeetingStatus);
+router.delete('/meetings/:meeting_id', AdminController.adminDeleteMeeting);
+
 export default router;

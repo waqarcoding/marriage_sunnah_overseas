@@ -180,25 +180,39 @@ export default function ProfileDropdown({ avatar, name, role, onLogout, menuItem
             </div>
 
             {/* Logout Confirmation Dialog */}
-            <AnimatePresence>
+            <AnimatePresence >
                 {showLogoutDialog && (
-                    <motion.div
+                    <motion.div className="mt-100"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-                        style={{
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            backdropFilter: "blur(4px)",
-                        }}
                         onClick={() => setShowLogoutDialog(false)}
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+
+                            backdropFilter: "blur(4px)",
+                            zIndex: 99999,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '16px'
+                        }}
                     >
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
+                            className="bg-white rounded-2xl p-8 shadow-2xl"
+                            style={{
+                                width: '100%',
+                                maxWidth: '500px',
+                                position: 'relative'
+                            }}
                         >
                             {/* Icon */}
                             <div
@@ -241,6 +255,7 @@ export default function ProfileDropdown({ avatar, name, role, onLogout, menuItem
                     </motion.div>
                 )}
             </AnimatePresence>
+
         </>
     );
 }

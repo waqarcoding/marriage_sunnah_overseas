@@ -72,7 +72,7 @@ class ChatService {
             const res = await Api._fetch(`${this.base}/add-conversation`, {
                 method: "POST",
                 headers: Api._getHeaders(),
-                body: JSON.stringify({ receiver_id: receiverId, message: "Hi! 👋" }),
+                body: JSON.stringify({ receiver_id: receiverId }),
             });
             return res;
         } catch (err) {
@@ -143,6 +143,35 @@ class ChatService {
             `${this.base}/conversation/${conversationId}`,
             { method: 'DELETE', headers: Api._getHeaders() }
         );
+    }
+    // ADD THIS METHOD TO YOUR ChatService.js
+
+    /**
+     * Get conversation details including match_id
+     * @param {string|number} receiverId - The other user's ID
+     * @returns {Promise<{success: boolean, data: {match_id: number}}>}
+     */
+    async getConversationDetails(receiverId) {
+        try {
+            // Option 1: If you have a dedicated endpoint
+            const response = await Api.get(`/chat/conversation/${receiverId}`);
+            return response;
+
+            // Option 2: If you don't have an endpoint, get it from conversations list
+            // const conversations = await this.getConversationUsers();
+            // const conversation = conversations.data?.find(c => 
+            //     String(c.other_user_id) === String(receiverId)
+            // );
+            // return {
+            //     success: true,
+            //     data: {
+            //         match_id: conversation?.match_id || null
+            //     }
+            // };
+        } catch (error) {
+            console.error('Error getting conversation details:', error);
+            return { success: false, data: null };
+        }
     }
 }
 

@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import {
     ChevronRight, ChevronLeft, Shield, Bell,
     Lock, Trash2, Crown, X, LogOut, Clock,
-    User, ImageOff, Phone, Mail, Info, BadgeCheck
+    User, ImageOff, Phone, Mail, Info, BadgeCheck, Calendar
 } from "lucide-react";
 import AuthService from "../../auth/services/AuthService";
 import ProfileService from "../../profile/services/ProfileService";
@@ -294,6 +294,19 @@ export default function SettingsPage() {
                                     style={{ background: "#fef3c7", color: "#92400e" }}>⭐ PRO</span>
                             )}
                         </div>
+                        <NavRow
+                            icon={Calendar}
+                            label="Meetings"
+                            sublabel="View and manage your meetings"
+                            onClick={() => {
+                                if (tokenData?.role === "guardian") {
+                                    navigate("/guardian/meetings");
+                                } else {
+                                    navigate("/individual/meetings");
+                                }
+                            }}
+                        />
+
                         {/* Guardian settings link — visible to guardians only */}
                         {tokenData?.role === "guardian" && (
                             <NavRow

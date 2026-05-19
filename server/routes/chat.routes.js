@@ -9,7 +9,9 @@ import {
     clearUnreadCount
 } from '../controllers/chat.controller.js';
 import { authenticate } from '../middlewares/auth.middleware.js';
-
+import db from '../models/index.js';
+import { Op } from 'sequelize';
+const { User, Profile, Interest, Guardian, Match } = db;
 const router = express.Router();
 
 // Send a message
@@ -31,6 +33,38 @@ router.post('/add-conversation', authenticate, addConversationUser);
 router.delete('/conversation/:id', authenticate, deleteConversation);
 router.post('/unread-count/clear', authenticate, clearUnreadCount);
 
+// Add BEFORE /conversation/:id route
+router.get('/conversation/:receiverId', authenticate, async (req, res) => {
+    try {
+        // @ts-ignore
+        const userId = req.user.id;
+        const { receiverId } = req.params;
+
+        // Find match between these users
+        const match = await Match.findOne({
+            where: {
+                [Op.or]: [
+                    { user1: userId, user2: receiverId },
+                    { user1: receiverId, user2: userId }
+                ]
+            },
+            attributes: ['id']
+        });
+
+        res.json({
+            success: true,
+            data: {
+                match_id: match?.id || null
+            }
+        });
+    } catch (error) {
+        console.error('Get conversation details error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get conversation details'
+        });
+    }
+});
 
 
 export default router;
