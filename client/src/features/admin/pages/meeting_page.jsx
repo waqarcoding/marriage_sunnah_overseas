@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Calendar, Users, Video, Phone, MapPin, Eye, Trash2, CheckCircle, XCircle, Clock, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
 import toast from "react-hot-toast";
-import AdminMeetingService from "../../meeting/services/MeetingServ";
+import AdminMeetingService from "../../meeting/services/MeetingService.js";
 
 
 export default function AdminMeetingsPage() {
