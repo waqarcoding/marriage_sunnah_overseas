@@ -3,8 +3,8 @@ import { Calendar, Clock, MapPin, Users, Video, Phone, X, Check, AlertCircle, Ex
 import { motion } from "motion/react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-// @ts-ignore
-import MeetingService from "../services/MeetingService.jsx";
+
+import MeetingService from "../services/MeetingService";
 
 export default function MyMeetingsPage() {
     const [meetings, setMeetings] = useState([]);
