@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { X, Calendar, Clock, Users, MapPin, FileText, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import toast from "react-hot-toast";
-import MeetingService from "../services/meetingservice";
+// @ts-ignore
+import MeetingService from "../services/MeetingService.js";
 
 export default function ScheduleMeetingModal({
     isOpen,
