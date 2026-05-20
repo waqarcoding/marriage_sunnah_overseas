@@ -502,9 +502,17 @@ function AdminLayout() {
     { icon: CheckCircle, label: 'Verifications', path: '/admin/verifications' },
     { icon: Crown, label: 'Subscriptions', path: '/admin/subscriptions' },
     { icon: DollarSign, label: 'Transactions', path: '/admin/transactions' },
-    { icon: MessageCircle, label: 'Messages', path: '/admin/messages' },
-    { icon: Shield, label: 'Add Staff', path: '/admin/addstaff' },
-    { icon: Settings, label: 'Settings', path: '/admin/settings' },
+
+
+    // Only show these three menu items if the user is an admin
+    ...(adminUser.role === "admin"
+      ? [
+        { icon: MessageCircle, label: 'Messages', path: '/admin/messages' },
+        { icon: Shield, label: 'Add Staff', path: '/admin/addstaff' },
+        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+      ]
+      : []
+    ),
   ];
 
   const handleMenuClick = (path) => {
@@ -692,6 +700,8 @@ const router = createBrowserRouter([
         path: 'interests/pending',
         element: <PendingInterestsPage />
       },
+
+
       { path: '/admin/addstaff', element: <AddStaffPage /> },
 
       ,

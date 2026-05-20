@@ -92,6 +92,7 @@ export const getDashboardStats = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const now = new Date();
 
         // User stats
         const [totalUsers, activeUsers, verifiedUsers, suspendedUsers, todaySignups] = await Promise.all([
@@ -140,6 +141,26 @@ export const getDashboardStats = async (req, res) => {
             })
         ]);
 
+        // Meeting stats
+        const [upcomingMeetings, todayMeetings, totalMeetings] = await Promise.all([
+            Meeting.count({
+                where: {
+                    meeting_datetime: { [Op.gte]: now },
+                    status: { [Op.in]: ['proposed', 'confirmed', 'in_progress'] }
+                }
+            }),
+            Meeting.count({
+                where: {
+                    meeting_datetime: {
+                        [Op.gte]: today,
+                        [Op.lt]: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+                    },
+                    status: { [Op.in]: ['proposed', 'confirmed', 'in_progress'] }
+                }
+            }),
+            Meeting.count()
+        ]);
+
         // Credits stats
         const [totalCredits, totalRcredits] = await Promise.all([
             User.sum('credits') || 0,
@@ -168,6 +189,11 @@ export const getDashboardStats = async (req, res) => {
                     pendingInterests,
                     todayMatches,
                     todayMessages
+                },
+                meetings: {
+                    upcoming: upcomingMeetings,
+                    today: todayMeetings,
+                    total: totalMeetings
                 },
                 pending: {
                     verifications: pendingVerifications
@@ -395,6 +421,8 @@ export const updateUser = async (req, res) => {
     }
 };
 
+/*
+Soft Delete
 export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -413,6 +441,27 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
         console.error('Delete user error:', error);
         res.status(500).json({ success: false, error: 'Failed to delete user' });
+    }
+};
+*/
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        await user.destroy();
+
+        res.json({
+            success: true,
+            message: 'User permanently deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ success: false, error: 'Failed to permanently delete user' });
     }
 };
 

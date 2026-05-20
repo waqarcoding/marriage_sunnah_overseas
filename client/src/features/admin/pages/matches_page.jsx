@@ -1,46 +1,66 @@
+// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Heart, Eye, ChevronLeft, ChevronRight, Calendar, TrendingUp, Sparkles } from "lucide-react";
+import {
+    Search, Heart, Eye, ChevronLeft, ChevronRight,
+    Calendar, Sparkles, X, ArrowRight,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import toast from "react-hot-toast";
 import AdminService from "./services/AdminService";
 
+const PRIMARY = "#1B4D3E";
+
+/* ─── User cell ─── */
+function UserCell({ user, gradient, navigate, align = "left" }) {
+    if (!user) return <span className="text-xs text-gray-400">—</span>;
+    return (
+        <button
+            onClick={() => navigate(`/admin/users/${user.id}`)}
+            className={`flex items-center gap-3 hover:opacity-80 transition-opacity group min-w-0 ${align === "right" ? "flex-row-reverse text-right" : "text-left"}`}
+        >
+            <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold text-white overflow-hidden flex-shrink-0 shadow-sm"
+                style={{ background: gradient }}
+            >
+                {user.avatar_url
+                    ? <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                    : (user.name?.charAt(0)?.toUpperCase() || "U")}
+            </div>
+            <div className="min-w-0">
+                <div className="font-semibold text-gray-900 text-sm truncate group-hover:text-[#1B4D3E] transition-colors">
+                    {user.name || "—"}
+                </div>
+                <div className="text-[11px] text-gray-500 truncate">{user.email}</div>
+            </div>
+        </button>
+    );
+}
 
 export default function MatchesPage() {
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0
-    });
+    const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
+    const [selectedMatch, setSelectedMatch] = useState(null);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        loadMatches();
-    }, [pagination.page]);
+    useEffect(() => { loadMatches(); }, [pagination.page]);
 
     const loadMatches = async () => {
         try {
             setLoading(true);
-            const params = {
-                page: pagination.page,
-                limit: pagination.limit,
-                search
-            };
-
+            const params = { page: pagination.page, limit: pagination.limit, search };
             const response = await AdminService.getMatches(params);
-
             if (response.success) {
                 setMatches(response.data.matches);
                 setPagination(prev => ({
                     ...prev,
                     total: response.data.total,
-                    totalPages: response.data.totalPages
+                    totalPages: response.data.totalPages,
                 }));
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to load matches");
         } finally {
             setLoading(false);
@@ -53,267 +73,383 @@ export default function MatchesPage() {
         loadMatches();
     };
 
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    const handleClearSearch = () => {
+        setSearch("");
+        setPagination(prev => ({ ...prev, page: 1 }));
     };
 
+    const formatDate = (d) =>
+        new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
+    const formatTime = (d) =>
+        new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/20 to-gray-50">
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-                {/* Hero Header */}
-                <div className="relative overflow-hidden bg-white rounded-3xl shadow-sm border border-gray-100">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#1B4D3E]/5 via-transparent to-[#2d7a63]/5" />
-                    <div className="relative p-6 sm:p-8">
-                        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                            <div>
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
-                                        style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
-                                    >
-                                        <Heart size={24} className="text-white fill-white" />
-                                    </div>
-                                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                                        Successful Matches
-                                    </h1>
-                                </div>
-                                <p className="text-gray-600 ml-15">
-                                    Celebrating love connections made on the platform
-                                </p>
+        <div className="min-h-screen bg-gradient-to-br from-[#f0f5f3] to-[#fafaf9] p-4 sm:p-6">
+            <div className="max-w-7xl mx-auto space-y-5">
+
+                {/* ── Header ── */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+                    <div>
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#1B4D3E]/10 text-[#1B4D3E] mb-2">
+                            <Sparkles size={11} /> Admin · Matches
+                        </div>
+                        <h1 className="text-2xl sm:text-[28px] font-extrabold text-gray-900 leading-tight tracking-tight"
+                            style={{ letterSpacing: "-0.03em" }}>
+                            Successful Matches
+                        </h1>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Love connections made on the platform
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white rounded-2xl px-4 py-2.5 border border-gray-100 shadow-sm flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                                style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a63)" }}>
+                                <Heart size={16} className="text-white fill-white" />
                             </div>
-
-                            {/* Stats Cards */}
-                            <div className="flex flex-wrap gap-4">
-                                <div className="rounded-2xl px-6 py-4 text-white shadow-lg min-w-[140px]"
-                                    style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
-                                >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Heart size={16} className="fill-white" />
-                                        <span className="text-sm font-medium opacity-90">Total Matches</span>
-                                    </div>
-                                    <div className="text-3xl font-bold">{pagination.total}</div>
+                            <div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Total</div>
+                                <div className="text-lg font-extrabold text-gray-900 leading-none" style={{ letterSpacing: "-0.02em" }}>
+                                    {pagination.total.toLocaleString()}
                                 </div>
-
                             </div>
                         </div>
-
-                        {/* Search Bar */}
-                        <form onSubmit={handleSearch} className="mt-6">
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <div className="flex-1 relative">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                                    <input
-                                        type="text"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search couples by name..."
-                                        className="w-full h-12 pl-12 pr-4 rounded-xl border-2 border-gray-200 focus:border-[#1B4D3E] outline-none transition-all bg-white/80 backdrop-blur-sm"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="w-full sm:w-auto px-8 h-12 rounded-xl font-semibold text-white transition-all hover:shadow-lg hover:scale-105"
-                                    style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
-                                >
-                                    Search
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
 
-                {/* Matches Grid */}
-                <div className="space-y-4">
+                {/* ── Search Bar ── */}
+                <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_16px_rgba(27,77,62,0.04)] border border-gray-100">
+                    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search couples by name or email…"
+                                className="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 focus:border-[#1B4D3E] focus:ring-2 focus:ring-[#1B4D3E]/10 outline-none transition-all text-sm bg-gray-50 focus:bg-white"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="h-11 px-6 rounded-xl font-bold text-white text-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
+                            style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
+                        >
+                            Search
+                        </button>
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="h-11 px-4 rounded-xl font-bold text-sm bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+                            >
+                                <X size={14} /> Clear
+                            </button>
+                        )}
+                    </form>
+                </div>
+
+                {/* ── Table ── */}
+                <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_16px_rgba(27,77,62,0.04)] border border-gray-100 overflow-hidden">
                     {loading ? (
-                        <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
-                            <div className="w-16 h-16 border-4 border-gray-200 border-t-[#1B4D3E] rounded-full animate-spin mx-auto mb-4" />
-                            <p className="text-gray-600 font-medium">Finding love stories...</p>
+                        <div className="p-16 text-center">
+                            <div className="w-12 h-12 border-4 border-gray-200 border-t-[#1B4D3E] rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-gray-500 text-sm font-medium">Finding love stories…</p>
                         </div>
                     ) : matches.length === 0 ? (
-                        <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
-                            <Heart size={64} className="mx-auto mb-4 text-gray-200" />
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No matches yet</h3>
-                            <p className="text-gray-500">Love connections will appear here</p>
+                        <div className="p-16 text-center">
+                            <div className="w-16 h-16 mx-auto rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+                                <Heart size={28} className="text-gray-300" />
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-700 mb-1">No matches yet</h3>
+                            <p className="text-xs text-gray-400">Love connections will appear here</p>
+                            {search && (
+                                <button onClick={handleClearSearch}
+                                    className="mt-3 text-xs font-bold text-[#1B4D3E] hover:underline">
+                                    Clear search
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                                {matches.map(match => (
-                                    <MatchCard
-                                        key={match.id}
-                                        match={match}
-                                        navigate={navigate}
-                                        formatDate={formatDate}
-                                    />
+                            {/* Desktop table */}
+                            <div className="hidden lg:block overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50 border-b border-gray-100">
+                                        <tr>
+                                            <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">ID</th>
+                                            <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">User One</th>
+                                            <th className="text-center px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">Match</th>
+                                            <th className="text-left px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">User Two</th>
+                                            <th className="text-left px-3 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">Matched On</th>
+                                            <th className="text-right px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matches.map((match, i) => (
+                                            <motion.tr
+                                                key={match.id}
+                                                initial={{ opacity: 0, y: 4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: i * 0.02 }}
+                                                className="border-b border-gray-50 hover:bg-gradient-to-r hover:from-[#f0f5f3]/40 hover:to-transparent transition-colors group"
+                                            >
+                                                <td className="px-5 py-3">
+                                                    <span className="text-xs font-mono font-bold text-gray-400">
+                                                        #{match.id}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <UserCell
+                                                        user={match.user_one}
+                                                        gradient="linear-gradient(135deg,#1B4D3E,#2d7a63)"
+                                                        navigate={navigate}
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="flex items-center justify-center">
+                                                        <div className="relative">
+                                                            <div className="absolute inset-0 bg-[#1B4D3E] rounded-full animate-ping opacity-15" />
+                                                            <div className="relative w-9 h-9 rounded-full flex items-center justify-center shadow-md"
+                                                                style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a63)" }}>
+                                                                <Heart size={14} className="text-white fill-white" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <UserCell
+                                                        user={match.user_two}
+                                                        gradient="linear-gradient(135deg,#059669,#047857)"
+                                                        navigate={navigate}
+                                                    />
+                                                </td>
+                                                <td className="px-3 py-3">
+                                                    <div className="text-xs text-gray-700 font-medium">{formatDate(match.created_at)}</div>
+                                                    <div className="text-[10px] text-gray-400">{formatTime(match.created_at)}</div>
+                                                </td>
+                                                <td className="px-5 py-3 text-right">
+                                                    <button
+                                                        onClick={() => setSelectedMatch(match)}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#1B4D3E] bg-[#1B4D3E]/10 hover:bg-[#1B4D3E] hover:text-white transition-colors"
+                                                    >
+                                                        <Eye size={11} /> View
+                                                    </button>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile card list */}
+                            <div className="lg:hidden divide-y divide-gray-100">
+                                {matches.map((match) => (
+                                    <div key={match.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-xs font-mono font-bold text-gray-400">#{match.id}</span>
+                                            <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                                                <Calendar size={11} /> {formatDate(match.created_at)}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-2 mb-3">
+                                            <UserCell
+                                                user={match.user_one}
+                                                gradient="linear-gradient(135deg,#1B4D3E,#2d7a63)"
+                                                navigate={navigate}
+                                            />
+                                            <div className="flex items-center gap-2 pl-2">
+                                                <div className="w-px h-3 bg-gray-200" />
+                                                <div className="w-6 h-6 rounded-full flex items-center justify-center"
+                                                    style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a63)" }}>
+                                                    <Heart size={10} className="text-white fill-white" />
+                                                </div>
+                                                <div className="w-px h-3 bg-gray-200" />
+                                            </div>
+                                            <UserCell
+                                                user={match.user_two}
+                                                gradient="linear-gradient(135deg,#059669,#047857)"
+                                                navigate={navigate}
+                                            />
+                                        </div>
+                                        <div className="flex justify-end pt-3 border-t border-gray-100">
+                                            <button
+                                                onClick={() => setSelectedMatch(match)}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#1B4D3E] bg-[#1B4D3E]/10"
+                                            >
+                                                <Eye size={11} /> Details
+                                            </button>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
 
                             {/* Pagination */}
-                            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6">
-                                    <div className="text-sm text-gray-600 font-medium">
-                                        Showing <span className="font-bold text-gray-900">{((pagination.page - 1) * pagination.limit) + 1}</span> to <span className="font-bold text-gray-900">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-bold text-gray-900">{pagination.total}</span> matches
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                                            disabled={pagination.page === 1}
-                                            className="w-10 h-10 rounded-xl border-2 border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#1B4D3E] hover:bg-green-50 transition-all flex items-center justify-center"
-                                        >
-                                            <ChevronLeft size={20} className="text-gray-600" />
-                                        </button>
-                                        <div className="px-4 py-2 rounded-xl text-white font-bold text-sm min-w-[100px] text-center"
-                                            style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
-                                        >
-                                            {pagination.page} of {pagination.totalPages}
-                                        </div>
-                                        <button
-                                            onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                                            disabled={pagination.page === pagination.totalPages}
-                                            className="w-10 h-10 rounded-xl border-2 border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#1B4D3E] hover:bg-green-50 transition-all flex items-center justify-center"
-                                        >
-                                            <ChevronRight size={20} className="text-gray-600" />
-                                        </button>
-                                    </div>
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 bg-gray-50 border-t border-gray-100">
+                                <div className="text-xs text-gray-500 font-medium">
+                                    Showing <span className="font-bold text-gray-900">{((pagination.page - 1) * pagination.limit) + 1}</span>
+                                    {" – "}
+                                    <span className="font-bold text-gray-900">{Math.min(pagination.page * pagination.limit, pagination.total)}</span>
+                                    {" of "}
+                                    <span className="font-bold text-gray-900">{pagination.total.toLocaleString()}</span> matches
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                                        disabled={pagination.page === 1}
+                                        className="w-8 h-8 rounded-lg border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white hover:border-[#1B4D3E]/30 transition-all flex items-center justify-center"
+                                    >
+                                        <ChevronLeft size={16} className="text-gray-600" />
+                                    </button>
+                                    <span className="text-xs font-bold text-gray-700 px-3 py-1.5 bg-white rounded-lg border border-gray-200">
+                                        {pagination.page} <span className="text-gray-400">/</span> {pagination.totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                                        disabled={pagination.page === pagination.totalPages}
+                                        className="w-8 h-8 rounded-lg border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white hover:border-[#1B4D3E]/30 transition-all flex items-center justify-center"
+                                    >
+                                        <ChevronRight size={16} className="text-gray-600" />
+                                    </button>
                                 </div>
                             </div>
                         </>
                     )}
                 </div>
             </div>
-        </div>
-    );
-}
 
-// Match Card Component
-function MatchCard({ match, navigate, formatDate }) {
-    const user1 = match.user_one;
-    const user2 = match.user_two;
-
-    return (
-        <div className="group bg-white rounded-3xl border-2 border-gray-100 overflow-hidden   hover:shadow-2xl transition-all duration-300">
-            {/* Sparkle Effect on Hover */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                <Sparkles size={24} className="text-[#1B4D3E]" />
-            </div>
-
-            {/* Users Section */}
-            <div className="relative p-6 bg-gradient-to-br from-green-50/50 via-white to-green-50/30">
-                {/* Heart Connector */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                    <div className="relative">
-                        {/* Pulse Animation */}
-                        <div className="absolute inset-0 bg-[#1B4D3E] rounded-full animate-ping opacity-20" />
-                        <div className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
-                            style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
-                        >
-                            <Heart size={22} className="text-white fill-white" />
-                        </div>
-                    </div>
-                </div>
-
-                {/* User 1 */}
-                <div className="flex items-center gap-3 mb-14">
-                    <div
-                        onClick={() => navigate(`/admin/users/${user1.id}`)}
-                        className="relative group/avatar cursor-pointer"
+            {/* ── Detail Modal ── */}
+            <AnimatePresence>
+                {selectedMatch && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedMatch(null)}
+                        className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
                     >
-                        {/* Glow Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#1B4D3E] to-[#2d7a63] rounded-2xl blur-sm opacity-0 group-hover/avatar:opacity-50 transition-opacity" />
-                        <div className="relative w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold text-white overflow-hidden shadow-lg transform group-hover/avatar:scale-110 transition-transform"
-                            style={{ background: "linear-gradient(135deg, #1B4D3E 0%, #2d7a63 100%)" }}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl w-full max-w-2xl max-h-[88vh] overflow-y-auto shadow-2xl"
                         >
-                            {user1.avatar_url ? (
-                                <img
-                                    src={user1.avatar_url}
-                                    alt={user1.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        const target = e.currentTarget;
-                                        target.style.display = 'none';
-                                        if (target.parentElement) {
-                                            target.parentElement.textContent = user1.name?.charAt(0)?.toUpperCase() || "U";
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                user1.name?.charAt(0)?.toUpperCase() || "U"
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="font-bold text-lg text-gray-900 truncate">{user1.name}</div>
-                        <div className="text-sm text-gray-500 truncate mb-2">{user1.email}</div>
-                        <button
-                            onClick={() => navigate(`/admin/users/${user1.id}`)}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#1B4D3E] hover:text-[#2d7a63] hover:gap-2 transition-all"
-                        >
-                            <Eye size={14} />
-                            View Profile
-                        </button>
-                    </div>
-                </div>
+                            {/* Modal header */}
+                            <div className="sticky top-0 bg-white border-b border-gray-100 p-5 flex items-center justify-between z-10">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-md"
+                                        style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a63)" }}>
+                                        <Heart size={20} className="text-white fill-white" />
+                                    </div>
+                                    <div>
+                                        <div className="font-extrabold text-gray-900 leading-tight" style={{ letterSpacing: "-0.02em" }}>
+                                            Match #{selectedMatch.id}
+                                        </div>
+                                        <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
+                                            <Calendar size={11} />
+                                            {formatDate(selectedMatch.created_at)} · {formatTime(selectedMatch.created_at)}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setSelectedMatch(null)}
+                                    className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500">
+                                    <X size={18} />
+                                </button>
+                            </div>
 
-                {/* User 2 */}
-                <div className="flex items-center gap-3 flex-row-reverse">
-                    <div
-                        onClick={() => navigate(`/admin/users/${user2.id}`)}
-                        className="relative group/avatar cursor-pointer"
-                    >
-                        {/* Glow Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#059669] to-[#047857] rounded-2xl blur-sm opacity-0 group-hover/avatar:opacity-50 transition-opacity" />
-                        <div className="relative w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold text-white overflow-hidden shadow-lg transform group-hover/avatar:scale-110 transition-transform"
-                            style={{ background: "linear-gradient(135deg, #059669 0%, #047857 100%)" }}
-                        >
-                            {user2.avatar_url ? (
-                                <img
-                                    src={user2.avatar_url}
-                                    alt={user2.name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                        const target = e.currentTarget;
-                                        target.style.display = 'none';
-                                        if (target.parentElement) {
-                                            target.parentElement.textContent = user2.name?.charAt(0)?.toUpperCase() || "U";
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                user2.name?.charAt(0)?.toUpperCase() || "U"
-                            )}
-                        </div>
-                    </div>
-                    <div className="flex-1 min-w-0 text-right">
-                        <div className="font-bold text-lg text-gray-900 truncate">{user2.name}</div>
-                        <div className="text-sm text-gray-500 truncate mb-2">{user2.email}</div>
-                        <button
-                            onClick={() => navigate(`/admin/users/${user2.id}`)}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#059669] hover:text-[#047857] hover:gap-2 transition-all ml-auto"
-                        >
-                            <Eye size={14} />
-                            View Profile
-                        </button>
-                    </div>
-                </div>
-            </div>
+                            {/* Modal body */}
+                            <div className="p-5 space-y-4">
+                                {/* Couple visualization */}
+                                <div className="relative bg-gradient-to-br from-[#f0f5f3] to-white rounded-2xl p-6 border border-[#1B4D3E]/10">
+                                    <div className="flex items-center justify-center gap-6">
+                                        {/* User one */}
+                                        <button
+                                            onClick={() => navigate(`/admin/users/${selectedMatch.user_one?.id}`)}
+                                            className="flex flex-col items-center gap-2 group/u"
+                                        >
+                                            <div
+                                                className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-extrabold text-white overflow-hidden shadow-lg group-hover/u:scale-105 transition-transform"
+                                                style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a63)" }}
+                                            >
+                                                {selectedMatch.user_one?.avatar_url
+                                                    ? <img src={selectedMatch.user_one.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                    : (selectedMatch.user_one?.name?.charAt(0)?.toUpperCase() || "U")}
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-sm font-bold text-gray-900 truncate max-w-[120px]">
+                                                    {selectedMatch.user_one?.name}
+                                                </div>
+                                                <div className="text-[10px] text-gray-500 truncate max-w-[120px]">
+                                                    {selectedMatch.user_one?.email}
+                                                </div>
+                                            </div>
+                                        </button>
 
-            {/* Match Info Footer */}
-            <div className="bg-gradient-to-r from-gray-50 to-green-50/50 px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar size={16} className="text-[#1B4D3E]" />
-                        <span className="font-medium">{formatDate(match.created_at)}</span>
-                    </div>
-                    <div className="px-3 py-1 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-600">
-                        #{match.id}
-                    </div>
-                </div>
-            </div>
+                                        {/* Center heart */}
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-[#1B4D3E] rounded-full animate-ping opacity-20" />
+                                            <div className="relative w-12 h-12 rounded-full flex items-center justify-center shadow-xl"
+                                                style={{ background: "linear-gradient(135deg,#1B4D3E,#2d7a63)" }}>
+                                                <Heart size={18} className="text-white fill-white" />
+                                            </div>
+                                        </div>
+
+                                        {/* User two */}
+                                        <button
+                                            onClick={() => navigate(`/admin/users/${selectedMatch.user_two?.id}`)}
+                                            className="flex flex-col items-center gap-2 group/u"
+                                        >
+                                            <div
+                                                className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-extrabold text-white overflow-hidden shadow-lg group-hover/u:scale-105 transition-transform"
+                                                style={{ background: "linear-gradient(135deg,#059669,#047857)" }}
+                                            >
+                                                {selectedMatch.user_two?.avatar_url
+                                                    ? <img src={selectedMatch.user_two.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                    : (selectedMatch.user_two?.name?.charAt(0)?.toUpperCase() || "U")}
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-sm font-bold text-gray-900 truncate max-w-[120px]">
+                                                    {selectedMatch.user_two?.name}
+                                                </div>
+                                                <div className="text-[10px] text-gray-500 truncate max-w-[120px]">
+                                                    {selectedMatch.user_two?.email}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Profile links */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => navigate(`/admin/users/${selectedMatch.user_one?.id}`)}
+                                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Eye size={14} className="text-[#1B4D3E] flex-shrink-0" />
+                                            <span className="text-xs font-bold text-gray-700 truncate">View User One</span>
+                                        </div>
+                                        <ArrowRight size={14} className="text-gray-400 flex-shrink-0" />
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/admin/users/${selectedMatch.user_two?.id}`)}
+                                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Eye size={14} className="text-[#059669] flex-shrink-0" />
+                                            <span className="text-xs font-bold text-gray-700 truncate">View User Two</span>
+                                        </div>
+                                        <ArrowRight size={14} className="text-gray-400 flex-shrink-0" />
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

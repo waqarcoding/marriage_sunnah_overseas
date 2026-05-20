@@ -44,6 +44,37 @@ class AuthApi {
             },
         })
     }
+    // Issues found:
+    // 1. callbacks.onSuccess() and callbacks.onFailed() are called immediately (not passed as functions to be called later).
+    // 2. No error normalization for onFailed.
+    // 3. No localStorage updates or handling as is present in the main register method.
+    // 4. No safety checks for whether the callbacks exist or are functions (could throw error if missing).
+
+    registerStaff(data, callbacks) {
+        return Api.upload(`${this.base}/register`, data, {
+            ...callbacks,
+
+            onSuccess: (res) => {
+
+                if (typeof callbacks?.onSuccess === 'function') {
+                    callbacks.onSuccess(); // No parameter, for consistency
+                }
+            },
+
+            onFailed: (err) => {
+                // Normalize error message for consistency
+                const message =
+                    err?.response?.data?.message ||
+                    err?.response?.data?.error ||
+                    err?.message ||
+                    "Registration failed";
+
+                if (typeof callbacks?.onFailed === 'function') {
+                    callbacks.onFailed({ message });
+                }
+            },
+        });
+    }
 
     // ---------------- Login ----------------
     login(data, callbacks) {
