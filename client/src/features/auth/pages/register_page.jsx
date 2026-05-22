@@ -195,7 +195,7 @@ export default function Register({ onRegister }) {
                                 <div className="flex items-center justify-center mb-2">
                                     <img
                                         src="/logo.png"
-                                        alt="Marriage Sunna Overseas Logo"
+                                        alt="Marriage Sunna Overseas"
                                         className="h-40 w-auto"
                                         style={{ maxHeight: 155 }}
                                     />
