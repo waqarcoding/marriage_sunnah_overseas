@@ -113,6 +113,7 @@ db.syncDatabase = async () => {
   }
 
   console.log(`✅ DB sync complete — ${synced} synced, ${skipped} skipped`);
+
 };
 
 export default db;

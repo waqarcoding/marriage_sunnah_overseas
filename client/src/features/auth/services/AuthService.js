@@ -113,8 +113,9 @@ class AuthApi {
     }
     // ---------------- Check Profile ----------------
     async checkProfile(navigate) {
-        const user = await ProfileService.getCurrentUser();
+        if (!this.isLoggedIn) return;
 
+        const user = await ProfileService.getCurrentUser();
 
         if (user.role === 'individual') {
             try {
@@ -129,36 +130,87 @@ class AuthApi {
                 console.log("User Role:" + user.role);
                 console.log("isProfileCompleted:" + user?.profile?.is_profile_completed);
 
+                // ✅ Get settings from singleton (already imported in your file)
+                const userVerificationRequired = settings.userVerificationRequired;
+                const guardianLinkingRequired = settings.guardianLinkingRequired;
+                const guardianVerificationRequired = settings.guardianVerificationRequired;
+                const manualProfileApproval = settings.manualProfileApproval;
 
+                // Step 1: Profile completion (always required)
                 if (!isProfileCompleted) {
-                    console.log("navigating to setup:")
+                    console.log("navigating to setup:");
                     navigate("/profilesetup", { replace: true });
+                    return { isProfileCompleted, isVerified };
                 }
 
-                /*
-                else if (!isVerified) {
-                    navigate("/verification", { replace: true });
-                } else if (!isGuardianFound) {
-                    navigate("/individual/show-pin", { replace: true });
-                }
-                */
-                else {
-                    navigate("/", { replace: true });
+                // Step 2: User CNIC verification (if enabled)
+                if (userVerificationRequired && !isVerified) {
+                    console.log("User CNIC verification required");
+                    navigate("/individual/verification", { replace: true });
+                    return { isProfileCompleted, isVerified };
                 }
 
+                // Step 3: Guardian linking (if enabled)
+                if (guardianLinkingRequired && !isGuardianFound) {
+                    console.log("Guardian linking required");
+                    navigate("/individual/addguardian", { replace: true });
+                    return { isProfileCompleted, isVerified };
+                }
+
+                // Step 4: Guardian CNIC verification (if enabled and guardian found)
+                if (guardianVerificationRequired && isGuardianFound) {
+                    const guardianUser = guardianData.data.guardianUser;
+                    const isGuardianVerified = guardianUser?.is_verified === true || guardianUser?.is_verified === 1;
+
+                    if (!isGuardianVerified) {
+                        console.log("Guardian CNIC verification required");
+                        // Show message or redirect to guardian verification page
+                        navigate("/guardian-verification-pending", { replace: true });
+                        return { isProfileCompleted, isVerified };
+                    }
+                }
+
+                // Step 5: Admin/Staff approval (if enabled)
+                if (manualProfileApproval) {
+                    const isApproved = user?.is_approved === true || user?.is_approved === 1;
+
+                    if (!isApproved) {
+                        console.log("Profile pending admin approval");
+                        navigate("/approval-pending", { replace: true });
+                        return { isProfileCompleted, isVerified };
+                    }
+                }
+
+                // ✅ All checks passed - go to home
+                console.log("All checks passed - redirecting to home");
+                navigate("/", { replace: true });
 
                 return { isProfileCompleted, isVerified };
-            } catch {
+
+            } catch (error) {
+                console.error("Profile check error:", error);
                 navigate("/profilesetup", { replace: true });
                 return { isProfileCompleted: false, isVerified: false };
             }
-        } else if (user.role === 'guardian') {
+        }
+        else if (user.role === 'guardian') {
+            // ✅ Check guardian verification if required
+            const guardianVerificationRequired = settings.guardianVerificationRequired;
+
+            if (guardianVerificationRequired) {
+                const isVerified = user?.is_verified === true || user?.is_verified === 1;
+
+                if (!isVerified) {
+                    navigate("/guardian/verification", { replace: true });
+                    return { isProfileCompleted: true, isVerified: false };
+                }
+            }
+
             navigate("/guardian", { replace: true });
         }
         else if (user.role === 'admin' || user.role === 'staff') {
             navigate("/admin/dashboard", { replace: true });
         }
-
     }
 
     // ---------------- Verify OTP (registration flow — requires token) ----------------

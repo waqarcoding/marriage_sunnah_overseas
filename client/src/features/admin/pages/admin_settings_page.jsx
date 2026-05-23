@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import {
     Settings, Save, Lock, AlertCircle, Globe, CreditCard,
-    Users, Gift, Shield, DollarSign, Zap, FileText, ChevronRight
+    Users, Gift, Shield, DollarSign, Zap, FileText, ChevronRight, UserCheck, FileCheck, CheckCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminService from "./services/AdminService";
+import { motion } from "framer-motion";
 
 
 export default function AdminSettingsPage() {
@@ -21,7 +22,6 @@ export default function AdminSettingsPage() {
         { id: 'credits', label: 'Credits & Costs', icon: DollarSign },
         { id: 'referrals', label: 'Referral System', icon: Gift },
         { id: 'limits', label: 'Verification', icon: Users },
-
     ];
 
     useEffect(() => {
@@ -62,7 +62,16 @@ export default function AdminSettingsPage() {
     };
 
     const updateField = (field, value) => {
-        setSettings(prev => ({ ...prev, [field]: value }));
+        setSettings(prev => {
+            const newSettings = { ...prev, [field]: value };
+
+            // Auto-disable skip option when manual approval is ON
+            if (field === 'manual_profile_approval' && value === true) {
+                newSettings.allow_skip_after_submit = false;
+            }
+
+            return newSettings;
+        });
     };
 
     if (loading) {
@@ -88,7 +97,6 @@ export default function AdminSettingsPage() {
                                 {isSuperAdmin ? "Configure platform settings" : "View platform settings (read-only)"}
                             </p>
                         </div>
-
                     </div>
 
                     {!isSuperAdmin && (
@@ -375,29 +383,197 @@ function ReferralSettings({ settings, updateField, isSuperAdmin }) {
 }
 
 function LimitsSettings({ settings, updateField, isSuperAdmin }) {
+    // ✅ Define function INSIDE component
+    const getSignUpFlowSteps = () => {
+        const steps = [];
+        let stepNumber = 1;
+
+        // Step 1: Always - User Registration
+        steps.push({
+            title: "User Registration",
+            description: "User creates account with basic information",
+            icon: Users,
+            iconBg: "bg-blue-50 border-blue-200",
+            iconColor: "text-blue-600",
+            badge: "bg-blue-100 text-blue-700",
+            stepNumber: stepNumber++
+        });
+
+        // Step 2: User CNIC Verification (if enabled)
+        if (settings?.user_verification_required) {
+            steps.push({
+                title: "User CNIC Verification",
+                description: "User uploads CNIC for admin verification",
+                icon: FileCheck,
+                iconBg: "bg-purple-50 border-purple-200",
+                iconColor: "text-purple-600",
+                badge: "bg-purple-100 text-purple-700",
+                stepNumber: stepNumber++
+            });
+        }
+
+        // Step 3: Guardian Linking (if enabled)
+        if (settings?.guardian_linking_required) {
+            steps.push({
+                title: "Guardian Linking",
+                description: "User links their guardian account",
+                icon: Users,
+                iconBg: "bg-orange-50 border-orange-200",
+                iconColor: "text-orange-600",
+                badge: "bg-orange-100 text-orange-700",
+                stepNumber: stepNumber++
+            });
+        }
+
+
+        // Step 5: Admin Profile Approval (if enabled)
+        if (settings?.manual_profile_approval) {
+            steps.push({
+                title: "Admin Profile Approval",
+                description: "Staff/Admin reviews and approves the profile",
+                icon: UserCheck,
+                iconBg: "bg-red-50 border-red-200",
+                iconColor: "text-red-600",
+                badge: "bg-red-100 text-red-700",
+                stepNumber: stepNumber++
+            });
+        }
+
+        // Step 6: Profile Live
+        steps.push({
+            title: "Profile Goes Live",
+            description: settings?.allow_skip_after_submit && !settings?.manual_profile_approval
+                ? "User can skip optional steps and start using platform"
+                : "User can now access the platform",
+            icon: CheckCircle,
+            iconBg: "bg-green-50 border-green-200",
+            iconColor: "text-green-600",
+            badge: "bg-green-100 text-green-700",
+            stepNumber: stepNumber++
+        });
+
+        return steps;
+    };
+
     return (
         <div className="space-y-6">
-            {/*
-              <Section title="Free User Limits" icon={Users}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Daily Interests" field="free_daily_interests" value={settings?.free_daily_interests} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
-                    <Field label="Daily Messages" field="free_daily_messages" value={settings?.free_daily_messages} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
-                </div>
-            </Section>
-
-            <Section title="Premium User Limits" icon={Users}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Daily Interests" field="premium_daily_interests" value={settings?.premium_daily_interests} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
-                    <Field label="Daily Messages" field="premium_daily_messages" value={settings?.premium_daily_messages} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
-                </div>
-            </Section>
-            
-            */}
-
-
-            <Section title="Guardian Settings" icon={Shield}>
+            <Section
+                title={
+                    <div className="flex items-center justify-between w-full">
+                        <span>SignUp Settings</span>
+                        <span className="text-sm font-normal text-gray-500">
+                            {getSignUpFlowSteps().length} step flow
+                        </span>
+                    </div>
+                }
+                icon={Shield}
+            >
                 <div className="grid grid-cols-1 gap-4">
-                    <Toggle label="Guardian Verification Required" field="guardian_verification_required" value={settings?.guardian_verification_required} onChange={updateField} disabled={!isSuperAdmin} />
+                    {/* User CNIC Verification */}
+                    <Toggle
+                        label="User CNIC Verification Required on Sign Up"
+                        field="user_verification_required"
+                        value={settings?.user_verification_required}
+                        onChange={updateField}
+                        disabled={!isSuperAdmin}
+                    />
+                    <p className="text-sm text-gray-500 -mt-2 ml-1">
+                        When enabled, new users must submit CNIC for admin verification before accessing the platform
+                    </p>
+
+                    {/* Guardian Linking */}
+                    <Toggle
+                        label="Guardian Linking Required on Sign Up"
+                        field="guardian_linking_required"
+                        value={settings?.guardian_linking_required}
+                        onChange={updateField}
+                        disabled={!isSuperAdmin}
+                    />
+                    <p className="text-sm text-gray-500 -mt-2 ml-1">
+                        When enabled, users must link a guardian (another user account) during registration
+                    </p>
+
+                    {/* Guardian CNIC Verification */}
+                    <Toggle
+                        label="Guardian CNIC Verification Required on Sign Up"
+                        field="guardian_verification_required"
+                        value={settings?.guardian_verification_required}
+                        onChange={updateField}
+                        disabled={!isSuperAdmin}
+                    />
+                    <p className="text-sm text-gray-500 -mt-2 ml-1">
+                        When enabled, guardian accounts must submit CNIC for admin verification during sign up
+                    </p>
+
+                    {/* Manual Profile Approval */}
+                    <Toggle
+                        label="Admin/Staff Approval Required Before Profile Goes Live"
+                        field="manual_profile_approval"
+                        value={settings?.manual_profile_approval}
+                        onChange={updateField}
+                        disabled={!isSuperAdmin}
+                    />
+                    <p className="text-sm text-gray-500 -mt-2 ml-1">
+                        When enabled, staff/admin must approve profiles before they become visible to others
+                    </p>
+
+                    {/* Skip Option */}
+                    <Toggle
+                        label="Show Skip Option After Submit"
+                        field="allow_skip_after_submit"
+                        value={settings?.manual_profile_approval ? false : settings?.allow_skip_after_submit}
+                        onChange={updateField}
+                        disabled={!isSuperAdmin || settings?.manual_profile_approval}
+                    />
+                    {settings?.manual_profile_approval ? (
+                        <p className="text-sm text-amber-600 -mt-2 ml-1">
+                            ⚠️ Disabled because "Admin/Staff Approval" is enabled. Users must wait for approval before their profile goes live.
+                        </p>
+                    ) : (
+                        <p className="text-sm text-gray-500 -mt-2 ml-1">
+                            When enabled, users can skip optional steps after submitting their profile
+                        </p>
+                    )}
+                </div>
+
+                {/* Flow Preview */}
+                <div className="mt-6 border-t pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-sm font-semibold text-gray-900">Sign Up Flow Preview</h4>
+                        <span className="text-xs text-gray-500">Based on current settings</span>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        {getSignUpFlowSteps().map((step, i) => {
+                            const Icon = step.icon;
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, x: -12 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.08 }}
+                                    className="flex gap-[18px]"
+                                >
+                                    <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center shrink-0 border-2 ${step.iconBg}`}>
+                                        <Icon className={`w-[22px] h-[22px] ${step.iconColor}`} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
+                                            <h4 className="m-0 text-[15px] font-semibold text-[#1B4D3E] tracking-tight">
+                                                {step.title}
+                                            </h4>
+                                            <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold tracking-wide whitespace-nowrap ${step.badge}`}>
+                                                Step {step.stepNumber}
+                                            </span>
+                                        </div>
+                                        <p className="m-0 text-sm text-gray-500 leading-relaxed">
+                                            {step.description}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
             </Section>
         </div>

@@ -147,16 +147,7 @@ module.exports = (sequelize, DataTypes) => {
             comment: 'YouTube channel URL',
         },
 
-        // ═════════════════════════════════════════════════════════════════
-        // USER REGISTRATION & VERIFICATION
-        // ═════════════════════════════════════════════════════════════════
 
-
-        manual_profile_approval: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-            comment: 'Admin must approve profiles before they go live',
-        },
 
 
         // ═════════════════════════════════════════════════════════════════
@@ -377,16 +368,35 @@ module.exports = (sequelize, DataTypes) => {
         },
 
         // ═════════════════════════════════════════════════════════════════
-        // GUARDIAN SETTINGS
+        // USER REGISTRATION & VERIFICATION
         // ═════════════════════════════════════════════════════════════════
 
 
+        user_verification_required: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'Require users to verify email/phone on sign up',
+        },
         guardian_verification_required: {
             type: DataTypes.BOOLEAN,
             defaultValue: false,
-            comment: 'Require guardians to verify their email/phone',
+            comment: 'Require guardians to verify their email/phone on sign up',
         },
-
+        guardian_linking_required: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'Require guardian to be linked during sign up',
+        },
+        allow_skip_after_submit: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            comment: 'Show skip option after submit for optional steps',
+        },
+        manual_profile_approval: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'Admin must approve profiles before they go live',
+        },
 
         // ═════════════════════════════════════════════════════════════════
         // PAYMENT PROCESSORS
@@ -487,6 +497,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: false,
             comment: 'Enable events/meetups feature',
         },
+
 
     }, {
         sequelize,

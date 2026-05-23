@@ -1,4 +1,5 @@
 import Api from '../api/Api';
+import AuthService from '../features/auth/services/AuthService';
 
 class Settings {
     constructor() {
@@ -15,6 +16,10 @@ class Settings {
             if (response.success) {
                 this._data = response.data;
                 this._loaded = true;
+
+
+
+
                 console.log('✅ Settings loaded');
             }
         } catch (error) {
@@ -25,7 +30,12 @@ class Settings {
 
         return this;
     }
-
+    // SIGNUP SETTINGS
+    get userVerificationRequired() { return this._data?.user_verification_required || false; }
+    get guardianVerificationRequired() { return this._data?.guardian_verification_required || false; }
+    get guardianLinkingRequired() { return this._data?.guardian_linking_required || false; }
+    get allowSkipAfterSubmit() { return this._data?.allow_skip_after_submit || true; }
+    get manualProfileApproval() { return this._data?.manual_profile_approval || false; }
     // ✅ Direct property access like Flutter
     get siteName() { return this._data?.site_name || 'Marriage Sunnah Overseas'; }
     get siteTagline() { return this._data?.site_tagline || ''; }

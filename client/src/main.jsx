@@ -386,9 +386,7 @@ function IndividualLayout() {
             <MyMeetingsPage />
           </ConditionalContent>
 
-          <ConditionalContent path="/individual/verification">
-            <VerificationPage onSubmit={() => { }} onSkip={() => { }} />
-          </ConditionalContent>
+
         </div>
       </div>
     </AuroraBackground>
@@ -663,6 +661,9 @@ const router = createBrowserRouter([
   { path: '/subscription', element: <ProtectedRoute><SubscriptionPage /></ProtectedRoute> },
   { path: '/subscription/success', element: <ProtectedRoute><SubscriptionSuccess /></ProtectedRoute> },
   { path: '/profilesetup', element: <ProtectedRoute><CompleteProfile /></ProtectedRoute> },
+  { path: '/individual/verification', element: <VerificationPage onSubmit={() => { }} onSkip={() => { }} /> },
+  { path: '/individual/addguardian', element: <ShowPinPage  ></ShowPinPage> },
+  { path: '/guardian/verification', element: <VerificationPage onSubmit={() => { }} onSkip={() => { }} /> },
   {
     path: '/guardian/*',
     element: <ProtectedRoute requireRole="guardian"><GuardianLayout /></ProtectedRoute>,
