@@ -18,7 +18,7 @@ const getSocketURL = () => {
   }
 
   // Fallback to production URL
-  return 'https://marriage-sunna-overseas-wceze.ondigitalocean.app';
+  return 'https://marriage-sunnah-overseas-pdniv.ondigitalocean.app';
 };
 
 const SOCKET_URL = getSocketURL();

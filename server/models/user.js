@@ -1,10 +1,10 @@
+// User.js
 'use strict';
-const { Model } = require('sequelize');
+const { Model, Op } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      // ── Self-referential many-to-many via Guardian junction ──────────────
       User.belongsToMany(User, {
         through: 'Guardian',
         as: 'Children',
@@ -19,7 +19,6 @@ module.exports = (sequelize, DataTypes) => {
         otherKey: 'guardian_id',
       });
 
-      // 1️⃣ Profile — cascade delete when user is deleted
       User.hasOne(models.Profile, {
         foreignKey: 'individual_id',
         as: 'profile',
@@ -27,7 +26,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 2️⃣ Guardians — cascade delete both sides when user is deleted
       User.hasMany(models.Guardian, {
         foreignKey: 'individual_id',
         as: 'guardians',
@@ -41,7 +39,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 3️⃣ Matches — cascade delete when user is deleted
       User.hasMany(models.Match, {
         foreignKey: 'user1',
         as: 'matchesSent',
@@ -55,7 +52,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 4️⃣ Interests — cascade delete when user is deleted
       User.hasMany(models.Interest, {
         foreignKey: 'from_user',
         as: 'interestsSent',
@@ -69,7 +65,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 5️⃣ Messages — cascade delete when user is deleted
       User.hasMany(models.Message, {
         foreignKey: 'sender_id',
         as: 'sentMessages',
@@ -83,7 +78,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 6️⃣ Dislikes — cascade delete when user is deleted
       User.hasMany(models.Dislike, {
         foreignKey: 'user_id',
         as: 'dislikesSent',
@@ -97,7 +91,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 7️⃣ OTPs — cascade delete when user is deleted
       User.hasMany(models.Otp, {
         foreignKey: 'user_id',
         as: 'otps',
@@ -105,7 +98,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 8️⃣ Subscriptions — cascade delete when user is deleted
       User.hasMany(models.Subscription, {
         foreignKey: 'user_id',
         as: 'subscriptions',
@@ -113,7 +105,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 9️⃣ Transactions — cascade delete when user is deleted
       User.hasMany(models.Transaction, {
         foreignKey: 'user_id',
         as: 'transactions',
@@ -121,7 +112,6 @@ module.exports = (sequelize, DataTypes) => {
         hooks: true,
       });
 
-      // 🔟 Contact Reveals — cascade delete when user is deleted
       User.hasMany(models.ContactReveal, {
         foreignKey: 'revealer_user_id',
         as: 'contactRevealsGiven',
@@ -138,51 +128,35 @@ module.exports = (sequelize, DataTypes) => {
 
     // ── Instance Methods ──────────────────────────────────────────────────
 
-    // Check if subscription is expired
     isSubscriptionExpired() {
-      if (!this.isSubscriptionExpired) return true;
-      // @ts-ignore
-      return new Date() > new Date(this.isSubscriptionExpired);
+      const exp = this.getDataValue('subscription_expires_at');
+      if (!exp) return true;
+      return new Date() > new Date(exp);
     }
 
-    // Check if credits are empty
     isCreditsEmpty() {
-      return (this.getDataValue && typeof this.getDataValue === 'function'
-        ? this.getDataValue('credits')
-        // @ts-ignore
-        : this.credits) <= 0;
+      const credits = this.getDataValue('credits');
+      return (credits || 0) <= 0;
     }
 
-    // Check if user should see subscription page
     shouldShowSubscriptionPage() {
       return this.isSubscriptionExpired() && this.isCreditsEmpty();
     }
 
-    // NEW: Check if user can reveal contacts
     canRevealContacts() {
-      // Unlimited reveals if subscription is active
-      // @ts-ignore
-      if (!this.isSubscriptionExpired() && this.unlimited_contact_reveals) {
+      if (!this.isSubscriptionExpired() && this.getDataValue('unlimited_contact_reveals')) {
         return true;
       }
-      // Check if user has reveals remaining
-      // @ts-ignore
-      return this.contact_reveals_remaining > 0;
+      return (this.getDataValue('contact_reveals_remaining') || 0) > 0;
     }
 
-    // NEW: Get contact reveals info
     getContactRevealsInfo() {
-      // @ts-ignore
-      if (!this.isSubscriptionExpired() && this.unlimited_contact_reveals) {
-        return {
-          unlimited: true,
-          remaining: 'unlimited'
-        };
+      if (!this.isSubscriptionExpired() && this.getDataValue('unlimited_contact_reveals')) {
+        return { unlimited: true, remaining: 'unlimited' };
       }
       return {
         unlimited: false,
-        // @ts-ignore
-        remaining: this.contact_reveals_remaining || 0
+        remaining: this.getDataValue('contact_reveals_remaining') || 0,
       };
     }
   }
@@ -190,7 +164,6 @@ module.exports = (sequelize, DataTypes) => {
   User.init({
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING(255), allowNull: false },
-
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -201,9 +174,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: 'users_mobile_unique',
     },
-
     password_hash: { type: DataTypes.STRING, allowNull: false },
-
     role: {
       type: DataTypes.ENUM('individual', 'guardian', 'admin', 'staff'),
       defaultValue: 'individual',
@@ -216,66 +187,61 @@ module.exports = (sequelize, DataTypes) => {
     is_pro: { type: DataTypes.BOOLEAN, defaultValue: false },
     frontid_url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
     backid_url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
-
-    // ── Subscription & Credits Fields ────────────────────────────────────
     credits: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
       allowNull: false,
-      comment: 'Available credits for premium features'
     },
     rcredits: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
       allowNull: false,
-      comment: 'Received from you referred subscriptions'
-
     },
     stripe_customer_id: {
       type: DataTypes.STRING(255),
       allowNull: true,
       unique: 'users_stripe_customer_unique',
-      comment: 'Stripe customer ID for billing'
     },
     subscription_expires_at: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: 'Subscription expiration timestamp'
     },
 
-    // ── NEW: Contact Reveal Fields ────────────────────────────────────────
+    // ── Virtual: is subscription currently active ─────────────────────
+    // Use this instead of is_pro for expiry checks — no DB writes needed
+    is_subscription_active: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        const exp = this.getDataValue('subscription_expires_at');
+        return exp ? new Date() < new Date(exp) : false;
+      },
+    },
+
     contact_reveals_remaining: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
       allowNull: false,
-      comment: 'Number of contact reveals remaining for current period'
     },
     unlimited_contact_reveals: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false,
-      comment: 'Whether user has unlimited contact reveals (premium tier)'
     },
-
     last_seen: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
-      comment: 'Last activity timestamp'
     },
     show_last_seen: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
-      comment: 'Privacy setting for last seen visibility'
     },
     is_blurred_images: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-      comment: 'Whether to blur profile images for non-pro users'
     },
     user_pin: {
       type: DataTypes.STRING(6),
       allowNull: true,
-      comment: '6-digit numeric PIN for user verification or actions'
     },
   }, {
     sequelize,
@@ -303,7 +269,7 @@ module.exports = (sequelize, DataTypes) => {
     },
 
     hooks: {
-      // Sync after a new user is created
+      // ✅ afterCreate: sync profile if needed
       afterCreate: async (user, options) => {
         try {
           const Profile = sequelize.models.Profile;
@@ -311,14 +277,14 @@ module.exports = (sequelize, DataTypes) => {
             where: { individual_id: user.get('id') },
           });
           if (profile) {
-            // Your existing logic
+            // your existing logic
           }
         } catch (err) {
-          console.error('[Hook] afterCreate sync is_pro error:', err);
+          console.error('[Hook] afterCreate error:', err);
         }
       },
 
-      // Sync only when changes
+      // ✅ afterUpdate: sync is_pro to profile
       afterUpdate: async (user, options) => {
         try {
           const changed = user.changed();
@@ -328,37 +294,18 @@ module.exports = (sequelize, DataTypes) => {
               where: { individual_id: user.get('id') },
             });
             if (profile) {
-              // Your existing logic
+              // your existing logic
             }
           }
         } catch (err) {
-          console.error('[Hook] afterUpdate sync is_pro error:', err);
+          console.error('[Hook] afterUpdate error:', err);
         }
       },
 
-      // Auto-expire subscription and update is_pro if subscription expired
-      beforeFind: async (options) => {
-        try {
-          const User = sequelize.models.User;
-          await User.update(
-            {
-              is_pro: false,
-              unlimited_contact_reveals: false // NEW: Reset unlimited reveals on expiry
-            },
-            {
-              where: {
-                subscription_expires_at: {
-                  [sequelize.Sequelize.Op.lt]: new Date()
-                },
-                is_pro: true
-              },
-              hooks: false
-            }
-          );
-        } catch (err) {
-          console.error('[Hook] beforeFind auto-expire error:', err);
-        }
-      },
+      // ✅ REMOVED beforeFind — it caused infinite recursion
+      // Subscription expiry is now handled by:
+      // 1. is_subscription_active virtual field (for checks)
+      // 2. Cron job in app.js (for DB cleanup)
     },
   });
 

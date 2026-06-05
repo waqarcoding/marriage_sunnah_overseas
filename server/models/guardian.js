@@ -1,34 +1,28 @@
-// @ts-nocheck
+// Guardian.js
 'use strict';
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class Guardian extends Model {
     static associate(models) {
-      // FIX: added onDelete CASCADE so when a User row is deleted, all
-      // Guardian rows where they are the individual OR the guardian are removed
-
       Guardian.belongsTo(models.User, {
         foreignKey: 'guardian_id',
-        as: 'guardianUser', // ✅ Changed from 'guardian' to avoid conflict
+        as: 'guardianUser',
         onDelete: 'CASCADE',
       });
 
-      // Association with the individual/ward (User)
       Guardian.belongsTo(models.User, {
         foreignKey: 'individual_id',
         as: 'individual',
         onDelete: 'CASCADE',
       });
 
-      // Association with individual's profile
       Guardian.belongsTo(models.Profile, {
         foreignKey: 'individual_id',
         targetKey: 'individual_id',
         as: 'individualProfile',
         onDelete: 'CASCADE',
       });
-
     }
   }
 
@@ -36,7 +30,6 @@ module.exports = (sequelize, DataTypes) => {
     id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
     individual_id: { type: DataTypes.BIGINT, allowNull: false },
     guardian_id: { type: DataTypes.BIGINT, allowNull: false },
-
     guardian_name: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
     guardian_phone: { type: DataTypes.STRING(50), allowNull: true, defaultValue: null },
     guardian_email: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
@@ -48,12 +41,8 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Guardian',
     tableName: 'Guardians',
     timestamps: true,
-    created_at: 'created_at',
-    updated_at: 'updated_at',
-
-    // FIX: stable index names prevent duplicate index creation on repeated sync()
-    // Previously these were unnamed and Sequelize would add guardians_individual_id_guardian_id_unique_2,
-    // guardians_individual_id_2, guardians_guardian_id_2, etc. on every restart
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
     indexes: [
       {
         unique: true,

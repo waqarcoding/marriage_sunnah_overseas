@@ -325,7 +325,7 @@ export default function ExplorePage() {
         isMountedRef.current = true;
         // AuthService.checkProfile(navigate);
         fetchProfiles();
-        AuthService.checkProfile(navigate);
+        //  AuthService.checkProfile(navigate);
 
         return () => {
             isMountedRef.current = false;

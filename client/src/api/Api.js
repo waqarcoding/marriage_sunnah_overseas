@@ -1,5 +1,4 @@
-import toast from "react-hot-toast";
-import * as jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import AuthService from "../features/auth/services/AuthService";
 
 class Api {
@@ -10,17 +9,17 @@ class Api {
 
     // ---------------- Headers ----------------
     _getHeaders(isJson = true) {
-
         const headers = {};
-        if (isJson) headers["Content-Type"] = "application/json";
-
+        if (isJson) {
+            headers["Content-Type"] = "application/json";
+            headers["Accept"] = "application/json";
+        }
         try {
             const token = localStorage.getItem("jwtToken");
             if (token) headers["Authorization"] = `Bearer ${token}`;
         } catch (err) {
-            console.error("Error reading token from localStorage:", err);
+            console.error("[API] Error reading token:", err);
         }
-
         return headers;
     }
 
@@ -29,34 +28,78 @@ class Api {
         const now = Date.now();
         if (now - this._lastPing < 60_000) return;
         this._lastPing = now;
-        console.log(`${this.baseURL}/profile/last-seen`)
         fetch(`${this.baseURL}/profile/last-seen`, {
             method: "GET",
-            // @ts-ignore
-            headers: this._getHeaders(),
-        }).catch(() => { console.log("erro ping lastseen") });
+
+        }).catch(() => console.log("[API] Last seen ping failed"));
     }
 
-    // ---------------- Central handle request ----------------
-    // Fix for Api.js handleRequest — guard against null response
+    // ---------------- Handle Response ----------------
+    _handleResponse(res, data, endpoint) {
+        console.log(`[API] ⬅️ ${res.status} ${endpoint}`);
+
+        if (res.ok && data?.success !== false) {
+            this._pingLastSeen();
+            return data;
+        }
+
+        let msg = "Request failed";
+        try {
+            const raw = data?.error || data?.message || data?.err || data?.msg;
+            if (typeof raw === "string") msg = raw;
+            else if (raw) msg = String(raw);
+            else msg = res.statusText || msg;
+        } catch { /* fallback */ }
+
+        console.error(`[API] ❌ Error: ${msg}`);
+
+        if (res.status === 401 &&
+            data?.error !== "Wrong password" &&
+            data?.error !== "Email not found"
+        ) {
+            this._handleTokenExpired();
+        }
+
+        return { success: false, error: msg, data };
+    }
+
+    // ---------------- Unified fetch ----------------
+    async _fetch(endpoint, options) {
+        console.log(`[API] 🌐 ${options.method} ${this.baseURL}${endpoint}`);
+
+        try {
+            const res = await fetch(`${this.baseURL}${endpoint}`, options);
+
+            let data = null;
+            try {
+                data = await res.json();
+            } catch {
+                data = null;
+            }
+
+            return this._handleResponse(res, data, endpoint);
+
+        } catch (err) {
+            if (err.name === "TypeError") {
+                console.error("[API] 🔌 Network Error:", err.message);
+                return { success: false, error: "Please check your internet connection" };
+            }
+            console.error("[API] Unexpected Error:", err.message);
+            return { success: false, error: "An unexpected error occurred" };
+        }
+    }
+
+    // ---------------- Compatibility: handleRequest ----------------
+    // Supports old callback pattern: Api.handleRequest(Api.get(...), { onSuccess, onFailed })
+    // AND new direct await pattern: const res = await Api.get(...)
     async handleRequest(promise, callbacks = {}) {
         const { onSuccess, onFailed } = callbacks;
         try {
             const res = await promise;
 
-            if (!res) {
-                const err = new Error('No response from server');
-                if (onFailed) onFailed({ message: err.message, data: null });
-                return null;
-            }
-
-            if (res.success === false) {
-                // Show the most relevant error message, preferring inner data.message if present
-                let errorMsg = res.message || res.error || 'Request failed';
-                if (res.error === 'server_error' && res.data && res.data.message) {
-                    errorMsg = res.data.message;
-                }
-                if (onFailed) onFailed({ message: errorMsg, data: res });
+            if (!res || res.success === false) {
+                const msg = res?.error || res?.message || "Request failed";
+                if (onFailed) onFailed({ message: msg, data: res });
                 return null;
             }
 
@@ -64,175 +107,122 @@ class Api {
             return res;
 
         } catch (err) {
-            // Prefer inner data.message for server_error as well
-            let errorMsg = err.message || 'Network error';
-            if (err.data && err.data.error === 'server_error' && err.data.message) {
-                errorMsg = err.data.message;
-            }
-            if (onFailed) onFailed({ message: errorMsg, data: err.data || null });
+            const msg = err?.message || "Network error";
+            if (onFailed) onFailed({ message: msg, data: null });
             return null;
         }
     }
-    // ---------------- Unified fetch ----------------
-    async _fetch(endpoint, options) {
-        const res = await fetch(`${this.baseURL}${endpoint}`, options);
-        let data = null;
 
-        try {
-            data = await res.json();
-        } catch {
-            data = null;
+    // ---------------- HTTP Methods ----------------
+    // Supports both:
+    //   await Api.get("/endpoint")                          → new pattern
+    //   await Api.get("/endpoint", { onSuccess, onFailed }) → old callback pattern
+    //   await Api.get("/endpoint", { page: 1 })            → query params
+    get(endpoint, secondArg) {
+        const isCallbacks = secondArg && (secondArg.onSuccess || secondArg.onFailed);
+        const queryParams = (!isCallbacks && secondArg) ? secondArg : null;
+        const callbacks = isCallbacks ? secondArg : {};
+
+        let url = endpoint;
+        if (queryParams && Object.keys(queryParams).length > 0) {
+            url += "?" + new URLSearchParams(queryParams).toString();
         }
 
-        // Remove incorrect API SUCCESS/FAILED logs with success === "true"
-        // No logging should happen here; _fetch should only handle errors below
+        const promise = this._fetch(url, {
+            method: "GET",
+            headers: this._getHeaders(),
+        });
 
+        // If callbacks provided, wrap in handleRequest (old pattern)
+        if (isCallbacks) return this.handleRequest(promise, callbacks);
 
-
-        if (!res.ok || data?.success === false) {
-
-            // ✅ Extract error message from response
-            const msg = (data && (data.error || data.message || data.err || data.msg)) || res.statusText;
-            console.error("API Error:", msg);
-            toast(msg)
-
-
-            const err = new Error(msg);
-            // @ts-ignore
-            err.data = data;       // attach full JSON
-            // @ts-ignore
-            err.status = res.status;
-            console.log("Backend Authentication Error:" + res.status)
-
-
-            if (res.status === 401) this._handleTokenExpired();
-
-            throw err;
-        }
-
-        this._pingLastSeen();
-
-        return data;
-    }
-    // ---------------- HTTP METHODS with built-in handleRequest ----------------
-    get(endpoint, callbacks) {
-        console.log("API GET ENDPOINT:", `${this.baseURL}${endpoint}`);
-
-        return this.handleRequest(
-            this._fetch(endpoint, {
-                method: "GET",
-                headers: this._getHeaders(),
-            }),
-            callbacks
-        );
+        // Otherwise return promise directly (new pattern)
+        return promise;
     }
 
     post(endpoint, body, callbacks) {
-        console.log("API POST ENDPOINT:", `${this.baseURL}${endpoint}`);
-        console.log("API POST body:", JSON.stringify(body));
-
-        return this.handleRequest(
-            this._fetch(endpoint, {
-                method: "POST",
-                headers: this._getHeaders(),
-                body: JSON.stringify(body),
-            }),
-            callbacks
-        );
+        const promise = this._fetch(endpoint, {
+            method: "POST",
+            headers: this._getHeaders(),
+            body: JSON.stringify(body),
+        });
+        if (callbacks) return this.handleRequest(promise, callbacks);
+        return promise;
     }
 
     put(endpoint, body, callbacks) {
-        console.log("API PUT ENDPOINT:", `${this.baseURL}${endpoint}`);
-        console.log("API PUT BODY:", body);
-        return this.handleRequest(
-            this._fetch(endpoint, {
-                method: "PUT",
-                headers: this._getHeaders(),
-                body: JSON.stringify(body),
-            }),
-            callbacks
-        );
+        const promise = this._fetch(endpoint, {
+            method: "PUT",
+            headers: this._getHeaders(),
+            body: JSON.stringify(body),
+        });
+        if (callbacks) return this.handleRequest(promise, callbacks);
+        return promise;
     }
-    // ---------------- File Upload (FormData) ----------------
+
+    patch(endpoint, body = {}, callbacks) {
+        const promise = this._fetch(endpoint, {
+            method: "PATCH",
+            headers: this._getHeaders(),
+            body: JSON.stringify(body),
+        });
+        if (callbacks) return this.handleRequest(promise, callbacks);
+        return promise;
+    }
+
+    delete(endpoint, callbacks) {
+        const promise = this._fetch(endpoint, {
+            method: "DELETE",
+            headers: this._getHeaders(),
+        });
+        if (callbacks) return this.handleRequest(promise, callbacks);
+        return promise;
+    }
+
+    // ---------------- File Upload ----------------
     upload(endpoint, formData, callbacks) {
         const headers = {};
         try {
             const token = localStorage.getItem("jwtToken");
             if (token) headers["Authorization"] = `Bearer ${token}`;
-            // ⚠️ NO Content-Type — browser sets multipart/form-data + boundary automatically
         } catch (err) {
-            console.error("Error reading token:", err);
+            console.error("[API] Error reading token:", err);
         }
 
-        return this.handleRequest(
-            this._fetch(endpoint, {
-                method: "POST",
-                headers,
-                body: formData,
-            }),
-            callbacks
-        );
+        const promise = this._fetch(endpoint, {
+            method: "POST",
+            headers,
+            body: formData,
+        });
+        if (callbacks) return this.handleRequest(promise, callbacks);
+        return promise;
     }
 
-    patch(endpoint, body = {}, callbacks) {
-        return this.handleRequest(
-            this._fetch(endpoint, {
-                method: "PATCH",
-                headers: this._getHeaders(),
-                body: JSON.stringify(body),
-            }),
-            callbacks
-        );
-    }
-
-    delete(endpoint, callbacks) {
-        return this.handleRequest(
-            this._fetch(endpoint, {
-                method: "DELETE",
-                headers: this._getHeaders(),
-            }),
-            callbacks
-        );
-    }
-
-    // ---------------- Token expired ----------------
+    // ---------------- Token Expired ----------------
     _handleTokenExpired() {
-        toast.error("Session expired. Please log in again.")
-        console.log("Session expired. Please log in again.")
-        AuthService.logout()
-
-
-
-        // ❌ remove hard reload
-        // window.location.href = "/login"
-
-        // ✅ soft navigation
+        console.log("[API] Session expired");
+        AuthService.logout();
         setTimeout(() => {
-            window.history.pushState({}, "", "/login")
-            window.dispatchEvent(new PopStateEvent("popstate"))
-        }, 100)
+            window.history.pushState({}, "", "/login");
+            window.dispatchEvent(new PopStateEvent("popstate"));
+        }, 100);
     }
 
-    // ---------------- JWT validation ----------------
+    // ---------------- Check Token ----------------
     checkToken() {
-        const token = localStorage.getItem("jwtToken")
-        console.log("JWT TOKEN NOT FOUND")
-        if (!token) return false
+        const token = localStorage.getItem("jwtToken");
+        if (!token) return false;
 
         try {
-            // @ts-ignore
-            const decoded = jwtDecode(token)
-
+            const decoded = jwtDecode(token);
             if (decoded.exp < Date.now() / 1000) {
-                this._handleTokenExpired()
-
-                return false
+                this._handleTokenExpired();
+                return false;
             }
-
-            return true
+            return true;
         } catch {
-            this._handleTokenExpired()
-            return false
+            this._handleTokenExpired();
+            return false;
         }
     }
 }

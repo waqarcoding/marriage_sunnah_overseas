@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1071889148896",
+    "project_id": "marriagesunnaoverseas-12de6",
+    "storage_bucket": "marriagesunnaoverseas-12de6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071889148896:android:600b55615124f5cb73d985",
+        "android_client_info": {
+          "package_name": "com.marriagesunnaoverseas.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmShlAvbf81yS3F1Q94gXSDknqbFVFxb4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

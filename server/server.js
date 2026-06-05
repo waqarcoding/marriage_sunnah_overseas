@@ -6,6 +6,7 @@ import http from "http";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
+import { apiLoggerMiddleware } from './middlewares/api-logger.middleware.js';
 
 dotenv.config();
 
@@ -29,10 +30,9 @@ import subscriptionRoutes from './routes/subscription.routes.js';
 import referralRoutes from './routes/referral.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 
-import { handleWebhook } from './controllers/subscription.controller.js'; // ✅ Direct import
+import { handleWebhook } from './controllers/subscription.controller.js';
 import { initSocket } from "./config/socket.js";
 
-// ✅ Import cron job schedulers
 import {
   scheduleExpiryNotifications,
   scheduleExpiredSubscriptionChecker,
@@ -48,14 +48,13 @@ const PORT = process.env.PORT || 8080;
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'http://localhost:5173',
-  'http://localhost:3000',
+  'http://localhost:5000',
   'https://marriagesunnaoverseas.com',
   'https://www.marriagesunnaoverseas.com'
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
@@ -76,12 +75,10 @@ app.use((req, res, next) => {
 });
 
 /* ---------------- CRITICAL: Webhook routes BEFORE bodyParser ---------------- */
-// express.raw() applied ONLY to the webhook endpoint, not the entire router
 app.post('/api/subscription/webhook',
   express.raw({ type: 'application/json' }),
   handleWebhook
 );
-// Handle without /api prefix (for ingress stripping)
 app.post('/subscription/webhook',
   express.raw({ type: 'application/json' }),
   handleWebhook
@@ -91,12 +88,14 @@ app.post('/subscription/webhook',
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+/* ---------------- API LOGGER (After bodyParser!) ---------------- */
+//app.use(apiLoggerMiddleware);
+//console.log('📝 API Logger enabled - responses will be saved to api-docs.json');
+
 /* ---------------- STATIC UPLOADS ---------------- */
 app.use("/uploads", express.static("uploads"));
 
 /* ---------------- API ROUTES (with /api prefix) ---------------- */
-
-
 app.use('/api/settings', settingsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
@@ -110,6 +109,7 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/meetings', meetingRoutes);
+
 /* ---------------- API ROUTES (without /api prefix - for ingress stripping) ---------------- */
 app.use('/settings', settingsRoutes);
 app.use("/auth", authRoutes);
@@ -124,6 +124,7 @@ app.use('/subscription', subscriptionRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/referrals', referralRoutes);
 app.use('/meetings', meetingRoutes);
+
 /* ---------------- HEALTH CHECK ---------------- */
 app.get("/api/health", (req, res) => res.json({
   status: "ok",
@@ -193,7 +194,6 @@ if (shouldServeClient) {
       next();
     });
 
-    // Catch-all for SPA routing
     app.use((req, res, next) => {
       if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
         return next();
@@ -209,7 +209,6 @@ if (shouldServeClient) {
 
 /* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
 app.use((req, res, next) => {
-  // ✅ Skip 404 for Socket.IO paths
   if (req.path.startsWith('/socket.io')) {
     return next();
   }
@@ -238,11 +237,9 @@ const startServer = async () => {
       await db.syncDatabase();
       console.log("🛠️ DB sync completed (development only)");
     } else {
-
       console.log("🚫 Production mode: skipping DB sync");
     }
 
-    // ✅ Initialize Cron Jobs (skip in test/development environment)
     if (process.env.NODE_ENV === 'production') {
       console.log('\n⏰ Initializing cron jobs...');
       scheduleExpiryNotifications();
@@ -260,13 +257,13 @@ const startServer = async () => {
       console.log('   POST /api/admin/trigger-expired-check\n');
     }
 
-    // Start server
     // @ts-ignore
     server.listen(PORT, "0.0.0.0", () => {
       const isProduction = process.env.NODE_ENV === 'production';
       const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-      // ✅ Initialize Socket.IO ONCE - AFTER server is listening
+
+      console.log('='.repeat(70) + '\n');
       try {
         console.log('🔌 Initializing Socket.IO...');
         initSocket(server);
@@ -299,7 +296,6 @@ const startServer = async () => {
   }
 };
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('⚠️  SIGTERM signal received: closing HTTP server');
   server.close(() => {

@@ -165,7 +165,7 @@ class AuthApi {
                     if (!isGuardianVerified) {
                         console.log("Guardian CNIC verification required");
                         // Show message or redirect to guardian verification page
-                        navigate("/guardian-verification-pending", { replace: true });
+                        navigate("/guardian/verification", { replace: true });
                         return { isProfileCompleted, isVerified };
                     }
                 }
