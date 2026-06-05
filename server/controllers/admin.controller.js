@@ -1119,7 +1119,7 @@ export const cancelSubscription = async (req, res) => {
 export const extendSubscription = async (req, res) => {
     try {
         const { id } = req.params;
-        const { days } = req.body;
+        const { days, credits = 0 } = req.body;
 
         if (!days || days <= 0) {
             return res.status(400).json({ success: false, error: 'Invalid days' });
@@ -1130,22 +1130,33 @@ export const extendSubscription = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Subscription not found' });
         }
 
+        // Extend subscription end date
         const newEnd = new Date(subscription.current_period_end);
         newEnd.setDate(newEnd.getDate() + parseInt(days));
-
         await subscription.update({ current_period_end: newEnd });
+
+        // Add credits to user if provided
+        const creditsToAdd = parseInt(credits) || 0;
+        if (creditsToAdd > 0) {
+            await User.increment('credits', {
+                by: creditsToAdd,
+                where: { id: subscription.user_id },
+            });
+        }
+
+        const parts = [`Subscription extended by ${days} days`];
+        if (creditsToAdd > 0) parts.push(`${creditsToAdd} credits added`);
 
         res.json({
             success: true,
             data: subscription,
-            message: `Subscription extended by ${days} days`
+            message: parts.join(' · '),
         });
     } catch (error) {
         console.error('Extend subscription error:', error);
         res.status(500).json({ success: false, error: 'Failed to extend subscription' });
     }
 };
-
 export const refundSubscription = async (req, res) => {
     try {
         const { id } = req.params;

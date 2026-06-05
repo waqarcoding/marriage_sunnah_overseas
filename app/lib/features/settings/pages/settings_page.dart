@@ -1,4 +1,5 @@
 import 'package:app/core/widgets/islamic_page_header.dart';
+import 'package:app/features/userprofile/pages/my_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -120,7 +121,8 @@ class _SettingsView extends GetView<SettingsController> {
                           isPro: isPro,
                           onTap: () {
                             // Navigate to profile page
-                            Get.back();
+                            Get.to(() => MyProfilePage(),
+                                transition: Transition.rightToLeft);
                           },
                         ),
 

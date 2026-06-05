@@ -150,10 +150,9 @@ class AdminService {
         return Api.post(`${this.base}/subscriptions/${id}/cancel`);
     }
 
-    async extendSubscription(id, days) {
-        return Api.post(`${this.base}/subscriptions/${id}/extend`, { days });
+    async extendSubscription(id, days, credits = 0) {
+        return Api.post(`${this.base}/subscriptions/${id}/extend`, { days, credits });
     }
-
     async refundSubscription(id) {
         return Api.post(`${this.base}/subscriptions/${id}/refund`);
     }

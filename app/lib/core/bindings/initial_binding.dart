@@ -1,3 +1,4 @@
+import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../data/providers/api_client.dart';
@@ -51,5 +52,6 @@ class InitialBinding extends Bindings {
     reg(InterestService());
     reg(ChatService());
     reg(UserSettingsService());
+    reg(UserProfileService());
   }
 }

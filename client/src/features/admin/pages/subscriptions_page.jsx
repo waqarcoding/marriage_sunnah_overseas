@@ -81,6 +81,8 @@ export default function SubscriptionsPage() {
     const [cancelConfirm, setCancelConfirm] = useState(null);
     const [extendDialog, setExtendDialog] = useState(null);
     const [extendDays, setExtendDays] = useState("");
+    // ✅ NEW: credits state
+    const [extendCredits, setExtendCredits] = useState("");
 
     useEffect(() => { loadSubscriptions(); }, [pagination.page, filters]);
 
@@ -117,14 +119,23 @@ export default function SubscriptionsPage() {
         } catch { toast.error("Failed to cancel"); }
     };
 
+    // ✅ UPDATED: sends both days + credits
     const handleExtend = async () => {
         if (!extendDialog || !extendDays || isNaN(extendDays)) return;
         try {
-            const res = await AdminService.extendSubscription(extendDialog.id, parseInt(extendDays));
+            const days = parseInt(extendDays);
+            const credits = extendCredits && !isNaN(extendCredits) && parseInt(extendCredits) > 0
+                ? parseInt(extendCredits)
+                : 0;
+
+            const res = await AdminService.extendSubscription(extendDialog.id, days, credits);
             if (res.success) {
-                toast.success(`Extended by ${extendDays} days`);
+                const parts = [`Extended by ${days} days`];
+                if (credits > 0) parts.push(`+${credits} credits added`);
+                toast.success(parts.join(" · "));
                 setExtendDialog(null);
                 setExtendDays("");
+                setExtendCredits("");
                 loadSubscriptions();
             }
         } catch { toast.error("Failed to extend"); }
@@ -155,11 +166,8 @@ export default function SubscriptionsPage() {
                             style={{ letterSpacing: "-0.03em" }}>
                             Subscriptions
                         </h1>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Manage user pro memberships
-                        </p>
+                        <p className="text-sm text-gray-500 mt-1">Manage user pro memberships</p>
                     </div>
-
                     <div className="flex items-center gap-3">
                         <div className="bg-white rounded-2xl px-4 py-2.5 border border-gray-100 shadow-sm flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -221,8 +229,7 @@ export default function SubscriptionsPage() {
                             </select>
                         </div>
                         <div className="flex items-end">
-                            <button onClick={handleClearFilters}
-                                disabled={!hasActiveFilters}
+                            <button onClick={handleClearFilters} disabled={!hasActiveFilters}
                                 className="w-full h-10 px-4 rounded-lg text-sm font-bold text-gray-600 border border-gray-200 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-gray-200 disabled:hover:text-gray-600">
                                 <X size={14} /> Clear All
                             </button>
@@ -278,18 +285,12 @@ export default function SubscriptionsPage() {
                                                 <td className="px-5 py-3">
                                                     <span className="text-xs font-mono font-bold text-gray-400">#{sub.id}</span>
                                                 </td>
-                                                <td className="px-5 py-3">
-                                                    <UserCell user={sub.user} />
-                                                </td>
+                                                <td className="px-5 py-3"><UserCell user={sub.user} /></td>
                                                 <td className="px-3 py-3">
                                                     <PlanChip plan={sub.plan_type} />
-                                                    <div className="mt-1">
-                                                        <ProcessorChip processor={sub.payment_processor} />
-                                                    </div>
+                                                    <div className="mt-1"><ProcessorChip processor={sub.payment_processor} /></div>
                                                 </td>
-                                                <td className="px-3 py-3">
-                                                    <StatusPill status={sub.status} />
-                                                </td>
+                                                <td className="px-3 py-3"><StatusPill status={sub.status} /></td>
                                                 <td className="px-3 py-3">
                                                     <div className="text-xs text-gray-700 font-semibold flex items-center gap-1">
                                                         <Calendar size={11} className="text-gray-400" />
@@ -336,9 +337,7 @@ export default function SubscriptionsPage() {
                                             <span className="text-xs font-mono font-bold text-gray-400">#{sub.id}</span>
                                             <StatusPill status={sub.status} size="xs" />
                                         </div>
-                                        <div className="mb-3">
-                                            <UserCell user={sub.user} />
-                                        </div>
+                                        <div className="mb-3"><UserCell user={sub.user} /></div>
                                         <div className="flex flex-wrap items-center gap-2 mb-3">
                                             <PlanChip plan={sub.plan_type} />
                                             <ProcessorChip processor={sub.payment_processor} />
@@ -367,7 +366,8 @@ export default function SubscriptionsPage() {
                             {/* Pagination */}
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 bg-gray-50 border-t border-gray-100">
                                 <div className="text-xs text-gray-500 font-medium">
-                                    Showing <span className="font-bold text-gray-900">{((pagination.page - 1) * pagination.limit) + 1}</span>
+                                    Showing{" "}
+                                    <span className="font-bold text-gray-900">{((pagination.page - 1) * pagination.limit) + 1}</span>
                                     {" – "}
                                     <span className="font-bold text-gray-900">{Math.min(pagination.page * pagination.limit, pagination.total)}</span>
                                     {" of "}
@@ -440,7 +440,7 @@ export default function SubscriptionsPage() {
                 {extendDialog && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        onClick={() => { setExtendDialog(null); setExtendDays(""); }}
+                        onClick={() => { setExtendDialog(null); setExtendDays(""); setExtendCredits(""); }}
                         className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
                     >
                         <motion.div
@@ -457,9 +457,11 @@ export default function SubscriptionsPage() {
                                 style={{ letterSpacing: "-0.02em" }}>
                                 Extend subscription
                             </h3>
-                            <p className="text-sm text-gray-500 text-center leading-relaxed mb-4">
-                                Add days to <strong className="text-gray-700">{extendDialog.user?.name || `#${extendDialog.id}`}</strong>'s subscription
+                            <p className="text-sm text-gray-500 text-center leading-relaxed mb-5">
+                                Update <strong className="text-gray-700">{extendDialog.user?.name || `#${extendDialog.id}`}</strong>'s subscription
                             </p>
+
+                            {/* Days */}
                             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block">
                                 Days to extend
                             </label>
@@ -468,17 +470,48 @@ export default function SubscriptionsPage() {
                                 onChange={(e) => setExtendDays(e.target.value)}
                                 placeholder="e.g. 30"
                                 autoFocus
-                                className="w-full h-11 px-3 mb-5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none text-sm bg-gray-50 focus:bg-white"
+                                className="w-full h-11 px-3 mb-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none text-sm bg-gray-50 focus:bg-white"
                             />
+
+                            {/* Credits — NEW */}
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block">
+                                Credits to add{" "}
+                                <span className="text-gray-400 normal-case font-normal">(optional)</span>
+                            </label>
+                            <input
+                                type="number" min="0" value={extendCredits}
+                                onChange={(e) => setExtendCredits(e.target.value)}
+                                placeholder="e.g. 100"
+                                className="w-full h-11 px-3 mb-4 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none text-sm bg-gray-50 focus:bg-white"
+                            />
+
+                            {/* Preview */}
+                            {(extendDays || extendCredits) && (
+                                <div className="mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-800 font-medium flex flex-col gap-1.5">
+                                    {extendDays && !isNaN(extendDays) && (
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size={12} />
+                                            <span>+{extendDays} days added to subscription</span>
+                                        </div>
+                                    )}
+                                    {extendCredits && !isNaN(extendCredits) && parseInt(extendCredits) > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles size={12} />
+                                            <span>+{extendCredits} credits added to account</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="flex gap-2">
-                                <button onClick={() => { setExtendDialog(null); setExtendDays(""); }}
+                                <button onClick={() => { setExtendDialog(null); setExtendDays(""); setExtendCredits(""); }}
                                     className="flex-1 h-11 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                                     Cancel
                                 </button>
                                 <button onClick={handleExtend} disabled={!extendDays || isNaN(extendDays)}
                                     className="flex-1 h-11 rounded-xl font-bold text-sm text-white transition-all shadow-[0_4px_12px_rgba(16,185,129,0.30)] disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}>
-                                    Extend
+                                    Confirm
                                 </button>
                             </div>
                         </motion.div>
