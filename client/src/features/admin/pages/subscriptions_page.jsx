@@ -81,6 +81,7 @@ export default function SubscriptionsPage() {
     const [cancelConfirm, setCancelConfirm] = useState(null);
     const [extendDialog, setExtendDialog] = useState(null);
     const [extendDays, setExtendDays] = useState("");
+    const [extending, setExtending] = useState(false);
     // ✅ NEW: credits state
     const [extendCredits, setExtendCredits] = useState("");
 
@@ -120,8 +121,10 @@ export default function SubscriptionsPage() {
     };
 
     // ✅ UPDATED: sends both days + credits
+    // ── 2. Replace handleExtend with this ──
     const handleExtend = async () => {
         if (!extendDialog || !extendDays || isNaN(extendDays)) return;
+        setExtending(true);
         try {
             const days = parseInt(extendDays);
             const credits = extendCredits && !isNaN(extendCredits) && parseInt(extendCredits) > 0
@@ -138,8 +141,13 @@ export default function SubscriptionsPage() {
                 setExtendCredits("");
                 loadSubscriptions();
             }
-        } catch { toast.error("Failed to extend"); }
+        } catch {
+            toast.error("Failed to extend");
+        } finally {
+            setExtending(false);
+        }
     };
+
 
     const handleClearFilters = () => {
         setFilters({ status: "", planType: "", processor: "" });
@@ -508,10 +516,20 @@ export default function SubscriptionsPage() {
                                     className="flex-1 h-11 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
                                     Cancel
                                 </button>
-                                <button onClick={handleExtend} disabled={!extendDays || isNaN(extendDays)}
-                                    className="flex-1 h-11 rounded-xl font-bold text-sm text-white transition-all shadow-[0_4px_12px_rgba(16,185,129,0.30)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                <button
+                                    onClick={handleExtend}
+                                    disabled={!extendDays || isNaN(extendDays) || extending}
+                                    className="flex-1 h-11 rounded-xl font-bold text-sm text-white transition-all shadow-[0_4px_12px_rgba(16,185,129,0.30)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}>
-                                    Confirm
+                                    {extending ? (
+                                        <>
+                                            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+                                                <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                                            </svg>
+                                            Saving…
+                                        </>
+                                    ) : "Confirm"}
                                 </button>
                             </div>
                         </motion.div>
