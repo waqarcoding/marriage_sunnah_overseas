@@ -1,6 +1,6 @@
+import 'package:app/features/auth/pages/welcome_page.dart';
 import 'package:get/get.dart';
 import 'app_routes.dart';
-import '../features/auth/pages/login_page.dart';
 import '../features/auth/pages/otp_page.dart';
 import '../features/auth/controllers/auth_controller.dart';
 
@@ -9,12 +9,12 @@ class AppPages {
     // Auth Routes
     GetPage(
       name: AppRoutes.login,
-      page: () => LoginPage(),
+      page: () => WellcomePage(),
       binding: BindingsBuilder(() {
         Get.lazyPut<AuthController>(() => AuthController());
       }),
     ),
-    
+
     GetPage(
       name: AppRoutes.otp,
       page: () => OtpPage(),
@@ -22,14 +22,14 @@ class AppPages {
         Get.lazyPut<AuthController>(() => AuthController());
       }),
     ),
-    
+
     // Add more routes as you create pages
     // GetPage(
     //   name: AppRoutes.register,
     //   page: () => RegisterPage(),
     //   binding: AuthBinding(),
     // ),
-    
+
     // GetPage(
     //   name: AppRoutes.home,
     //   page: () => HomePage(),

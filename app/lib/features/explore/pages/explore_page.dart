@@ -1,6 +1,9 @@
 import 'package:app/core/widgets/image_widget.dart';
 import 'package:app/data/models/user_model.dart';
+import 'package:app/features/auth/services/auth_service.dart';
+import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/explore/pages/notification_page.dart';
+import 'package:app/features/userprofile/pages/my_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:swipe_cards/swipe_cards.dart';
@@ -18,6 +21,7 @@ class ExplorePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Get.put(ExploreController());
+
     return _ExploreView();
   }
 }
@@ -275,8 +279,9 @@ class _ActionRow extends StatelessWidget {
             onTap: () {
               final profile = Get.find<ExploreController>().currentProfile;
               if (profile != null)
-                Get.to(() => ProfileDetailPage(profile: profile),
-                    transition: Transition.rightToLeft);
+                Get.to(
+                  () => ProfileDetailPage(profile: profile),
+                );
             }),
       ],
     );
@@ -349,6 +354,7 @@ class _SearchInputState extends State<_SearchInput> {
   @override
   void initState() {
     super.initState();
+
     _ctrl.text = widget.value;
   }
 
@@ -756,7 +762,11 @@ class _AvatarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {}, // navigate to profile
+      onTap: () {
+        Get.to(
+          () => MyProfilePage(),
+        );
+      }, // navigate to profile
       child: SizedBox(
         width: 52,
         height: 52,

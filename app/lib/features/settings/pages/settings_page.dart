@@ -1,5 +1,10 @@
+import 'package:app/core/theme/app_colors.dart';
 import 'package:app/core/widgets/islamic_page_header.dart';
+import 'package:app/data/services/settings_service.dart';
+import 'package:app/features/guardian/pages/guardian_profile_page.dart';
+import 'package:app/features/meeting/pages/my_meetings_page.dart';
 import 'package:app/features/userprofile/pages/my_profile_page.dart';
+import 'package:app/features/verification/pages/verification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -16,16 +21,17 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Get.put(UserSettingsService(), permanent: true);
-    Get.put(SettingsController());
+    Get.put(SubscriptionController());
     return _SettingsView();
   }
 }
 
-class _SettingsView extends GetView<SettingsController> {
+class _SettingsView extends GetView<SubscriptionController> {
   @override
   Widget build(BuildContext context) {
+    SettingsService settingsService = SettingsService();
     return Scaffold(
-      backgroundColor: Color(0xFFF0F5F3),
+      backgroundColor: AppColors.background,
       body: Obx(() {
         if (controller.isLoading.value) return _LoadingView();
 
@@ -55,8 +61,9 @@ class _SettingsView extends GetView<SettingsController> {
                     // ── Pro upgrade banner (non-pro individuals only) ──────
                     if (!isPro && !isGuardian)
                       GestureDetector(
-                        onTap: () => Get.to(() => SubscriptionDetailPage(),
-                            transition: Transition.rightToLeft),
+                        onTap: () => Get.to(
+                          () => SubscriptionDetailPage(),
+                        ),
                         child: Container(
                           margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
                           padding: EdgeInsets.all(16),
@@ -121,8 +128,11 @@ class _SettingsView extends GetView<SettingsController> {
                           isPro: isPro,
                           onTap: () {
                             // Navigate to profile page
-                            Get.to(() => MyProfilePage(),
-                                transition: Transition.rightToLeft);
+                            Get.to(
+                              () => !isGuardian
+                                  ? MyProfilePage()
+                                  : GuardianProfilePage(),
+                            );
                           },
                         ),
 
@@ -131,8 +141,7 @@ class _SettingsView extends GetView<SettingsController> {
                           icon: Icons.calendar_today_outlined,
                           label: 'Meetings',
                           sublabel: 'View and manage your meetings',
-                          onTap: () => Get.snackbar('Meetings', 'Coming soon',
-                              snackPosition: SnackPosition.BOTTOM),
+                          onTap: () => Get.to(() => MyMeetingsPage()),
                         ),
 
                         // Guardian: My Ward
@@ -150,8 +159,9 @@ class _SettingsView extends GetView<SettingsController> {
                             icon: Icons.workspace_premium_outlined,
                             label: 'Subscription',
                             sublabel: 'Manage your subscription details',
-                            onTap: () => Get.to(() => SubscriptionDetailPage(),
-                                transition: Transition.rightToLeft),
+                            onTap: () => Get.to(
+                              () => SubscriptionDetailPage(),
+                            ),
                           ),
 
                         // Verification
@@ -161,7 +171,9 @@ class _SettingsView extends GetView<SettingsController> {
                               ? 'Verification'
                               : 'Get Verified Badge',
                           sublabel: 'Apply for account verification',
-                          onTap: () {},
+                          onTap: () => Get.to(
+                            () => VerificationPage(),
+                          ),
                         ),
 
                         // Individual: Referral
@@ -170,8 +182,9 @@ class _SettingsView extends GetView<SettingsController> {
                             icon: Icons.people_outline,
                             label: 'Referral Program',
                             sublabel: 'Invite friends & earn rewards',
-                            onTap: () => Get.to(() => ReferralPage(),
-                                transition: Transition.rightToLeft),
+                            onTap: () => Get.to(
+                              () => ReferralPage(),
+                            ),
                           ),
 
                         // Change Password
@@ -179,8 +192,9 @@ class _SettingsView extends GetView<SettingsController> {
                           icon: Icons.lock_outline,
                           label: 'Change Password',
                           sublabel: 'Update your account password',
-                          onTap: () => Get.to(() => ChangePasswordPage(),
-                              transition: Transition.rightToLeft),
+                          onTap: () => Get.to(
+                            () => ChangePasswordPage(),
+                          ),
                           isLast: true,
                         ),
                       ],
@@ -210,8 +224,8 @@ class _SettingsView extends GetView<SettingsController> {
                                     ? (v) => controller.handleToggle(
                                         'is_show_last_seen', v)
                                     : (_) => Get.to(
-                                        () => SubscriptionDetailPage(),
-                                        transition: Transition.rightToLeft),
+                                          () => SubscriptionDetailPage(),
+                                        ),
                                 disabled: !isPro,
                               ),
                               ToggleRow(
@@ -233,8 +247,8 @@ class _SettingsView extends GetView<SettingsController> {
                                     ? (v) => controller.handleToggle(
                                         'is_blurred_images', v)
                                     : (_) => Get.to(
-                                        () => SubscriptionDetailPage(),
-                                        transition: Transition.rightToLeft),
+                                          () => SubscriptionDetailPage(),
+                                        ),
                                 disabled: !isPro,
                                 isLast: true,
                               ),

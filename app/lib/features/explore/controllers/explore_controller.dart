@@ -6,7 +6,6 @@ import '../../../data/models/options_model.dart';
 
 class ExploreController extends GetxController {
   final ExploreService _exploreService = Get.find<ExploreService>();
-
   // ─── State ───────────────────────────────────────────────────────────────
   var profiles = <Map<String, dynamic>>[].obs;
   var currentIndex = 0.obs;
@@ -206,6 +205,7 @@ class ExploreController extends GetxController {
         duration: Duration(seconds: 2),
       );
       advance(1);
+      fetchProfiles(isRefresh: false);
       return true;
     } else {
       final msg = result?['message'] ?? 'Failed to send interest';
@@ -221,6 +221,7 @@ class ExploreController extends GetxController {
     if (id == null) return false;
 
     final result = await _exploreService.sendDislike(id as int);
+    fetchProfiles(isRefresh: false);
     if (result != null && result['success'] == true) {
       advance(-1);
       return true;
@@ -244,6 +245,7 @@ class ExploreController extends GetxController {
         duration: Duration(seconds: 2),
       );
       advance(1);
+      fetchProfiles(isRefresh: false);
       return true;
     } else {
       final msg = result?['message'] ?? 'Failed to send super like';

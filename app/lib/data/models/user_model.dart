@@ -39,12 +39,10 @@ class UserModel {
       isVerified: json['is_verified'] == 1 || json['is_verified'] == true,
       isPro: json['is_pro'] == 1 || json['is_pro'] == true,
       credits: json['credits'] ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'])
-          : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 

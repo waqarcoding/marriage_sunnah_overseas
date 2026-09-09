@@ -11,7 +11,11 @@ import { getUploadedUrl } from '../middlewares/upload.middleware.js';
 import { applyReferralReward } from './referral.controller.js';
 import setting from '../models/setting.js';
 
+import { OAuth2Client } from 'google-auth-library';
 
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID
+);
 /**
  * Helper: Generate and store OTP for a user
  */
@@ -55,9 +59,6 @@ const createOtp = async (userId, issignup) => {
   return otpCode;
 };
 
-
-
-
 /**
  * Signup user
  */
@@ -99,7 +100,9 @@ export const signup = async (req, res) => {
       mobile,
       avatar_url: photoPath,
 
-      role: role?.trim() || "individual",
+      role: role?.trim() || null,
+
+      provider: "email",
       password_hash: hashedPassword,
     }, { transaction: t });
 
@@ -174,6 +177,247 @@ export const signup = async (req, res) => {
   }
 };
 
+/**
+ * Continue With Google
+ */
+export const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    let needsProfileCompletion = false;
+    if (!idToken) {
+      return res.status(400).json({
+        error: 'Google ID token is required'
+      });
+    }
+
+    // Verify Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const googleUser = ticket.getPayload();
+
+    if (!googleUser) {
+      return res.status(401).json({
+        error: 'Invalid Google token'
+      });
+    }
+
+    const {
+      sub: googleId,
+      email,
+      name,
+      picture,
+      email_verified,
+    } = googleUser;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Google account email is required'
+      });
+    }
+
+    if (!email_verified) {
+      return res.status(401).json({
+        error: 'Google email is not verified'
+      });
+    }
+
+    // Find existing user by email
+    let user = await User.findOne({
+      where: {
+        email: email.toLowerCase()
+      },
+      attributes: [
+        'id',
+        'password_hash',
+        'email',
+        'role',
+        'avatar_url',
+        'name',
+        'google_id'
+      ],
+      include: [
+        {
+          as: 'profile',
+          model: Profile
+        }
+      ]
+    });
+
+    // --------------------------------------------------
+    // EXISTING USER
+    // --------------------------------------------------
+
+    if (user) {
+
+      // Save Google ID if this user does not already have it
+      if (!user.google_id) {
+        await user.update({
+          google_id: googleId
+        });
+      }
+
+      // If user doesn't have avatar, use Google picture
+      if (!user.avatar_url && picture) {
+        await user.update({
+          avatar_url: picture
+        });
+      }
+
+      // Refresh user data after updates
+      user = await User.findOne({
+        where: {
+          id: user.id
+        },
+        attributes: [
+          'id',
+          'password_hash',
+          'email',
+          'role',
+          'avatar_url',
+          'name',
+          'google_id'
+        ],
+        include: [
+          {
+            as: 'profile',
+            model: Profile
+          }
+        ]
+      });
+
+    } else {
+
+      // --------------------------------------------------
+      // NEW GOOGLE USER
+      // --------------------------------------------------
+
+      user = await User.create({
+        name: name || '',
+        email: email.toLowerCase(),
+
+        // Google users don't have a password initially
+        password_hash: null,
+
+        // Google users don't have mobile initially
+        mobile: null,
+
+        role: null,
+
+        avatar_url: picture || null,
+
+        google_id: googleId,
+        provider: "google",
+      });
+
+      // Create profile exactly like your signup flow
+      await Profile.create({
+        name: name || '',
+        guardian_id: user.id,
+        individual_id: user.id,
+
+        gender: null,
+        phone: null,
+
+
+        images: JSON.stringify(
+          picture ? [picture] : []
+        ),
+      });
+
+      // Reload user with profile
+      user = await User.findOne({
+        where: {
+          id: user.id
+        },
+        attributes: [
+          'id',
+          'password_hash',
+          'email',
+          'role',
+          'avatar_url',
+          'name',
+          'google_id'
+
+        ],
+        include: [
+          {
+            as: 'profile',
+            model: Profile
+          }
+        ]
+      });
+    }
+
+    // --------------------------------------------------
+    // JWT
+    // Same structure as your existing login()
+    // --------------------------------------------------
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+
+    if (!JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined in .env');
+    }
+
+    // Populate avatar_url from profile if available,
+    // fallback to user.avatar_url
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+
+      name: user.profile?.name ?? user.name ?? null,
+
+      avatar_url:
+        (
+          user.profile &&
+          Array.isArray(user.profile.images) &&
+          user.profile.images.length > 0
+        )
+          ? user.profile.images[0]
+          : user.profile?.avatar_url ||
+          user.avatar_url ||
+          null,
+
+      city: user.profile?.city ?? null,
+      country: user.profile?.country ?? null,
+
+      ts: Date.now(),
+    };
+
+    const token = jwt.sign(
+      payload,
+      JWT_SECRET,
+      {
+        expiresIn: '7d'
+      }
+    );
+
+    // --------------------------------------------------
+    // RESPONSE
+    // Same structure as login()
+    // --------------------------------------------------
+
+    return res.json({
+      success: true,
+      needsProfileCompletion: user.role == null ? true : false,
+
+      message: 'Google login successful',
+      token,
+      user: payload
+    });
+
+  } catch (err) {
+    console.error('Google login error:', err);
+
+    return res.status(500).json({
+      error: 'Server error'
+    });
+  }
+};
 /**
  * Login
  */
@@ -376,6 +620,7 @@ export const ressetPassword = async (req, res) => {
 export default {
   signup,
   login,
+  googleLogin,
   verifyOtp,
   sendOtpById,
   sendOTPbyEmail,

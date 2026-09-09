@@ -242,7 +242,6 @@ export const clearUnreadCount = async (req, res, next) => {
     }
 };
 
-
 export const getConversationUsers = async (req, res, next) => {
     try {
         const current_user_id = req.user.id;

@@ -41,9 +41,8 @@ class SocketService extends GetxService {
   IO.Socket? _socket;
   String? _currentUserId;
 
-  static const String _socketUrl =
-      'https://marriage-sunnah-overseas-pdniv.ondigitalocean.app';
-  static const String _socketPath = '/api/socket.io/';
+  static const String _socketUrl = 'http://localhost:5000';
+  static const String _socketPath = '/socket.io/';
 
   // ── Connect ──────────────────────────────────────────────────────────────────
   void connect(String userId) {

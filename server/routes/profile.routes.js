@@ -8,10 +8,13 @@ import videoupload from '../middlewares/uploadvideos.middleware.js';
 const router = express.Router();
 
 // Create / update profile
+
 router.post('/create-profile', authenticate, profileController.createProfile);
 router.put('/update-prefs', authenticate, profileController.updatePrefs);
 router.put('/change-password', authenticate, profileController.changePassword);
 router.put('/update-about', authenticate, profileController.updateAboutInterest);
+// Route for updating user role
+router.patch('/update-role', authenticate, profileController.updateRole);
 
 router.put('/update-profile', authenticate, profileController.updateProfile);
 router.put('/update-guardian', authenticate, profileController.updateGuardian);

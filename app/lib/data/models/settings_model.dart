@@ -5,32 +5,32 @@ class SettingsModel {
   final String? siteLogo;
   final bool maintenanceMode;
   final String maintenanceMessage;
-  
+
   // Social Media
   final String? instagramUrl;
   final String? facebookUrl;
   final String? twitterUrl;
   final String? linkedinUrl;
   final String? youtubeUrl;
-  
+
   // Contact
   final String supportEmail;
   final String supportPhone;
   final String supportWhatsapp;
   final String? officeAddress;
-  
+
   // Legal
   final String? privacyPolicyUrl;
   final String? termsOfServiceUrl;
   final String? cookiePolicyUrl;
-  
+
   // Signup Settings
   final bool userVerificationRequired;
   final bool guardianVerificationRequired;
   final bool guardianLinkingRequired;
   final bool allowSkipAfterSubmit;
   final bool manualProfileApproval;
-  
+
   // Costs
   final int costSendInterest;
   final int costSendMessage;
@@ -42,23 +42,23 @@ class SettingsModel {
   final int costSuperLike;
   final int costUploadImage;
   final int costUploadVideo;
-  
+
   // Credits
   final int freeCreditsSignup;
   final int freeCreditsVerification;
   final int referralCreditsReferrer;
   final int referralCreditsReferee;
-  
+
   // Free Limits
   final int freeDailyInterests;
   final int freeDailyMessages;
   final int freeProfileViews;
-  
+
   // Premium Limits
   final int premiumDailyInterests;
   final int premiumDailyMessages;
   final int premiumProfileViews;
-  
+
   // Guardian
   final bool guardianEnabled;
   final bool guardianApprovalRequired;
@@ -66,7 +66,7 @@ class SettingsModel {
   final bool guardianCanSendInterests;
   final int maxGuardiansPerUser;
   final int guardianAutoApproveHours;
-  
+
   // Basic Plan
   final bool basicPlanEnabled;
   final String basicPlanName;
@@ -76,7 +76,7 @@ class SettingsModel {
   final int basicPlanPricePkr;
   final int basicPlanPriceAed;
   final bool basicPlanPopular;
-  
+
   // Premium Plan
   final bool premiumPlanEnabled;
   final String premiumPlanName;
@@ -86,7 +86,7 @@ class SettingsModel {
   final int premiumPlanPricePkr;
   final int premiumPlanPriceAed;
   final bool premiumPlanPopular;
-  
+
   // Platinum Plan
   final bool platinumPlanEnabled;
   final String platinumPlanName;
@@ -96,7 +96,7 @@ class SettingsModel {
   final int platinumPlanPricePkr;
   final int platinumPlanPriceAed;
   final bool platinumPlanPopular;
-  
+
   // Features
   final bool chatEnabled;
   final bool videoCallEnabled;
@@ -104,27 +104,27 @@ class SettingsModel {
   final bool blogEnabled;
   final bool eventsEnabled;
   final bool successStoriesEnabled;
-  
+
   // Chat
   final bool chatRequiresMatch;
   final int maxMessageLength;
   final bool fileSharingEnabled;
   final int maxFileSizeMb;
-  
+
   // Subscription
   final bool autoRenewEnabled;
   final int trialPeriodDays;
   final int refundWithinDays;
-  
+
   // Payment
   final bool stripeEnabled;
   final bool jazzcashEnabled;
   final bool easypaisaEnabled;
   final bool paypalEnabled;
-  
+
   // Referral
-  final int referralCommissionPercentage;
-  
+  final double referralCommissionPercentage;
+
   SettingsModel({
     required this.siteName,
     required this.siteTagline,
@@ -217,8 +217,12 @@ class SettingsModel {
     required this.paypalEnabled,
     required this.referralCommissionPercentage,
   });
-  
+
   factory SettingsModel.fromJson(Map<String, dynamic> json) {
+    convertStringToDouble(String value) {
+      print("converting " + value);
+    }
+
     return SettingsModel(
       siteName: json['site_name'] ?? 'Marriage Sunnah Overseas',
       siteTagline: json['site_tagline'] ?? '',
@@ -238,7 +242,8 @@ class SettingsModel {
       termsOfServiceUrl: json['terms_of_service_url'],
       cookiePolicyUrl: json['cookie_policy_url'],
       userVerificationRequired: json['user_verification_required'] ?? false,
-      guardianVerificationRequired: json['guardian_verification_required'] ?? false,
+      guardianVerificationRequired:
+          json['guardian_verification_required'] ?? false,
       guardianLinkingRequired: json['guardian_linking_required'] ?? false,
       allowSkipAfterSubmit: json['allow_skip_after_submit'] ?? true,
       manualProfileApproval: json['manual_profile_approval'] ?? false,
@@ -267,12 +272,14 @@ class SettingsModel {
       guardianCanBrowse: json['guardian_can_browse'] ?? true,
       guardianCanSendInterests: json['guardian_can_send_interests'] ?? true,
       maxGuardiansPerUser: json['max_guardians_per_user'] ?? 2,
-      guardianAutoApproveHours: json['guardian_auto_approve_timeout_hours'] ?? 72,
+      guardianAutoApproveHours:
+          json['guardian_auto_approve_timeout_hours'] ?? 72,
       basicPlanEnabled: json['basic_plan_enabled'] ?? true,
       basicPlanName: json['basic_plan_name'] ?? 'Basic',
       basicPlanCredits: json['basic_plan_credits'] ?? 50,
       basicPlanDays: json['basic_plan_duration_days'] ?? 7,
-      basicPlanPriceUsd: (json['basic_plan_price_usd'] ?? 4.99).toDouble(),
+      basicPlanPriceUsd:
+          convertStringToDouble(json['basic_plan_price_usd']) ?? 4.99,
       basicPlanPricePkr: json['basic_plan_price_pkr'] ?? 1400,
       basicPlanPriceAed: json['basic_plan_price_aed'] ?? 18,
       basicPlanPopular: json['basic_plan_popular'] ?? false,
@@ -280,7 +287,8 @@ class SettingsModel {
       premiumPlanName: json['premium_plan_name'] ?? 'Premium',
       premiumPlanCredits: json['premium_plan_credits'] ?? 250,
       premiumPlanDays: json['premium_plan_duration_days'] ?? 30,
-      premiumPlanPriceUsd: (json['premium_plan_price_usd'] ?? 12.99).toDouble(),
+      premiumPlanPriceUsd:
+          convertStringToDouble(json['premium_plan_price_usd']) ?? 12.99,
       premiumPlanPricePkr: json['premium_plan_price_pkr'] ?? 3600,
       premiumPlanPriceAed: json['premium_plan_price_aed'] ?? 48,
       premiumPlanPopular: json['premium_plan_popular'] ?? true,
@@ -288,7 +296,8 @@ class SettingsModel {
       platinumPlanName: json['platinum_plan_name'] ?? 'Platinum',
       platinumPlanCredits: json['platinum_plan_credits'] ?? 3500,
       platinumPlanDays: json['platinum_plan_duration_days'] ?? 365,
-      platinumPlanPriceUsd: (json['platinum_plan_price_usd'] ?? 71.88).toDouble(),
+      platinumPlanPriceUsd:
+          convertStringToDouble(json['platinum_plan_price_usd']) ?? 71.88,
       platinumPlanPricePkr: json['platinum_plan_price_pkr'] ?? 20000,
       platinumPlanPriceAed: json['platinum_plan_price_aed'] ?? 264,
       platinumPlanPopular: json['platinum_plan_popular'] ?? false,
@@ -309,10 +318,11 @@ class SettingsModel {
       jazzcashEnabled: json['jazzcash_enabled'] ?? false,
       easypaisaEnabled: json['easypaisa_enabled'] ?? false,
       paypalEnabled: json['paypal_enabled'] ?? false,
-      referralCommissionPercentage: json['referral_commission_percentage'] ?? 10,
+      referralCommissionPercentage:
+          convertStringToDouble(json['referral_commission_percentage']) ?? 10,
     );
   }
-  
+
   static SettingsModel defaults() {
     return SettingsModel(
       siteName: 'Marriage Sunnah Overseas',

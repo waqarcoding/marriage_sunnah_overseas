@@ -117,9 +117,9 @@ class _InterestItemState extends State<InterestItem>
       onTapUp: (_) {
         _ac.reverse();
         Get.to(
-            () => ProfileDetailPage(
-                profile: {...profile, 'images': widget.images}),
-            transition: Transition.rightToLeft);
+          () =>
+              ProfileDetailPage(profile: {...profile, 'images': widget.images}),
+        );
       },
       onTapCancel: () => _ac.reverse(),
       child: AnimatedBuilder(
@@ -407,14 +407,38 @@ class _StatusTrackerState extends State<_StatusTracker> {
     final hasFrom = i['from_guardian'] != null;
     final hasTo = i['to_guardian'] != null;
 
+    //You
     final youAccepted = !isReceived
         ? true
         : (i['status'] == 'accepted' || i['both_users_approved'] == true);
     final youDeclined = i['status'] == 'declined';
+
+    //Other
     final otherApproved = !isReceived
         ? (i['status'] == 'accepted' || i['both_users_approved'] == true)
         : true;
     final otherDeclined = i['status'] == 'declined';
+
+    //Your Guardian
+
+    // According to tabs
+    final uguardianDone = isReceived
+        ? i['to_guardian_status'] == 'accepted'
+        : i['from_guardian_status'] == 'accepted';
+
+    final uguardianFailed = isReceived
+        ? i['to_guardian_status'] == 'declined'
+        : i['from_guardian_status'] == 'declined';
+
+    //Other Guardian
+    final oguardianDone = isReceived
+        ? i['from_guardian_status'] == 'accepted'
+        : i['to_guardian_status'] == 'accepted';
+    final oguardianFailed = isReceived
+        ? i['from_guardian_status'] == 'declined'
+        : i['to_guardian_status'] == 'declined';
+
+    final prevDone = youAccepted && otherApproved;
 
     final steps = <Map<String, dynamic>>[
       {
@@ -431,25 +455,21 @@ class _StatusTrackerState extends State<_StatusTracker> {
         'active': youAccepted && !otherApproved && !otherDeclined,
         'failed': otherDeclined
       },
+      {
+        'key': 'uguardian',
+        'label': "Your G",
+        'done': uguardianDone,
+        'active': prevDone && !uguardianDone && !uguardianFailed,
+        'failed': uguardianFailed
+      },
+      {
+        'key': 'oguardian',
+        'label': "Other G",
+        'done': oguardianDone,
+        'active': prevDone && !oguardianDone && !oguardianFailed,
+        'failed': oguardianFailed
+      }
     ];
-
-    final guardianLabel = isReceived
-        ? (hasFrom ? "Guardian" : null)
-        : (hasTo ? "Guardian" : null);
-    if (guardianLabel != null) {
-      final guardianStatus =
-          isReceived ? i['from_guardian_status'] : i['to_guardian_status'];
-      final gDone = guardianStatus == 'accepted';
-      final gFailed = guardianStatus == 'declined';
-      final prevDone = youAccepted && otherApproved;
-      steps.add({
-        'key': 'guardian',
-        'label': guardianLabel,
-        'done': gDone,
-        'active': prevDone && !gDone && !gFailed,
-        'failed': gFailed
-      });
-    }
 
     return steps;
   }
@@ -504,20 +524,7 @@ class _StatusTrackerState extends State<_StatusTracker> {
                 right: 12,
                 child: Container(height: 2, color: Colors.grey[200]),
               ),
-              // Progress
-              Positioned(
-                top: 11,
-                left: 12,
-                child: Container(
-                  height: 2,
-                  width: (MediaQuery.of(context).size.width - 80) *
-                      progressPct.clamp(0.0, 1.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF1B4D3E)]),
-                  ),
-                ),
-              ),
+
               // Dots
               Row(
                 children: steps

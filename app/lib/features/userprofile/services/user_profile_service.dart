@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'package:app/data/models/profile_model.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 
 class UserProfileService extends GetxService {
   final ApiClient _api = Get.find<ApiClient>();
+  final Rx<ProfileModel?> userprofile = Rx<ProfileModel?>(null);
+  final RxBool isLoaded = false.obs;
 
   // ── GET /profile/get-current-user ─────────────────────────────────────────
   Future<Map<String, dynamic>?> getCurrentUser() async =>

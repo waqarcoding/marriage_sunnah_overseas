@@ -1,13 +1,17 @@
 import Stripe from 'stripe';
 import db from '../models/index.js';
 import { Op } from 'sequelize';
+const { User, Subscription, Transaction, Profile, Referral, Setting } = db;
+import { applyReferralReward } from './referral.controller.js';
+import setting from '../models/setting.js';
+
 
 import crypto from 'crypto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
-const { User, Subscription, Transaction, Profile, Referral, Setting } = db;
-import { applyReferralReward } from './referral.controller.js';
-
+let settings;
+initSetting();
+// @ts-ignore
+let stripe;
 
 
 // Payment processor configurations
@@ -49,7 +53,7 @@ const fetchPlansFromSettings = async () => {
             pricePKR: parseFloat(settings.basic_plan_price_pkr) || 0,
             priceAED: parseFloat(settings.basic_plan_price_aed) || 0,
             popular: settings.basic_plan_popular,
-            stripePriceId: process.env.STRIPE_WEEKLY_PRICE_ID,
+            stripePriceId: settings?.stripe_weekly_price_id,
         };
     }
 
@@ -65,7 +69,7 @@ const fetchPlansFromSettings = async () => {
             pricePKR: parseFloat(settings.premium_plan_price_pkr) || 0,
             priceAED: parseFloat(settings.premium_plan_price_aed) || 0,
             popular: settings.premium_plan_popular,
-            stripePriceId: process.env.STRIPE_MONTHLY_PRICE_ID,
+            stripePriceId: settings?.stripe_monthly_price_id,
         };
     }
 
@@ -81,7 +85,7 @@ const fetchPlansFromSettings = async () => {
             pricePKR: parseFloat(settings.platinum_plan_price_pkr) || 0,
             priceAED: parseFloat(settings.platinum_plan_price_aed) || 0,
             popular: settings.platinum_plan_popular,
-            stripePriceId: process.env.STRIPE_YEARLY_PRICE_ID,
+            stripePriceId: settings?.stripe_yearly_price_id,
         };
     }
 
@@ -124,7 +128,7 @@ export const getPaymentMethods = async (req, res) => {
                 name: 'Credit/Debit Card',
                 description: 'Pay with Visa, Mastercard, or American Express',
                 icon: 'credit-card',
-                enabled: settings?.stripe_enabled && !!process.env.STRIPE_SECRET_KEY,
+                enabled: settings?.stripe_enabled && !!settings?.stripe_secret_key,
                 currencies: ['USD', 'PKR', 'AED'],
                 fees: 'No additional fees',
                 autoRenewal: true,
@@ -553,7 +557,7 @@ export const createPaymentSession = async (req, res) => {
 export const handleWebhook = async (req, res) => {
     console.log('🔔 Webhook hit received'); // add this
     const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = settings?.stripe_webhook_secret;
 
     let event;
     try {
@@ -1143,13 +1147,13 @@ export const restorePurchases = async (req, res) => {
         let planType = 'monthly';
         let creditsAmount = 250;
 
-        if (priceId === process.env.STRIPE_WEEKLY_PRICE_ID) {
+        if (priceId === settings?.stripe_weekly_price_id) {
             planType = 'weekly';
             creditsAmount = 50;
-        } else if (priceId === process.env.STRIPE_MONTHLY_PRICE_ID) {
+        } else if (priceId === settings?.stripe_monthly_price_id) {
             planType = 'monthly';
             creditsAmount = 250;
-        } else if (priceId === process.env.STRIPE_YEARLY_PRICE_ID) {
+        } else if (priceId === settings?.stripe_yearly_price_id) {
             planType = 'yearly';
             creditsAmount = 3500;
         }
@@ -1248,3 +1252,8 @@ export const verifySession = async (req, res) => {
         });
     }
 };
+
+async function initSetting() {
+    settings = await Setting.getAllSettings();
+    stripe = new Stripe(settings?.stripe_secret_key ?? '');
+}

@@ -1,28 +1,20 @@
 // services/emailService.js
 
 import nodemailer from 'nodemailer';
+import db from '../models/index.js';
 
+
+// @ts-ignore
+
+const { Setting } = db;
 // ----------------------
 // Configure transporter
 // ----------------------
-const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: parseInt(process.env.MAIL_PORT || '587'),
-    secure: false,
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-    },
-});
 
-// Verify transporter connection
-transporter.verify((error, success) => {
-    if (error) {
-        console.error("❌ Mail transporter error:", error);
-    } else {
-        console.log("✅ Mail transporter is ready");
-    }
-});
+
+let settings;
+let transporter;
+initMailer();
 
 // ----------------------
 // Email Template
@@ -1210,3 +1202,35 @@ export default {
     sendMeetingReminderEmail,
     sendMeetingCancellationEmail,
 };
+
+async function initMailer() {
+    settings = await Setting.getAllSettings();
+    transporter = nodemailer.createTransport({
+        // @ts-ignore
+        host: settings?.mail_host,
+        // @ts-ignore
+        port: parseInt(settings?.mail_port || '587'),
+        secure: false,
+        auth: {
+            // @ts-ignore
+            user: settings?.mail_user,
+            // @ts-ignore
+            pass: settings?.mail_pass,
+        },
+    });
+
+
+
+    // Verify transporter connection
+    transporter.verify((error, success) => {
+        if (error) {
+            console.error("❌ Mail transporter error:", error);
+            console.error("❌ Mail Host:", settings?.mail_host);
+            console.error("❌ Mail Port:", settings?.mail_port);
+            console.error("❌ Mail User:", settings?.mail_user);
+            console.error("❌ Mail Pass:", settings?.mail_pass);
+        } else {
+            console.log("✅ Mail transporter is ready");
+        }
+    });;
+}

@@ -6,12 +6,31 @@ class AppTheme {
   // Font families matching web
   static const String fontSans = 'DM Sans';
   static const String fontHeading = 'Playfair Display';
-  
+  // Gradients
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFFFAFAFA), Color(0xFFA1A1AA)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient cardGradient = LinearGradient(
+    colors: [Color(0xFF1C1C1F), Color(0xFF111113)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const Color primary =
+      AppColors.primary; // zinc-50, white — primary actions on black
+  static const Color primaryLight =
+      Color(0xFFE4E4E7); // zinc-200, soft white highlight
+  static const Color primaryDark =
+      Color(0xFFA1A1AA); // zinc-400, dimmed primary
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      
+
       // Color Scheme
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
@@ -23,11 +42,11 @@ class AppTheme {
         onSurface: AppColors.foreground,
         onError: Colors.white,
       ),
-      
+
       // Primary Color
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.secondary,
-      
+
       // Card Theme
       cardTheme: CardTheme(
         color: AppColors.card,
@@ -37,7 +56,7 @@ class AppTheme {
           side: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
-      
+
       // AppBar Theme
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
@@ -53,7 +72,7 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -90,7 +109,7 @@ class AppTheme {
           color: AppColors.mutedForeground,
         ),
       ),
-      
+
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -108,7 +127,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -120,7 +139,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -137,7 +156,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.white,
@@ -145,7 +164,7 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
       ),
-      
+
       // Dialog Theme
       dialogTheme: DialogTheme(
         backgroundColor: Colors.white,
@@ -154,20 +173,20 @@ class AppTheme {
         ),
         elevation: 8,
       ),
-      
+
       // Divider Theme
       dividerTheme: DividerThemeData(
         color: AppColors.border,
         thickness: 1,
         space: 1,
       ),
-      
+
       // Icon Theme
       iconTheme: IconThemeData(
         color: AppColors.foreground,
         size: 24,
       ),
-      
+
       // Text Theme - matching web typography
       textTheme: TextTheme(
         displayLarge: TextStyle(
@@ -267,7 +286,7 @@ class AppTheme {
           color: AppColors.mutedForeground,
         ),
       ),
-      
+
       // Font Family (fallback)
       fontFamily: fontSans,
     );

@@ -1,3 +1,4 @@
+import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../services/interest_service.dart';
@@ -26,7 +27,9 @@ class InterestController extends GetxController {
       final userData = storage.read('user');
       if (userData is Map) return userData['id'];
       return null;
-    } catch (_) { return null; }
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -36,11 +39,15 @@ class InterestController extends GetxController {
     fetchData();
   }
 
-  void _loadProStatus() {
+  Future<void> _loadProStatus() async {
     try {
-      final storage = GetStorage();
-      final user = storage.read('user');
-      isPro.value = user?['is_pro'] == true || user?['is_pro'] == 1;
+      UserProfileService userProfileService = UserProfileService();
+
+      final user = await userProfileService.getCurrentUser();
+
+      if (user == null) return;
+
+      isPro.value = user['is_pro'];
     } catch (_) {}
   }
 
@@ -59,7 +66,8 @@ class InterestController extends GetxController {
       }
     } catch (e) {
       print('fetchData error: $e');
-      Get.snackbar('Error', 'Failed to load interests', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', 'Failed to load interests',
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }
@@ -67,7 +75,8 @@ class InterestController extends GetxController {
 
   List<Map<String, dynamic>> _toList(dynamic v) {
     if (v == null) return [];
-    if (v is List) return v.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    if (v is List)
+      return v.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     return [];
   }
 
@@ -90,7 +99,8 @@ class InterestController extends GetxController {
     ];
   }
 
-  List<Map<String, dynamic>> get interests => activeTab.value == 'Sent' ? sentAll : receivedAll;
+  List<Map<String, dynamic>> get interests =>
+      activeTab.value == 'Sent' ? sentAll : receivedAll;
   int get sentCount => sentAll.length;
   int get receivedCount => receivedAll.length;
 
@@ -102,11 +112,21 @@ class InterestController extends GetxController {
 
   // ─── Accept / Decline ─────────────────────────────────────────────────────
   void openAcceptDialog(Map<String, dynamic> interest, String name) {
-    dialog.value = {'type': 'accept', 'interestId': interest['id'], 'name': name, 'interest': interest};
+    dialog.value = {
+      'type': 'accept',
+      'interestId': interest['id'],
+      'name': name,
+      'interest': interest
+    };
   }
 
   void openDeclineDialog(Map<String, dynamic> interest, String name) {
-    dialog.value = {'type': 'decline', 'interestId': interest['id'], 'name': name, 'interest': interest};
+    dialog.value = {
+      'type': 'decline',
+      'interestId': interest['id'],
+      'name': name,
+      'interest': interest
+    };
   }
 
   Future<void> confirmDialog() async {
@@ -122,28 +142,38 @@ class InterestController extends GetxController {
     if (type == 'accept') {
       tabData.value = {
         ...tabData,
-        'received': (tabData['received'] ?? []).where((i) => i['id'] != interestId).toList(),
+        'received': (tabData['received'] ?? [])
+            .where((i) => i['id'] != interestId)
+            .toList(),
         'matches': [interest, ...(tabData['matches'] ?? [])],
       };
     } else {
       tabData.value = {
         ...tabData,
-        'received': (tabData['received'] ?? []).where((i) => i['id'] != interestId).toList(),
-        'rejected': [{...interest, 'status': 'declined'}, ...(tabData['rejected'] ?? [])],
+        'received': (tabData['received'] ?? [])
+            .where((i) => i['id'] != interestId)
+            .toList(),
+        'rejected': [
+          {...interest, 'status': 'declined'},
+          ...(tabData['rejected'] ?? [])
+        ],
       };
     }
 
     try {
       if (type == 'accept') {
         await _service.accept(interestId as int);
-        Get.snackbar('Accepted! 🎉', 'Interest accepted successfully', snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Accepted! 🎉', 'Interest accepted successfully',
+            snackPosition: SnackPosition.BOTTOM);
       } else {
         await _service.decline(interestId as int);
-        Get.snackbar('Declined', 'Interest declined', snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Declined', 'Interest declined',
+            snackPosition: SnackPosition.BOTTOM);
       }
       fetchData(); // silent refresh
     } catch (e) {
-      Get.snackbar('Error', 'Action failed', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', 'Action failed',
+          snackPosition: SnackPosition.BOTTOM);
       fetchData(); // rollback
     }
   }
@@ -166,21 +196,32 @@ class InterestController extends GetxController {
     try {
       final res = await _service.cancel(cc['id'] as int);
       if (res != null && res['success'] == true) {
-        Get.snackbar('Cancelled', 'Interest cancelled', snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Cancelled', 'Interest cancelled',
+            snackPosition: SnackPosition.BOTTOM);
         fetchData();
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to cancel interest', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', 'Failed to cancel interest',
+          snackPosition: SnackPosition.BOTTOM);
     }
   }
 
   List<String> _parseImages(dynamic v) {
     if (v == null) return [];
-    if (v is List) return v.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+    if (v is List)
+      return v.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
     try {
       final s = v.toString();
-      return s.replaceAll('[', '').replaceAll(']', '').replaceAll('"', '')
-          .split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    } catch (_) { return []; }
+      return s
+          .replaceAll('[', '')
+          .replaceAll(']', '')
+          .replaceAll('"', '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 }

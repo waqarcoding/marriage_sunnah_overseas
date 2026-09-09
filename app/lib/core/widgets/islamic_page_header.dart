@@ -63,10 +63,12 @@ class IslamicPageHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              /*
               if (icon != null) ...[
                 _IconBox(child: icon!),
                 SizedBox(width: 12),
               ],
+             */
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

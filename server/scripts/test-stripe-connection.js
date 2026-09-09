@@ -5,7 +5,7 @@ const Stripe = require('stripe');
 console.log('\n=== Testing Stripe Connection ===\n');
 
 // Check if API key exists
-const apiKey = process.env.STRIPE_SECRET_KEY;
+const apiKey = settings?.stripe_secret_key;
 console.log('1. Checking API Key...');
 console.log('   Key exists:', !!apiKey);
 console.log('   Key starts with sk_test_:', apiKey?.startsWith('sk_test_'));

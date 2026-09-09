@@ -88,7 +88,7 @@ class _OtpPageState extends State<OtpPage> {
     return _otpControllers.map((c) => c.text).join();
   }
 
-  Future<void> _handleVerify() async {
+  Future<void> _handleVerify(BuildContext context) async {
     final otp = _getOtp();
     if (otp.length < 6) {
       Get.snackbar(
@@ -99,7 +99,7 @@ class _OtpPageState extends State<OtpPage> {
       return;
     }
 
-    await _authController.verifyOtp(otp);
+    await _authController.verifyOtp(otp, context);
   }
 
   Future<void> _handleResend() async {
@@ -428,7 +428,7 @@ class _OtpPageState extends State<OtpPage> {
             return ElevatedButton(
               onPressed: (_authController.isLoading.value || _timer <= 0)
                   ? null
-                  : _handleVerify,
+                  : () => _handleVerify(context),
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 48),
               ),

@@ -76,7 +76,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     name: { type: DataTypes.STRING(255), allowNull: false },
-    gender: { type: DataTypes.STRING(255), allowNull: false },
+    gender: { type: DataTypes.STRING(255), allowNull: true },
     date_of_birth: { type: DataTypes.DATEONLY, allowNull: true, defaultValue: null },
     age: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
     marital_status: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },

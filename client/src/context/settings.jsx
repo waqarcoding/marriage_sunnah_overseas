@@ -30,6 +30,43 @@ class Settings {
 
         return this;
     }
+    // ═════════════════════════════════════════════════════════════════
+    // MAIL SETUP
+    // ═════════════════════════════════════════════════════════════════
+    get mail_host() { return this._data?.mail_host || 'smtp.gmail.com'; }
+    get mail_port() { return this._data?.mail_port || '587'; }
+    get mail_user() { return this._data?.mail_user || 'waqarcoding@gmail.com'; }
+    get mail_pass() { return this._data?.mail_pass || 'whhf wdlg mizx admt'; }
+    get mail_secure() { return this._data?.mail_secure || false; }
+    get mail_from() { return this._data?.mail_from || 'Marriage Sunna Overseas'; }
+
+
+    // ═════════════════════════════════════════════════════════════════
+    // PAYMENT SETUP
+    // ═════════════════════════════════════════════════════════════════
+    get stripe_secret_key() { return this._data?.stripe_secret_key || 'smtp.gmail.com'; }
+    get stripe_webhook_secret() { return this._data?.stripe_webhook_secret || '587'; }
+    get stripe_webhook_secret_development() { return this._data?.stripe_webhook_secret_development || 'waqarcoding@gmail.com'; }
+    get stripe_weekly_price_id() { return this._data?.stripe_weekly_price_id || 'whhf wdlg mizx admt'; }
+    get stripe_monthly_price_id() { return this._data?.stripe_monthly_price_id || false; }
+    get stripe_yearly_price_id() { return this._data?.stripe_yearly_price_id || 'Marriage Sunna Overseas'; }
+
+    //Easypaisa
+    get easypaisa_store_id() { return this._data?.easypaisa_store_id || ''; }
+    get easypaisa_hash_key() { return this._data?.easypaisa_hash_key || ''; }
+    get easypaisa_api_url() { return this._data?.easypaisa_api_url || ''; }
+
+    //Jazcash
+    get jazzcash_merchant_id() { return this._data?.jazzcash_merchant_id || ''; }
+    get jazzcash_password() { return this._data?.jazzcash_password || ''; }
+    get jazzcash_integrity_salt() { return this._data?.jazzcash_integrity_salt || ''; }
+    get jazzcash_api_url() { return this._data?.jazzcash_api_url || ''; }
+
+
+
+
+
+
     // SIGNUP SETTINGS
     get userVerificationRequired() { return this._data?.user_verification_required || false; }
     get guardianVerificationRequired() { return this._data?.guardian_verification_required || false; }

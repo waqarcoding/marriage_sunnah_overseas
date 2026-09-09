@@ -47,16 +47,12 @@ class StepCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _getBgColor(),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.border,
-          width: 1,
-        ),
+        border: Border.all(color: Color(0xFFF3F4F6), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: Offset(0, 4))
         ],
       ),
       padding: EdgeInsets.all(20),

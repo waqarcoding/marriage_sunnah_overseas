@@ -3,3 +3,4 @@
 .env.production
 testing/
 .zip
+server/APP_SPEC.txt

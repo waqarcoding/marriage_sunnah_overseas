@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
 
 class ApiClient extends GetxService {
   final GetStorage _storage = GetStorage();
 
   // Base URL - change this to your server URL
-  static const String baseUrl = 'http://localhost:5000/api';
+  // static const String baseUrl = 'http://localhost:5000/api'; //for live server use this
+  static const String baseUrl = 'http://192.168.100.54:5000/api';
 
   DateTime _lastPing = DateTime.now();
 
@@ -227,6 +229,7 @@ class ApiClient extends GetxService {
   }
 
   // Upload file (multipart/form-data)
+
   Future<dynamic> upload(
     String endpoint,
     Map<String, String> fields,
@@ -247,8 +250,16 @@ class ApiClient extends GetxService {
       request.fields.addAll(fields);
 
       for (var entry in files.entries) {
+        final path = entry.value;
+        final mimeType =
+            lookupMimeType(path) ?? 'image/jpeg'; // sensible fallback
+
         request.files.add(
-          await http.MultipartFile.fromPath(entry.key, entry.value),
+          await http.MultipartFile.fromPath(
+            entry.key,
+            path,
+            contentType: http.MediaType.parse(mimeType),
+          ),
         );
       }
 

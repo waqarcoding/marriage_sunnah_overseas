@@ -1,12 +1,15 @@
+import 'package:app/features/auth/pages/auth_sheet.dart';
+import 'package:app/features/auth/pages/welcome_page.dart';
+
 import '../../../core/services/socket_service.dart';
 import '../../../core/services/push_notification_service.dart';
-import '../../auth/pages/login_page.dart';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../services/settings_service.dart';
-import '../../../data/services/auth_service.dart';
+import '../../auth/services/auth_service.dart';
 
-class SettingsController extends GetxController {
+class SubscriptionController extends GetxController {
   final UserSettingsService _service = Get.find<UserSettingsService>();
 
   var isLoading = true.obs;
@@ -106,7 +109,7 @@ class SettingsController extends GetxController {
       Get.find<PushNotificationService>().removeToken();
     } catch (_) {}
     GetStorage().erase();
-    Get.offAll(() => LoginPage());
+    Get.offAll(() => WellcomePage());
   }
 
   Future<void> deleteAccount() async {

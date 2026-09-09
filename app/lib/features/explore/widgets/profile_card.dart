@@ -359,8 +359,8 @@ class _ProfileCardState extends State<ProfileCard> {
                       _ActionBtn(
                         onTap: () {
                           Get.to(
-                              () => ProfileDetailPage(profile: widget.profile),
-                              transition: Transition.rightToLeft);
+                            () => ProfileDetailPage(profile: widget.profile),
+                          );
                         },
                         variant: _BtnVariant.secondary,
                         size: 52,

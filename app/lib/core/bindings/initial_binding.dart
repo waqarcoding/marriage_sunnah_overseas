@@ -1,8 +1,15 @@
+import 'package:app/data/services/settings_service.dart';
+import 'package:app/features/auth/controllers/auth_controller.dart';
+import 'package:app/features/guardian/services/guardian_service.dart';
+import 'package:app/features/meeting/services/meeting_service.dart';
+import 'package:app/features/profile/widgets/profile_progress_widget.dart';
+
 import 'package:app/features/userprofile/services/user_profile_service.dart';
+import 'package:app/features/verification/services/verification_service.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../data/providers/api_client.dart';
-import '../../data/services/auth_service.dart';
+import '../../features/auth/services/auth_service.dart';
 import '../../core/services/socket_service.dart';
 import '../../features/profile/services/profile_service.dart';
 import '../../features/explore/services/explore_service.dart';
@@ -53,5 +60,10 @@ class InitialBinding extends Bindings {
     reg(ChatService());
     reg(UserSettingsService());
     reg(UserProfileService());
+    reg(MeetingService());
+    reg(GuardianService());
+    reg(VerificationService());
+    Get.put(AuthController());
+    Get.put(ProfileProgressController());
   }
 }

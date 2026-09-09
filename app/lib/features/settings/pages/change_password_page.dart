@@ -41,10 +41,21 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   ];
 
   Future<void> _submit() async {
-    setState(() { _error = ''; });
-    if (_currentCtrl.text.isEmpty) { setState(() => _error = 'Enter your current password'); return; }
-    if (_nextCtrl.text.length < 8) { setState(() => _error = 'New password must be at least 8 characters'); return; }
-    if (_nextCtrl.text != _confirmCtrl.text) { setState(() => _error = "Passwords don't match"); return; }
+    setState(() {
+      _error = '';
+    });
+    if (_currentCtrl.text.isEmpty) {
+      setState(() => _error = 'Enter your current password');
+      return;
+    }
+    if (_nextCtrl.text.length < 8) {
+      setState(() => _error = 'New password must be at least 8 characters');
+      return;
+    }
+    if (_nextCtrl.text != _confirmCtrl.text) {
+      setState(() => _error = "Passwords don't match");
+      return;
+    }
 
     setState(() => _loading = true);
     try {
@@ -54,14 +65,23 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         'new_password': _nextCtrl.text,
       });
       if (res != null && res['success'] == true) {
-        setState(() { _success = true; _loading = false; });
+        setState(() {
+          _success = true;
+          _loading = false;
+        });
         await Future.delayed(Duration(milliseconds: 1800));
         Get.back();
       } else {
-        setState(() { _error = res?['message'] ?? 'Failed to update password'; _loading = false; });
+        setState(() {
+          _error = res?['message'] ?? 'Failed to update password';
+          _loading = false;
+        });
       }
     } catch (e) {
-      setState(() { _error = 'Failed to update password'; _loading = false; });
+      setState(() {
+        _error = 'Failed to update password';
+        _loading = false;
+      });
     }
   }
 
@@ -80,7 +100,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       body: Column(
         children: [
           SubPageHeader(title: 'Change Password', onBack: () => Get.back()),
-
           Expanded(
             child: SingleChildScrollView(
               child: Center(
@@ -91,21 +110,35 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     children: [
                       // Lock icon
                       Container(
-                        width: 64, height: 64,
+                        width: 64,
+                        height: 64,
                         decoration: BoxDecoration(
                           color: Color(0xFF1B4D3E),
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [BoxShadow(color: Color(0xFF1B4D3E).withOpacity(0.25), blurRadius: 24, offset: Offset(0, 8))],
+                          boxShadow: [
+                            BoxShadow(
+                                color: Color(0xFF1B4D3E).withOpacity(0.25),
+                                blurRadius: 24,
+                                offset: Offset(0, 8))
+                          ],
                         ),
-                        child: Icon(Icons.lock_outline, color: Colors.white, size: 28),
+                        child: Icon(Icons.lock_outline,
+                            color: Colors.white, size: 28),
                       ),
                       SizedBox(height: 20),
                       Text('Update Password',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF1B4D3E))),
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1B4D3E))),
                       SizedBox(height: 6),
-                      Text('Choose a strong password to keep your account secure',
+                      Text(
+                          'Choose a strong password to keep your account secure',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF), height: 1.5)),
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF9CA3AF),
+                              height: 1.5)),
                       SizedBox(height: 24),
 
                       // Success banner
@@ -122,10 +155,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.verified_user_outlined, size: 20, color: Color(0xFF16A34A)),
+                                    Icon(Icons.verified_user_outlined,
+                                        size: 20, color: Color(0xFF16A34A)),
                                     SizedBox(width: 10),
                                     Text('Password updated successfully!',
-                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF15803D))),
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF15803D))),
                                   ],
                                 ),
                               )
@@ -138,14 +175,17 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         child: _error.isNotEmpty
                             ? Container(
                                 margin: EdgeInsets.only(bottom: 16),
-                                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: Color(0xFFFFF1F2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: Color(0xFFFECDD3)),
                                 ),
                                 child: Text(_error,
-                                    style: TextStyle(fontSize: 13, color: Color(0xFFBE123C))),
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFFBE123C))),
                               )
                             : SizedBox.shrink(),
                       ),
@@ -156,8 +196,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(24),
-                          boxShadow: [BoxShadow(color: Color(0xFF1B4D3E).withOpacity(0.07), blurRadius: 16)],
-                          border: Border.all(color: Color(0xFF1B4D3E).withOpacity(0.07)),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Color(0xFF1B4D3E).withOpacity(0.07),
+                                blurRadius: 16)
+                          ],
+                          border: Border.all(
+                              color: Color(0xFF1B4D3E).withOpacity(0.07)),
                         ),
                         child: Column(
                           children: [
@@ -165,14 +210,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               label: 'Current password',
                               controller: _currentCtrl,
                               show: _showCurrent,
-                              onToggle: () => setState(() => _showCurrent = !_showCurrent),
+                              onToggle: () =>
+                                  setState(() => _showCurrent = !_showCurrent),
                             ),
                             _Divider(),
                             _PasswordField(
                               label: 'New password',
                               controller: _nextCtrl,
                               show: _showNext,
-                              onToggle: () => setState(() => _showNext = !_showNext),
+                              onToggle: () =>
+                                  setState(() => _showNext = !_showNext),
                               onChanged: (_) => setState(() {}),
                             ),
 
@@ -184,20 +231,30 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      children: List.generate(4, (i) => Expanded(
-                                        child: Container(
-                                          margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
-                                          height: 4,
-                                          decoration: BoxDecoration(
-                                            color: i < _strength ? _strengthColors[_strength] : Color(0xFFE5E7EB),
-                                            borderRadius: BorderRadius.circular(2),
-                                          ),
-                                        ),
-                                      )),
+                                      children: List.generate(
+                                          4,
+                                          (i) => Expanded(
+                                                child: Container(
+                                                  margin: EdgeInsets.only(
+                                                      right: i < 3 ? 4 : 0),
+                                                  height: 4,
+                                                  decoration: BoxDecoration(
+                                                    color: i < _strength
+                                                        ? _strengthColors[
+                                                            _strength]
+                                                        : Color(0xFFE5E7EB),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            2),
+                                                  ),
+                                                ),
+                                              )),
                                     ),
                                     SizedBox(height: 4),
                                     Text(_strengthLabels[_strength],
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
                                             color: _strengthColors[_strength])),
                                   ],
                                 ),
@@ -208,8 +265,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                               label: 'Confirm new password',
                               controller: _confirmCtrl,
                               show: _showConfirm,
-                              onToggle: () => setState(() => _showConfirm = !_showConfirm),
-                              hasError: _confirmCtrl.text.isNotEmpty && _nextCtrl.text != _confirmCtrl.text,
+                              onToggle: () =>
+                                  setState(() => _showConfirm = !_showConfirm),
+                              hasError: _confirmCtrl.text.isNotEmpty &&
+                                  _nextCtrl.text != _confirmCtrl.text,
                               onChanged: (_) => setState(() {}),
                             ),
                           ],
@@ -219,25 +278,35 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
                       // Password tips
                       ..._tips.map((tip) => Padding(
-                        padding: EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          children: [
-                            AnimatedContainer(
-                              duration: Duration(milliseconds: 200),
-                              width: 18, height: 18,
-                              decoration: BoxDecoration(
-                                color: tip['check']! ? Color(0xFF1B4D3E) : Color(0xFFE5E7EB),
-                                shape: BoxShape.circle,
-                              ),
-                              child: tip['check']! ? Center(child: Icon(Icons.check, size: 11, color: Colors.white)) : null,
+                            padding: EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              children: [
+                                AnimatedContainer(
+                                  duration: Duration(milliseconds: 200),
+                                  width: 18,
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color: tip['check']!
+                                        ? Color(0xFF1B4D3E)
+                                        : Color(0xFFE5E7EB),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: tip['check']!
+                                      ? Center(
+                                          child: Icon(Icons.check,
+                                              size: 11, color: Colors.white))
+                                      : null,
+                                ),
+                                SizedBox(width: 8),
+                                Text(tip['text']!,
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: tip['check']!
+                                            ? Color(0xFF1B4D3E)
+                                            : Color(0xFF9CA3AF))),
+                              ],
                             ),
-                            SizedBox(width: 8),
-                            Text(tip['text']!,
-                                style: TextStyle(fontSize: 12,
-                                    color: tip['check']! ? Color(0xFF1B4D3E) : Color(0xFF9CA3AF))),
-                          ],
-                        ),
-                      )),
+                          )),
 
                       SizedBox(height: 24),
 
@@ -256,10 +325,16 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                           ),
                           child: Center(
                             child: _loading
-                                ? SizedBox(width: 20, height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white))
                                 : Text('Update Password',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white)),
                           ),
                         ),
                       ),
@@ -275,11 +350,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   }
 
   List<Map<String, dynamic>> get _tips => [
-    {'text': 'At least 8 characters', 'check': _nextCtrl.text.length >= 8},
-    {'text': 'One uppercase letter', 'check': RegExp(r'[A-Z]').hasMatch(_nextCtrl.text)},
-    {'text': 'One number', 'check': RegExp(r'[0-9]').hasMatch(_nextCtrl.text)},
-    {'text': 'One special character', 'check': RegExp(r'[^A-Za-z0-9]').hasMatch(_nextCtrl.text)},
-  ];
+        {'text': 'At least 8 characters', 'check': _nextCtrl.text.length >= 8},
+        {
+          'text': 'One uppercase letter',
+          'check': RegExp(r'[A-Z]').hasMatch(_nextCtrl.text)
+        },
+        {
+          'text': 'One number',
+          'check': RegExp(r'[0-9]').hasMatch(_nextCtrl.text)
+        },
+        {
+          'text': 'One special character',
+          'check': RegExp(r'[^A-Za-z0-9]').hasMatch(_nextCtrl.text)
+        },
+      ];
 }
 
 class _PasswordField extends StatefulWidget {
@@ -291,9 +375,12 @@ class _PasswordField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
 
   const _PasswordField({
-    required this.label, required this.controller,
-    required this.show, required this.onToggle,
-    this.hasError = false, this.onChanged,
+    required this.label,
+    required this.controller,
+    required this.show,
+    required this.onToggle,
+    this.hasError = false,
+    this.onChanged,
   });
 
   @override
@@ -307,13 +394,18 @@ class _PasswordFieldState extends State<_PasswordField> {
   Widget build(BuildContext context) {
     final borderColor = widget.hasError
         ? Color(0xFFFCA5A5)
-        : _focused ? Color(0xFF1B4D3E) : Color(0xFF1B4D3E).withOpacity(0.12);
+        : _focused
+            ? Color(0xFF1B4D3E)
+            : Color(0xFF1B4D3E).withOpacity(0.12);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(widget.label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF6B7280))),
         SizedBox(height: 8),
         Container(
           height: 48,
@@ -325,7 +417,8 @@ class _PasswordFieldState extends State<_PasswordField> {
           child: Row(
             children: [
               SizedBox(width: 14),
-              Icon(Icons.lock_outline, size: 16,
+              Icon(Icons.lock_outline,
+                  size: 16,
                   color: _focused ? Color(0xFF1B4D3E) : Color(0xFF9CA3AF)),
               SizedBox(width: 10),
               Expanded(
@@ -350,8 +443,11 @@ class _PasswordFieldState extends State<_PasswordField> {
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Icon(
-                    widget.show ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    size: 16, color: Color(0xFF9CA3AF),
+                    widget.show
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 16,
+                    color: Color(0xFF9CA3AF),
                   ),
                 ),
               ),
@@ -365,7 +461,8 @@ class _PasswordFieldState extends State<_PasswordField> {
 
 class _Divider extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      Container(margin: EdgeInsets.symmetric(vertical: 16), height: 1,
-          color: Color(0xFF1B4D3E).withOpacity(0.06));
+  Widget build(BuildContext context) => Container(
+      margin: EdgeInsets.symmetric(vertical: 16),
+      height: 1,
+      color: Color(0xFF1B4D3E).withOpacity(0.06));
 }

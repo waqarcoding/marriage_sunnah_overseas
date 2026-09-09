@@ -171,13 +171,20 @@ module.exports = (sequelize, DataTypes) => {
     },
     mobile: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: 'users_mobile_unique',
     },
-    password_hash: { type: DataTypes.STRING, allowNull: false },
+    password_hash: { type: DataTypes.STRING, allowNull: true, },
     role: {
-      type: DataTypes.ENUM('individual', 'guardian', 'admin', 'staff'),
-      defaultValue: 'individual',
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'admin/staff/guardian/indivisual'
+    },
+    provider: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "email",
     },
     avatar_url: { type: DataTypes.STRING, allowNull: true },
     is_online: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -242,6 +249,12 @@ module.exports = (sequelize, DataTypes) => {
     user_pin: {
       type: DataTypes.STRING(6),
       allowNull: true,
+    },
+    google_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+      comment: 'Google OAuth ID (for Google login)',
     },
   }, {
     sequelize,

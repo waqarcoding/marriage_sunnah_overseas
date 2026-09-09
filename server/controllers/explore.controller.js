@@ -264,7 +264,7 @@ export const getExplore = async (req, res) => {
         ].filter(id => id != null);
 
         console.log('🚫 Excluding', excludeIds.length, 'user IDs');
-
+        console.log('🚫 Excluding', excludeIds, 'user IDs');
         // ✅ Build base where clause
         const baseWhere = {
             individual_id: { [Op.notIn]: excludeIds },

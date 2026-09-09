@@ -1,3 +1,4 @@
+import 'package:app/features/userprofile/controllers/user_profile_controller.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/models/options_model.dart';
@@ -8,6 +9,7 @@ class CompleteProfileController extends GetxController {
   final ProfileService _profileService = Get.find<ProfileService>();
 
   // Loading states
+
   var isLoading = false.obs;
   var isSaving = false.obs;
   var optsLoading = true.obs;
@@ -15,7 +17,7 @@ class CompleteProfileController extends GetxController {
   var currentStep = 1.obs;
   var errorMessage = ''.obs;
 
-  static const int totalSteps = 7;
+  static const int totalSteps = 6;
 
   // Options
   var opts = Rxn<OptionsModel>();
@@ -176,20 +178,33 @@ class CompleteProfileController extends GetxController {
     final fbList = data.getFamilyBackgrounds('Muslim');
     final relList = data.getRelationshipOptions('Muslim');
 
-    if (form['city'] == null || form['city'].toString().isEmpty) setForm('city', defaultCity);
-    if (form['nationality'] == null || form['nationality'].toString().isEmpty) setForm('nationality', defaultNat);
-    if (form['mother_tongue'] == null || form['mother_tongue'].toString().isEmpty) setForm('mother_tongue', defaultTongue);
-    if (form['religious_practice_level'] == null || form['religious_practice_level'].toString().isEmpty) setForm('religious_practice_level', defaultPractice);
-    if (form['body_type'] == null || form['body_type'].toString().isEmpty) setForm('body_type', defaultBodyType);
-    if (form['education'] == null || form['education'].toString().isEmpty) setForm('education', defaultEdu);
-    if (form['employment_type'] == null || form['employment_type'].toString().isEmpty) setForm('employment_type', defaultEmp);
-    if (form['marital_status'] == null || form['marital_status'].toString().isEmpty) {
+    if (form['city'] == null || form['city'].toString().isEmpty)
+      setForm('city', defaultCity);
+    if (form['nationality'] == null || form['nationality'].toString().isEmpty)
+      setForm('nationality', defaultNat);
+    if (form['mother_tongue'] == null ||
+        form['mother_tongue'].toString().isEmpty)
+      setForm('mother_tongue', defaultTongue);
+    if (form['religious_practice_level'] == null ||
+        form['religious_practice_level'].toString().isEmpty)
+      setForm('religious_practice_level', defaultPractice);
+    if (form['body_type'] == null || form['body_type'].toString().isEmpty)
+      setForm('body_type', defaultBodyType);
+    if (form['education'] == null || form['education'].toString().isEmpty)
+      setForm('education', defaultEdu);
+    if (form['employment_type'] == null ||
+        form['employment_type'].toString().isEmpty)
+      setForm('employment_type', defaultEmp);
+    if (form['marital_status'] == null ||
+        form['marital_status'].toString().isEmpty) {
       setForm('marital_status', marital.isNotEmpty ? marital.first : '');
     }
-    if (form['family_background'] == null || form['family_background'].toString().isEmpty) {
+    if (form['family_background'] == null ||
+        form['family_background'].toString().isEmpty) {
       setForm('family_background', _random(fbList));
     }
-    if (form['relationship'] == null || form['relationship'].toString().isEmpty) {
+    if (form['relationship'] == null ||
+        form['relationship'].toString().isEmpty) {
       setForm('relationship', _random(relList));
     }
   }
@@ -206,10 +221,12 @@ class CompleteProfileController extends GetxController {
     final hasChild = data.hasChildren;
     final pakCities = data.getCities('Pakistan');
 
-    if (prefs['pref_education'] == null || prefs['pref_education'].toString().isEmpty) {
+    if (prefs['pref_education'] == null ||
+        prefs['pref_education'].toString().isEmpty) {
       setPrefs('pref_education', defaultEdu);
     }
-    if (prefs['pref_has_children'] == null || prefs['pref_has_children'].toString().isEmpty) {
+    if (prefs['pref_has_children'] == null ||
+        prefs['pref_has_children'].toString().isEmpty) {
       setPrefs('pref_has_children', hasChild.isNotEmpty ? hasChild.first : '');
     }
     if (prefs['pref_city'] == null || prefs['pref_city'].toString().isEmpty) {
@@ -234,41 +251,66 @@ class CompleteProfileController extends GetxController {
       if (p['name'] != null) setForm('name', p['name'].toString());
       if (p['gender'] != null) setForm('gender', p['gender'].toString());
       if (p['date_of_birth'] != null) {
-        setForm('date_of_birth', p['date_of_birth'].toString().split('T').first);
+        setForm(
+            'date_of_birth', p['date_of_birth'].toString().split('T').first);
       }
-      if (p['marital_status'] != null) setForm('marital_status', p['marital_status'].toString());
+      if (p['marital_status'] != null)
+        setForm('marital_status', p['marital_status'].toString());
       if (p['phone'] != null) setForm('phone', p['phone'].toString());
       if (p['country'] != null) setForm('country', p['country'].toString());
       if (p['city'] != null) setForm('city', p['city'].toString());
-      if (p['nationality'] != null) setForm('nationality', p['nationality'].toString());
+      if (p['nationality'] != null)
+        setForm('nationality', p['nationality'].toString());
       if (p['religion'] != null) setForm('religion', p['religion'].toString());
       if (p['sect'] != null) setForm('sect', p['sect'].toString());
-      if (p['religious_practice_level'] != null) setForm('religious_practice_level', p['religious_practice_level'].toString());
+      if (p['religious_practice_level'] != null)
+        setForm('religious_practice_level',
+            p['religious_practice_level'].toString());
       if (p['caste'] != null) setForm('caste', p['caste'].toString());
-      if (p['mother_tongue'] != null) setForm('mother_tongue', p['mother_tongue'].toString());
-      if (p['height_inches'] != null) setForm('height_inches', p['height_inches'].toString());
-      if (p['body_type'] != null) setForm('body_type', p['body_type'].toString());
-      if (p['education'] != null) setForm('education', p['education'].toString());
-      if (p['profession'] != null) setForm('profession', p['profession'].toString());
-      if (p['employment_type'] != null) setForm('employment_type', p['employment_type'].toString());
-      if (p['monthly_salary'] != null) setForm('monthly_salary', p['monthly_salary'].toString());
+      if (p['mother_tongue'] != null)
+        setForm('mother_tongue', p['mother_tongue'].toString());
+      if (p['height_inches'] != null)
+        setForm('height_inches', p['height_inches'].toString());
+      if (p['body_type'] != null)
+        setForm('body_type', p['body_type'].toString());
+      if (p['education'] != null)
+        setForm('education', p['education'].toString());
+      if (p['profession'] != null)
+        setForm('profession', p['profession'].toString());
+      if (p['employment_type'] != null)
+        setForm('employment_type', p['employment_type'].toString());
+      if (p['monthly_salary'] != null)
+        setForm('monthly_salary', p['monthly_salary'].toString());
       if (p['bio'] != null) setForm('bio', p['bio'].toString());
-      if (p['family_background'] != null) setForm('family_background', p['family_background'].toString());
-      if (p['father_occupation'] != null) setForm('father_occupation', p['father_occupation'].toString());
-      if (p['mother_occupation'] != null) setForm('mother_occupation', p['mother_occupation'].toString());
+      if (p['family_background'] != null)
+        setForm('family_background', p['family_background'].toString());
+      if (p['father_occupation'] != null)
+        setForm('father_occupation', p['father_occupation'].toString());
+      if (p['mother_occupation'] != null)
+        setForm('mother_occupation', p['mother_occupation'].toString());
       if (p['brothers'] != null) setForm('brothers', p['brothers'].toString());
       if (p['sisters'] != null) setForm('sisters', p['sisters'].toString());
-      if (p['relationship'] != null) setForm('relationship', p['relationship'].toString());
-      if (p['contact_hidden'] != null) setForm('contact_hidden', p['contact_hidden'].toString());
+      if (p['relationship'] != null)
+        setForm('relationship', p['relationship'].toString());
+      if (p['contact_hidden'] != null)
+        setForm('contact_hidden', p['contact_hidden'].toString());
 
       // has_children
       final hc = p['has_children'];
-      if (hc != null) setForm('has_children', hc == 1 || hc == true ? 'Has Children' : 'No Children');
+      if (hc != null)
+        setForm('has_children',
+            hc == 1 || hc == true ? 'Has Children' : 'No Children');
 
       // willing_to_relocate
       final wtr = p['willing_to_relocate'];
       if (wtr != null) {
-        setForm('willing_to_relocate', wtr == 1 ? 'Yes' : wtr == 0 ? 'No' : 'Maybe');
+        setForm(
+            'willing_to_relocate',
+            wtr == 1
+                ? 'Yes'
+                : wtr == 0
+                    ? 'No'
+                    : 'Maybe');
       }
 
       // interests
@@ -279,7 +321,8 @@ class CompleteProfileController extends GetxController {
             ints = ints.split(',').map((e) => e.trim()).toList();
           } catch (_) {}
         }
-        if (ints is List) setForm('interests', ints.map((e) => e.toString()).toList());
+        if (ints is List)
+          setForm('interests', ints.map((e) => e.toString()).toList());
       }
 
       // images
@@ -323,8 +366,13 @@ class CompleteProfileController extends GetxController {
             ? tongues.first
             : '';
     setForm('mother_tongue', defaultTongue);
-    setForm('monthly_salary',
-        salaries.length > 1 ? salaries[1] : salaries.isNotEmpty ? salaries.first : '');
+    setForm(
+        'monthly_salary',
+        salaries.length > 1
+            ? salaries[1]
+            : salaries.isNotEmpty
+                ? salaries.first
+                : '');
   }
 
   void handlePrefCountryChange(String country) {
@@ -342,8 +390,8 @@ class CompleteProfileController extends GetxController {
       final b = DateTime.parse(dob);
       final now = DateTime.now();
       int age = now.year - b.year;
-      if (now.month < b.month ||
-          (now.month == b.month && now.day < b.day)) age--;
+      if (now.month < b.month || (now.month == b.month && now.day < b.day))
+        age--;
       return age > 0 ? age : null;
     } catch (_) {
       return null;
@@ -411,35 +459,67 @@ class CompleteProfileController extends GetxController {
   List<String> validateStep(int step) {
     final missing = <String>[];
     if (step == 1) {
-      if (form['date_of_birth'] == null || form['date_of_birth'].toString().isEmpty) missing.add('Date of Birth');
-      if (form['marital_status'] == null || form['marital_status'].toString().isEmpty) missing.add('Marital Status');
+      if (form['date_of_birth'] == null ||
+          form['date_of_birth'].toString().isEmpty)
+        missing.add('Date of Birth');
+      if (form['marital_status'] == null ||
+          form['marital_status'].toString().isEmpty)
+        missing.add('Marital Status');
     }
     if (step == 2) {
-      if (form['country'] == null || form['country'].toString().isEmpty) missing.add('Country');
-      if (form['city'] == null || form['city'].toString().isEmpty) missing.add('City');
-      if (form['nationality'] == null || form['nationality'].toString().isEmpty) missing.add('Nationality');
+      if (form['country'] == null || form['country'].toString().isEmpty)
+        missing.add('Country');
+      if (form['city'] == null || form['city'].toString().isEmpty)
+        missing.add('City');
+      if (form['nationality'] == null || form['nationality'].toString().isEmpty)
+        missing.add('Nationality');
     }
     if (step == 3) {
-      if (form['religion'] == null || form['religion'].toString().isEmpty) missing.add('Religion');
-      if (form['religious_practice_level'] == null || form['religious_practice_level'].toString().isEmpty) missing.add('Practice Level');
-      if (form['father_occupation'] == null || form['father_occupation'].toString().isEmpty) missing.add("Father's Occupation");
-      if (form['brothers'] == null || form['brothers'].toString().isEmpty) missing.add('No. of Brothers');
-      if (form['sisters'] == null || form['sisters'].toString().isEmpty) missing.add('No. of Sisters');
+      if (form['religion'] == null || form['religion'].toString().isEmpty)
+        missing.add('Religion');
+      if (form['religious_practice_level'] == null ||
+          form['religious_practice_level'].toString().isEmpty)
+        missing.add('Practice Level');
+      if (form['father_occupation'] == null ||
+          form['father_occupation'].toString().isEmpty)
+        missing.add("Father's Occupation");
+      if (form['brothers'] == null || form['brothers'].toString().isEmpty)
+        missing.add('No. of Brothers');
+      if (form['sisters'] == null || form['sisters'].toString().isEmpty)
+        missing.add('No. of Sisters');
     }
     if (step == 4) {
-      if (form['height_inches'] == null || form['height_inches'].toString().isEmpty) missing.add('Height');
-      if (form['body_type'] == null || form['body_type'].toString().isEmpty) missing.add('Body Type');
+      if (form['height_inches'] == null ||
+          form['height_inches'].toString().isEmpty) missing.add('Height');
+      if (form['body_type'] == null || form['body_type'].toString().isEmpty)
+        missing.add('Body Type');
     }
     if (step == 5) {
-      if (form['education'] == null || form['education'].toString().isEmpty) missing.add('Education Level');
-      if (form['profession'] == null || form['profession'].toString().isEmpty) missing.add('Profession');
-      if (form['employment_type'] == null || form['employment_type'].toString().isEmpty) missing.add('Employment Type');
+      if (form['education'] == null || form['education'].toString().isEmpty)
+        missing.add('Education Level');
+      if (form['profession'] == null || form['profession'].toString().isEmpty)
+        missing.add('Profession');
+      if (form['employment_type'] == null ||
+          form['employment_type'].toString().isEmpty)
+        missing.add('Employment Type');
     }
     if (step == 6) {
-      if (form['bio'] == null || form['bio'].toString().isEmpty) missing.add('About Me');
-      if (form['relationship'] == null || form['relationship'].toString().isEmpty) missing.add('Relationship Intent');
+      if (form['bio'] == null || form['bio'].toString().isEmpty)
+        missing.add('About Me');
+      if (form['relationship'] == null ||
+          form['relationship'].toString().isEmpty)
+        missing.add('Relationship Intent');
     }
     return missing;
+  }
+
+  void setProfileCompleteStatus() {
+    ProfileService profileService = ProfileService();
+
+    //isProfileCompleted.value= profileService;
+    //isCnicVerified.value=;
+    //isGuardianLinked.value=;
+    //isAdminApproved.value=;
   }
 
   // ─── Submit ───────────────────────────────────────────────────────────────
@@ -479,10 +559,16 @@ class CompleteProfileController extends GetxController {
         'family_background': form['family_background'],
         'interests': interestsStr,
         'has_children': hc == 'Has Children' ? 1 : 0,
-        'willing_to_relocate': wtr == 'Yes' ? 1 : wtr == 'No' ? 0 : null,
+        'willing_to_relocate': wtr == 'Yes'
+            ? 1
+            : wtr == 'No'
+                ? 0
+                : null,
         'relationship': form['relationship'],
-        'contact_hidden': int.tryParse(form['contact_hidden']?.toString() ?? '0') ?? 0,
-        'is_guardian_required': int.tryParse(form['is_guardian_required']?.toString() ?? '1') ?? 1,
+        'contact_hidden':
+            int.tryParse(form['contact_hidden']?.toString() ?? '0') ?? 0,
+        'is_guardian_required':
+            int.tryParse(form['is_guardian_required']?.toString() ?? '1') ?? 1,
         'father_occupation': form['father_occupation'],
         'mother_occupation': form['mother_occupation'],
         'brothers': int.tryParse(form['brothers']?.toString() ?? '0') ?? 0,
@@ -512,7 +598,8 @@ class CompleteProfileController extends GetxController {
             'pref_city': prefs['pref_city'],
             'pref_religion': prefs['pref_religion'],
             'pref_sect': prefs['pref_sect'],
-            'pref_religious_practice_level': prefs['pref_religious_practice_level'],
+            'pref_religious_practice_level':
+                prefs['pref_religious_practice_level'],
             'pref_height_min_inches': prefs['pref_height_min_inches'],
             'pref_height_max_inches': prefs['pref_height_max_inches'],
             'pref_body_type': prefs['pref_body_type'],
@@ -520,19 +607,21 @@ class CompleteProfileController extends GetxController {
             'pref_employment_type': prefs['pref_employment_type'],
             'pref_monthly_salary': prefs['pref_monthly_salary'],
             'pref_has_children': prefs['pref_has_children'],
-            'pref_willing_to_relocate': prefs['pref_willing_to_relocate'] == 'Yes'
-                ? 1
-                : prefs['pref_willing_to_relocate'] == 'No'
-                    ? 0
-                    : null,
+            'pref_willing_to_relocate':
+                prefs['pref_willing_to_relocate'] == 'Yes'
+                    ? 1
+                    : prefs['pref_willing_to_relocate'] == 'No'
+                        ? 0
+                        : null,
           };
           await _profileService.updatePrefs(prefData);
         }
 
         isDone.value = true;
       } else {
-        errorMessage.value =
-            response?['error'] ?? response?['message'] ?? 'Failed to save profile';
+        errorMessage.value = response?['error'] ??
+            response?['message'] ??
+            'Failed to save profile';
       }
     } catch (e) {
       errorMessage.value = 'An error occurred: ${e.toString()}';

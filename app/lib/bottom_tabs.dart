@@ -1,13 +1,23 @@
+import 'package:app/features/auth/services/auth_service.dart';
+import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/chat/pages/chat_page.dart';
 import 'package:app/features/explore/pages/explore_page.dart';
+import 'package:app/features/guardian/pages/guardian_dashboard_page.dart';
+import 'package:app/features/guardian/pages/guardian_profile_page.dart';
+import 'package:app/features/guardian/pages/guardian_shell.dart';
+import 'package:app/features/guardian/pages/link_ward_page.dart';
 import 'package:app/features/interest/pages/interest_page.dart';
+import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:app/features/settings/pages/settings_page.dart';
+import 'package:app/features/userguardian/link_guardian_page.dart';
+import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/services/socket_service.dart';
 
 // ── Shell Controller ──────────────────────────────────────────────────────────
 class BottomTabBarController extends GetxController {
+  @override
   var currentIndex = 0.obs;
 
   void goTo(int index) => currentIndex.value = index;
@@ -16,13 +26,6 @@ class BottomTabBarController extends GetxController {
 // ── Main Shell ────────────────────────────────────────────────────────────────
 class BottomTabBar extends StatelessWidget {
   const BottomTabBar({Key? key}) : super(key: key);
-
-  static final _pages = [
-    const ExplorePage(),
-    const InterestPage(),
-    const ChatPage(),
-    const SettingsPage(),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -38,11 +41,26 @@ class BottomTabBar extends StatelessWidget {
       final interestBadge = socket?.badges.interestCount.value ?? 0;
       final chatBadge = socket?.badges.chatCount.value ?? 0;
 
+      final isGuardian = AuthService().userRole == "individual" ? false : true;
+      final _indivisualpages = [
+        const ExplorePage(),
+        const InterestPage(),
+        const ChatPage(),
+        const SettingsPage(),
+      ];
+
+      final _guardianpages = [
+        const GuardianDashboardPage(),
+        const LinkWardPage(),
+        const ChatPage(),
+        const SettingsPage(),
+      ];
+
       return Scaffold(
         // IndexedStack keeps all pages alive — no rebuild on tab switch
         body: IndexedStack(
           index: ctrl.currentIndex.value,
-          children: _pages,
+          children: isGuardian ? _guardianpages : _indivisualpages,
         ),
 
         bottomNavigationBar: Container(
@@ -60,46 +78,99 @@ class BottomTabBar extends StatelessWidget {
             top: false,
             child: SizedBox(
               height: 64,
-              child: Row(
-                children: [
-                  _NavItem(
-                    icon: Icons.explore_outlined,
-                    activeIcon: Icons.explore,
-                    label: 'Explore',
-                    isActive: ctrl.currentIndex.value == 0,
-                    onTap: () => ctrl.goTo(0),
-                  ),
-                  _NavItem(
-                    icon: Icons.favorite_outline,
-                    activeIcon: Icons.favorite,
-                    label: 'Interests',
-                    isActive: ctrl.currentIndex.value == 1,
-                    badge: interestBadge,
-                    onTap: () => ctrl.goTo(1),
-                  ),
-                  _NavItem(
-                    icon: Icons.chat_bubble_outline,
-                    activeIcon: Icons.chat_bubble,
-                    label: 'Chats',
-                    isActive: ctrl.currentIndex.value == 2,
-                    badge: chatBadge,
-                    onTap: () => ctrl.goTo(2),
-                  ),
-                  _NavItem(
-                    icon: Icons.settings_outlined,
-                    activeIcon: Icons.settings,
-                    label: 'Settings',
-                    isActive: ctrl.currentIndex.value == 3,
-                    onTap: () => ctrl.goTo(3),
-                  ),
-                ],
-              ),
+              child: isGuardian
+                  ? getGuardianItems(ctrl, interestBadge, chatBadge)
+                  : getIndividualItems(ctrl, interestBadge, chatBadge),
             ),
           ),
         ),
       );
     });
   }
+}
+
+Widget getIndividualItems(
+    BottomTabBarController ctrl, int interestBadge, int chatBadge) {
+  return Row(
+    children: [
+      _NavItem(
+        icon: Icons.explore_outlined,
+        activeIcon: Icons.explore,
+        label: 'Explore',
+        isActive: ctrl.currentIndex.value == 0,
+        onTap: () => ctrl.goTo(0),
+      ),
+      _NavItem(
+        icon: Icons.favorite_outline,
+        activeIcon: Icons.favorite,
+        label: 'Interests',
+        isActive: ctrl.currentIndex.value == 1,
+        badge: interestBadge,
+        onTap: () => ctrl.goTo(1),
+      ),
+      _NavItem(
+        icon: Icons.security_outlined,
+        activeIcon: Icons.security,
+        label: 'Guardian',
+        isActive: ctrl.currentIndex.value == 2,
+        badge: chatBadge,
+        onTap: () => ctrl.goTo(2),
+      ),
+      _NavItem(
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        label: 'Chats',
+        isActive: ctrl.currentIndex.value == 3,
+        badge: chatBadge,
+        onTap: () => ctrl.goTo(3),
+      ),
+      _NavItem(
+        icon: Icons.settings_outlined,
+        activeIcon: Icons.settings,
+        label: 'Settings',
+        isActive: ctrl.currentIndex.value == 4,
+        onTap: () => ctrl.goTo(4),
+      ),
+    ],
+  );
+}
+
+Widget getGuardianItems(
+    BottomTabBarController ctrl, int interestBadge, int chatBadge) {
+  return Row(
+    children: [
+      _NavItem(
+        icon: Icons.explore_outlined,
+        activeIcon: Icons.explore,
+        label: 'Explore',
+        isActive: ctrl.currentIndex.value == 0,
+        onTap: () => ctrl.goTo(0),
+      ),
+      _NavItem(
+        icon: Icons.favorite_outline,
+        activeIcon: Icons.favorite,
+        label: 'Interests',
+        isActive: ctrl.currentIndex.value == 1,
+        badge: interestBadge,
+        onTap: () => ctrl.goTo(1),
+      ),
+      _NavItem(
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        label: 'Chats',
+        isActive: ctrl.currentIndex.value == 2,
+        badge: chatBadge,
+        onTap: () => ctrl.goTo(2),
+      ),
+      _NavItem(
+        icon: Icons.settings_outlined,
+        activeIcon: Icons.settings,
+        label: 'Settings',
+        isActive: ctrl.currentIndex.value == 3,
+        onTap: () => ctrl.goTo(3),
+      ),
+    ],
+  );
 }
 
 // ── Nav Item ──────────────────────────────────────────────────────────────────

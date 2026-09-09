@@ -1,3 +1,4 @@
+import 'package:app/data/services/settings_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -30,11 +31,12 @@ class _ReferralPageState extends State<ReferralPage> {
     'referred_users': [],
   };
   Map<String, dynamic>? _referrer;
-
+  SettingsService settingsService = SettingsService();
   // Settings-based values (fallback constants)
-  int get _commissionRate => 10;
-  int get _referrerBonus => 200;
-  int get _refereeBonus => 100;
+  double get _commissionRate =>
+      settingsService.referralCommissionPercentage ?? 10.0;
+  int get _referrerBonus => settingsService.referralCreditsReferrer ?? 200;
+  int get _refereeBonus => settingsService.referralCreditsReferee ?? 100;
 
   @override
   void initState() {
@@ -115,6 +117,9 @@ class _ReferralPageState extends State<ReferralPage> {
 
   @override
   Widget build(BuildContext context) {
+    setState(() {
+      _tab = 'overview';
+    });
     return Scaffold(
       backgroundColor: Color(0xFFF4F7F5),
       body: Column(
@@ -123,9 +128,6 @@ class _ReferralPageState extends State<ReferralPage> {
 
           // Tabs
           Container(
-            color: Colors.white,
-            decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: _border))),
             child: Row(
               children: [
                 _TabBtn(
@@ -159,7 +161,7 @@ class _ReferralPageState extends State<ReferralPage> {
                             copied: _copied,
                             onCopy: _copy,
                             onShare: _share,
-                            commissionRate: _commissionRate,
+                            commissionRate: _commissionRate.toInt(),
                             referrerBonus: _referrerBonus,
                             refereeBonus: _refereeBonus,
                             fmtDate: _fmtDate,

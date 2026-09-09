@@ -498,6 +498,117 @@ module.exports = (sequelize, DataTypes) => {
             comment: 'Enable events/meetups feature',
         },
 
+        // ═════════════════════════════════════════════════════════════════
+        // MAIL SETUP
+        // ═════════════════════════════════════════════════════════════════
+        mail_host: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'smtp.gmail.com',
+        },
+        mail_port: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: '587',
+        },
+        mail_user: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'waqarcoding@gmail.com',
+        },
+        mail_pass: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'whhf wdlg mizx admt',
+        },
+        mail_secure: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'false/true',
+        },
+        mail_from: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'Marriage Sunna Overseas <marriagesunnaoverseas@gmail.com>',
+        },
+        // ═════════════════════════════════════════════════════════════════
+        // STRIPE PROCESSOR CONFIG
+        // ═════════════════════════════════════════════════════════════════
+        stripe_secret_key: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        stripe_webhook_secret: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        stripe_webhook_secret_development: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        stripe_weekly_price_id: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        stripe_monthly_price_id: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        stripe_yearly_price_id: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        // ═════════════════════════════════════════════════════════════════
+        // EASYPAISA PROCESSOR CONFIG
+        // ═════════════════════════════════════════════════════════════════
+        easypaisa_store_id: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        easypaisa_hash_key: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        easypaisa_api_url: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        // ═════════════════════════════════════════════════════════════════
+        // JAZZCASH PROCESSOR CONFIG
+        // ═════════════════════════════════════════════════════════════════
+        jazzcash_merchant_id: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        jazzcash_password: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+        jazzcash_integrity_salt: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+
+        jazzcash_api_url: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+
+        },
+
+
+
 
     }, {
         sequelize,

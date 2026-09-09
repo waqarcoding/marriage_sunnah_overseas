@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
     Settings, Save, Lock, AlertCircle, Globe, CreditCard,
     Users, Gift, Shield, DollarSign, Zap, FileText, ChevronRight, UserCheck, FileCheck, CheckCircle,
+    Mail,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminService from "./services/AdminService";
@@ -22,12 +23,15 @@ export default function AdminSettingsPage() {
         { id: 'credits', label: 'Credits & Costs', icon: DollarSign },
         { id: 'referrals', label: 'Referral System', icon: Gift },
         { id: 'limits', label: 'Verification', icon: Users },
+        { id: 'mail', label: 'Mail Setup', icon: Mail },
+        { id: 'payment', label: 'Payment Processor', icon: DollarSign },
     ];
 
     useEffect(() => {
         loadSettings();
     }, []);
 
+    // @ts-ignore
     const loadSettings = async () => {
         try {
             setLoading(true);
@@ -42,6 +46,7 @@ export default function AdminSettingsPage() {
         }
     };
 
+    // @ts-ignore
     const handleSave = async () => {
         if (!isSuperAdmin) {
             toast.error("Only super admin can update settings");
@@ -140,6 +145,9 @@ export default function AdminSettingsPage() {
                 {activeTab === 'credits' && <CreditsSettings settings={settings} updateField={updateField} isSuperAdmin={isSuperAdmin} />}
                 {activeTab === 'referrals' && <ReferralSettings settings={settings} updateField={updateField} isSuperAdmin={isSuperAdmin} />}
                 {activeTab === 'limits' && <LimitsSettings settings={settings} updateField={updateField} isSuperAdmin={isSuperAdmin} />}
+                {activeTab === 'mail' && <MailSettings settings={settings} updateField={updateField} isSuperAdmin={isSuperAdmin} />}
+                {activeTab === 'payment' && <PaymentSettings settings={settings} updateField={updateField} isSuperAdmin={isSuperAdmin} />}
+
                 {activeTab === 'features' && <FeaturesSettings settings={settings} updateField={updateField} isSuperAdmin={isSuperAdmin} />}
 
                 {/* Bottom Save Button */}
@@ -320,21 +328,7 @@ function PlansSettings({ settings, updateField, isSuperAdmin }) {
                 </div>
             </Section>
 
-            <Section title="Payment Processors" icon={DollarSign}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Toggle label="Stripe Enabled" field="stripe_enabled" value={settings?.stripe_enabled} onChange={updateField} disabled={!isSuperAdmin} />
-                    <Toggle label="JazzCash Enabled" field="jazzcash_enabled" value={settings?.jazzcash_enabled} onChange={updateField} disabled={!isSuperAdmin} />
-                    <Toggle label="EasyPaisa Enabled" field="easypaisa_enabled" value={settings?.easypaisa_enabled} onChange={updateField} disabled={!isSuperAdmin} />
-                    <Toggle label="PayPal Enabled" field="paypal_enabled" value={settings?.paypal_enabled} onChange={updateField} disabled={!isSuperAdmin} />
-                </div>
-            </Section>
 
-            <Section title="Payment Settings" icon={DollarSign}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Currency Code" field="currency_code" value={settings?.currency_code} onChange={updateField} disabled={!isSuperAdmin} placeholder="USD" min={undefined} max={undefined} />
-                    <Field label="Refund Policy (days)" field="refund_policy_days" value={settings?.refund_policy_days} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
-                </div>
-            </Section>
         </div>
     );
 }
@@ -381,6 +375,87 @@ function ReferralSettings({ settings, updateField, isSuperAdmin }) {
         </div>
     );
 }
+function MailSettings({ settings, updateField, isSuperAdmin }) {
+
+    return (
+        <div className="space-y-6">
+            <Section title="Business Email Configuration" icon={Mail}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <Field label="Mail Host" field="mail_host" value={settings?.mail_host} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="Mail Port" field="mail_port" value={settings?.mail_port} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="Mail User" field="mail_user" value={settings?.mail_user} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                    <Field label="Mail Pass" field="mail_pass" value={settings?.mail_pass} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                    <Field label="Mail Secure" field="mail_secure" value={settings?.mail_secure} onChange={updateField} disabled={!isSuperAdmin} type="bool" min={0} max={100} placeholder={undefined} />
+                    <Field label="Mail From" field="mail_from" value={settings?.mail_from} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+
+                </div>
+            </Section>
+        </div>
+    );
+
+}
+function PaymentSettings({ settings, updateField, isSuperAdmin }) {
+
+    return (
+        <div className="space-y-6">
+            <Section title="Payment Processors" icon={DollarSign}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Toggle label="Stripe Enabled" field="stripe_enabled" value={settings?.stripe_enabled} onChange={updateField} disabled={!isSuperAdmin} />
+                    <Toggle label="JazzCash Enabled" field="jazzcash_enabled" value={settings?.jazzcash_enabled} onChange={updateField} disabled={!isSuperAdmin} />
+                    <Toggle label="EasyPaisa Enabled" field="easypaisa_enabled" value={settings?.easypaisa_enabled} onChange={updateField} disabled={!isSuperAdmin} />
+
+                    {/* Paypal If Required
+                     
+                       <Toggle label="PayPal Enabled" field="paypal_enabled" value={settings?.paypal_enabled} onChange={updateField} disabled={!isSuperAdmin} />
+
+                     */}
+
+                </div>
+            </Section>
+
+            <Section title="Stripe Configuration" icon={Mail}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Stripe Secret Key" field="stripe_secret_key" value={settings?.stripe_secret_key} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="Stripe Webhook Secret" field="stripe_webhook_secret" value={settings?.stripe_webhook_secret} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="Stripe Webhook Secret Dev" field="stripe_webhook_secret_development" value={settings?.stripe_webhook_secret_development} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                    <Field label="Stripe Weekly Price Id" field="stripe_weekly_price_id" value={settings?.stripe_weekly_price_id} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                    <Field label="Stripe Monthly Price Id" field="stripe_monthly_price_id" value={settings?.stripe_monthly_price_id} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                    <Field label="Stripe Yearly Price Id" field="stripe_yearly_price_id" value={settings?.stripe_yearly_price_id} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+
+                </div>
+            </Section>
+
+            <Section title="Easypaisa Configuration" icon={Mail}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Easypaisa Store Id" field="easypaisa_store_id" value={settings?.easypaisa_store_id} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="Easypaisa HashKey" field="easypaisa_hash_key" value={settings?.easypaisa_hash_key} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="Easypaisa API URL" field="easypaisa_api_url" value={settings?.easypaisa_api_url} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                </div>
+            </Section>
+
+            <Section title="Jazzcash Configuration" icon={Mail}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="JazzCash Merchant Id" field="jazzcash_merchant_id" value={settings?.jazzcash_merchant_id} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="JazzCash Password" field="jazzcash_password" value={settings?.jazzcash_password} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={undefined} placeholder={undefined} />
+                    <Field label="JazzCash Integrity Salt" field="jazzcash_integrity_salt" value={settings?.jazzcash_integrity_salt} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+                    <Field label="JazzCash API URL" field="jazzcash_api_url" value={settings?.jazzcash_api_url} onChange={updateField} disabled={!isSuperAdmin} type="text" min={0} max={100} placeholder={undefined} />
+
+                </div>
+            </Section>
+
+
+            <Section title="Payment Settings" icon={DollarSign}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Currency Code" field="currency_code" value={settings?.currency_code} onChange={updateField} disabled={!isSuperAdmin} placeholder="USD" min={undefined} max={undefined} />
+                    <Field label="Refund Policy (days)" field="refund_policy_days" value={settings?.refund_policy_days} onChange={updateField} disabled={!isSuperAdmin} type="number" min={0} max={undefined} placeholder={undefined} />
+                </div>
+            </Section>
+        </div>
+    );
+
+}
+
 
 function LimitsSettings({ settings, updateField, isSuperAdmin }) {
     // ✅ Define function INSIDE component

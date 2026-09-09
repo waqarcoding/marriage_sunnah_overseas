@@ -22,6 +22,8 @@ router.post(
   ),
   authController.signup
 );
+
+router.post('/googlelogin', authController.googleLogin);
 router.post(
   '/login',
   validateBody(

@@ -75,7 +75,8 @@ db.Sequelize = Sequelize;
 db.authenticateDatabase = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Database connected');
+    console.log('✅ Database connected\nDatabase Port:' + config.port);
+
   } catch (error) {
     console.error('❌ Database connection failed:', error);
     throw error;

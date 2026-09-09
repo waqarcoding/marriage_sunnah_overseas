@@ -191,7 +191,7 @@ export default function UserDetailPage() {
                         </button>
 
                         {/* Edit/Save Buttons - Only for Individuals */}
-                        {isIndividual && (
+                        {(
                             editMode ? (
                                 <>
                                     <button
@@ -378,6 +378,52 @@ export default function UserDetailPage() {
                                 fullWidth
                             />
                         </div>
+
+
+                    </div>
+                )}
+
+                {(
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <User size={20} />
+                            Credential Data
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <ProfileField
+                                label="Name"
+                                value={user.name}
+                                editMode={editMode}
+                                onChange={(v) => setEditedProfile({ ...editedProfile, email: v })}
+
+
+                            />
+                            <ProfileField
+                                label="Email"
+                                value={user.email}
+                                editMode={editMode}
+                                onChange={(v) => setEditedProfile({ ...editedProfile, email: v })}
+
+
+                            />
+                            <ProfileField
+                                label="Password"
+                                value={user.password_hash}
+                                editMode={editMode}
+                                onChange={(v) => setEditedProfile({ ...editedProfile, password: v })}
+
+                            />
+                            <ProfileField
+                                label="Phone"
+                                value={profile.phone}
+                                editMode={editMode}
+                                onChange={(v) => setEditedProfile({ ...editedProfile, password: v })}
+
+                            />
+                        </div>
+
+
                     </div>
                 )}
 

@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "1071889148896",
-    "project_id": "marriagesunnaoverseas-12de6",
-    "storage_bucket": "marriagesunnaoverseas-12de6.firebasestorage.app"
+    "project_number": "1017969673235",
+    "project_id": "marriagesunnaoverseas-8736e",
+    "storage_bucket": "marriagesunnaoverseas-8736e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1071889148896:android:600b55615124f5cb73d985",
+        "mobilesdk_app_id": "1:1017969673235:android:1483a93593dc284f95abe6",
         "android_client_info": {
           "package_name": "com.marriagesunnaoverseas.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1017969673235-9sq8l9emvlchs00q89ofd1t5ifa9vemq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.marriagesunnaoverseas.app",
+            "certificate_hash": "aa829526c12df40b0025d25541ff15f7d85f4c47"
+          }
+        },
+        {
+          "client_id": "1017969673235-d4r3u8hikquj19ojia8j7i4mp3186e63.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDmShlAvbf81yS3F1Q94gXSDknqbFVFxb4"
+          "current_key": "AIzaSyAqC_Fcz14JtGfgN_r9x8PHLyZH9KoVM1A"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1017969673235-d4r3u8hikquj19ojia8j7i4mp3186e63.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

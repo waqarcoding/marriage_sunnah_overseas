@@ -9,34 +9,34 @@ class UserProfileController extends GetxController {
   final _picker = ImagePicker();
 
   // ── State ─────────────────────────────────────────────────────────────────
-  var isLoading        = true.obs;
-  var isSaving         = false.obs;
-  var isSavingAbout    = false.obs;
-  var uploadingIdx     = Rx<int?>(null);
+  var isLoading = true.obs;
+  var isSaving = false.obs;
+  var isSavingAbout = false.obs;
+  var uploadingIdx = Rx<int?>(null);
   var uploadingVideoIdx = Rx<int?>(null);
-  var showSuccess      = false.obs;
+  var showSuccess = false.obs;
 
   // Profile data
-  var profile   = Rx<Map<String, dynamic>?>(null);
-  var counts    = <String, int>{}.obs;
-  var photos    = <String>[].obs;
-  var videos    = <String>[].obs;
+  var profile = Rx<Map<String, dynamic>?>(null);
+  var counts = <String, int>{}.obs;
+  var photos = <String>[].obs;
+  var videos = <String>[].obs;
   var interests = <String>[].obs;
   var isPremium = false.obs;
 
   // Guardian
-  var guardian    = Rx<Map<String, dynamic>?>(null);
+  var guardian = Rx<Map<String, dynamic>?>(null);
   var hasGuardian = false.obs;
 
   // Form
-  var formName       = ''.obs;
-  var formAge        = ''.obs;
+  var formName = ''.obs;
+  var formAge = ''.obs;
   var formProfession = ''.obs;
-  var formEducation  = ''.obs;
-  var formBio        = ''.obs;
+  var formEducation = ''.obs;
+  var formBio = ''.obs;
 
   String get location {
-    final city    = profile.value?['profile']?['city']    ?? '';
+    final city = profile.value?['profile']?['city'] ?? '';
     final country = profile.value?['profile']?['country'] ?? '';
     return [city, country].where((s) => s.isNotEmpty).join(', ');
   }
@@ -57,27 +57,26 @@ class UserProfileController extends GetxController {
 
       counts.value = {
         'likes_received': _toInt(res['counts']?['likes_received']),
-        'matches':        _toInt(res['counts']?['matches']),
-        'likes_sent':     _toInt(res['counts']?['likes_sent']),
+        'matches': _toInt(res['counts']?['matches']),
+        'likes_sent': _toInt(res['counts']?['likes_sent']),
       };
 
       final p = res['profile'] ?? res;
       profile.value = res;
 
-      photos.value  = _parseJsonList(p['images']);
-      videos.value  = _parseJsonList(p['videos']);
+      photos.value = _parseJsonList(p['images']);
+      videos.value = _parseJsonList(p['videos']);
       interests.value = _parseJsonList(p['interests']);
 
       // Check premium from storage
       final stored = GetStorage().read('user');
       isPremium.value = stored?['is_pro'] == true || stored?['is_pro'] == 1;
 
-      formName.value       = p['name']?.toString()       ?? '';
-      formAge.value        = p['age']?.toString()        ?? '';
+      formName.value = p['name']?.toString() ?? '';
+      formAge.value = p['age']?.toString() ?? '';
       formProfession.value = p['profession']?.toString() ?? '';
-      formEducation.value  = p['education']?.toString()  ?? '';
-      formBio.value        = p['bio']?.toString()        ?? '';
-
+      formEducation.value = p['education']?.toString() ?? '';
+      formBio.value = p['bio']?.toString() ?? '';
     } catch (e) {
       print('fetchProfile error: $e');
       Get.snackbar('Error', 'Failed to load profile',
@@ -93,7 +92,7 @@ class UserProfileController extends GetxController {
       final res = await _service.getMyGuardian();
       final data = res?['data'];
       if (data != null && data['guardianUser'] != null) {
-        guardian.value  = data;
+        guardian.value = data;
         hasGuardian.value = true;
       } else {
         hasGuardian.value = false;
@@ -108,7 +107,7 @@ class UserProfileController extends GetxController {
     isSavingAbout.value = true;
     try {
       await _service.updateAboutInterest({
-        'bio':       formBio.value,
+        'bio': formBio.value,
         'interests': _jsonList(interests),
       });
       Get.snackbar('Saved', 'Profile updated!',
@@ -123,8 +122,8 @@ class UserProfileController extends GetxController {
 
   // ── Upload photo ──────────────────────────────────────────────────────────
   Future<void> pickAndUploadPhoto(int idx) async {
-    final picked = await _picker.pickImage(
-        source: ImageSource.gallery, imageQuality: 90);
+    final picked =
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
     if (picked == null) return;
 
     uploadingIdx.value = idx;
@@ -187,8 +186,7 @@ class UserProfileController extends GetxController {
       Get.toNamed('/subscription');
       return;
     }
-    final picked =
-        await _picker.pickVideo(source: ImageSource.gallery);
+    final picked = await _picker.pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
 
     uploadingVideoIdx.value = idx;
@@ -229,7 +227,7 @@ class UserProfileController extends GetxController {
   Future<void> removeGuardian() async {
     try {
       await _service.removeGuardian();
-      guardian.value    = null;
+      guardian.value = null;
       hasGuardian.value = false;
       Get.snackbar('Done', 'Guardian removed',
           snackPosition: SnackPosition.BOTTOM);
@@ -243,14 +241,22 @@ class UserProfileController extends GetxController {
   // ── Helpers ───────────────────────────────────────────────────────────────
   List<String> _parseJsonList(dynamic val) {
     if (val == null) return [];
-    if (val is List) return val.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+    if (val is List)
+      return val.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
     if (val is String) {
       try {
-        final parsed = val.replaceAll('[', '').replaceAll(']', '')
-            .replaceAll('"', '').split(',').map((s) => s.trim())
-            .where((s) => s.isNotEmpty).toList();
+        final parsed = val
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll('"', '')
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
         return parsed;
-      } catch (_) { return []; }
+      } catch (_) {
+        return [];
+      }
     }
     return [];
   }

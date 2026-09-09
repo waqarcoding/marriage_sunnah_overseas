@@ -6,7 +6,6 @@ import http from "http";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
-import { apiLoggerMiddleware } from './middlewares/api-logger.middleware.js';
 
 dotenv.config();
 
@@ -88,9 +87,6 @@ app.post('/subscription/webhook',
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-/* ---------------- API LOGGER (After bodyParser!) ---------------- */
-//app.use(apiLoggerMiddleware);
-//console.log('📝 API Logger enabled - responses will be saved to api-docs.json');
 
 /* ---------------- STATIC UPLOADS ---------------- */
 app.use("/uploads", express.static("uploads"));
@@ -205,6 +201,7 @@ if (shouldServeClient) {
   }
 } else {
   console.log('🚫 API-only mode: Not serving client files');
+
 }
 
 /* ---------------- 404 HANDLER (Must be AFTER all routes) ---------------- */
@@ -260,7 +257,7 @@ const startServer = async () => {
     // @ts-ignore
     server.listen(PORT, "0.0.0.0", () => {
       const isProduction = process.env.NODE_ENV === 'production';
-      const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+      const baseUrl = isProduction ? process.env.BASE_URL : `http://localhost:${PORT}`;
 
 
       console.log('='.repeat(70) + '\n');
@@ -281,7 +278,7 @@ const startServer = async () => {
       console.log('='.repeat(70));
       console.log(`📡 Webhook: ${baseUrl}/api/subscription/webhook`);
       console.log(`🏥 Health: ${baseUrl}/api/health`);
-      console.log(`🔌 Socket.IO: ${baseUrl}/api/socket.io/?EIO=4&transport=polling`);
+      console.log(`🔌 Socket.IO: ${baseUrl}/socket.io/?EIO=4&transport=polling`);
       console.log(`🌐 Client: ${process.env.CLIENT_URL || 'Not set'}`);
       console.log(`📧 Email: ${process.env.MAIL_USER ? 'Configured ✓' : 'Not configured ✗'}`);
       console.log(`💬 WebSocket: ${process.env.SOCKET_ENABLED !== 'false' ? 'Enabled ✓' : 'Disabled ✗'}`);

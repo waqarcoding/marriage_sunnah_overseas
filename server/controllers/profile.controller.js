@@ -26,6 +26,38 @@ export const createProfile = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+export const updateRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    console.log("updating role...");
+
+    if (!role || !['guardian', 'individual'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role.' });
+    }
+
+    // req.user is the raw JWT payload — fetch the real Sequelize instance here
+    const userInstance = await User.findByPk(req.user.id);
+
+    if (!userInstance) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    await userInstance.update({ role });
+
+    const updatedUser = await User.findByPk(userInstance.id, {
+      attributes: { exclude: ['password_hash'] },
+    });
+
+    return res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error('❌ updateRole error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err || 'Server error',
+    });
+  }
+};
+
 
 // ─── Update Preferences ───────────────────────────────────────────────────────
 export const updatePrefs = async (req, res) => {

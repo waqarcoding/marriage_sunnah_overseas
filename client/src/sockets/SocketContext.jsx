@@ -92,9 +92,9 @@ function createSocket(userId, setters) {
   });
 
   s.on('connect_error', (err) => {
-    console.error('❌ Socket connection error:', err.message);
-    console.error('   URL attempted:', SOCKET_URL);
-    console.error('   Path attempted: /socket.io/');
+    console.log('❌ Socket connection error:', err.message);
+    console.log('   URL attempted:', SOCKET_URL);
+    console.log('   Path attempted: /socket.io/');
   });
 
   s.on('reconnect', (attemptNumber) => {
@@ -102,11 +102,11 @@ function createSocket(userId, setters) {
   });
 
   s.on('reconnect_error', (err) => {
-    console.error('❌ Socket reconnection error:', err.message);
+    console.log('❌ Socket reconnection error:', err.message);
   });
 
   s.on('reconnect_failed', () => {
-    console.error('❌ Socket reconnection failed after max attempts');
+    console.log('❌ Socket reconnection failed after max attempts');
   });
 
   // ─────────────────────────────────────────

@@ -4,10 +4,12 @@ import { useNavigate } from "react-router-dom";
 import {
     Search, Filter, UserCheck, UserX, Shield, ChevronLeft, ChevronRight,
     Eye, X, Crown, Sparkles, AlertTriangle, Coins, Trash2,
+    MessageCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import toast from "react-hot-toast";
 import AdminService from "./services/AdminService";
+import { ChatBubble, Message } from "@mui/icons-material";
 
 const PRIMARY = "#1B4D3E";
 
@@ -371,10 +373,14 @@ export default function UsersPage() {
                                                     </td>
                                                     <td className="px-5 py-3 text-right">
                                                         <div className="flex items-center justify-end gap-1">
-                                                            <button onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                            <button onClick={() => navigate(`/admin/chats?receiver_id=${user.id}`, {
+                                                                state: { user },
+                                                            })
+
+                                                            }
                                                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-[#1B4D3E] hover:bg-[#1B4D3E] hover:text-white transition-colors"
                                                                 title="View Details">
-                                                                <Eye size={14} />
+                                                                <MessageCircle size={14} />
                                                             </button>
                                                             {!user.is_verified && (
                                                                 <button onClick={() => handleVerify(user.id)}
@@ -435,9 +441,15 @@ export default function UsersPage() {
                                                 </span>
                                             </div>
                                             <div className="flex justify-end gap-1 pt-3 border-t border-gray-100 flex-wrap">
-                                                <button onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                <button onClick={() =>
+
+                                                    navigate(`/admin/chats?receiver_id=${user.id}`, {
+                                                        state: { user },
+                                                    })
+
+                                                }
                                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#1B4D3E] bg-[#1B4D3E]/10">
-                                                    <Eye size={11} /> View
+                                                    <Message size={11} /> Message
                                                 </button>
                                                 {!user.is_verified && (
                                                     <button onClick={() => handleVerify(user.id)}
@@ -589,6 +601,6 @@ export default function UsersPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

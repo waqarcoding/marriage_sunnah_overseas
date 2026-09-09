@@ -317,8 +317,8 @@ class _InterestGrid extends StatelessWidget {
           images: images,
           activeTab: activeTab,
           onOpenProfile: () => Get.to(
-              () => ProfileDetailPage(profile: {...profile, 'images': images}),
-              transition: Transition.rightToLeft),
+            () => ProfileDetailPage(profile: {...profile, 'images': images}),
+          ),
           onStartChat: () {
             final otherId = activeTab == 'Sent'
                 ? (item['toProfile']?['individual_id']?.toString())
@@ -336,7 +336,6 @@ class _InterestGrid extends StatelessWidget {
                     'avatar': images.isNotEmpty ? images.first : null,
                   },
                 ),
-                transition: Transition.rightToLeft,
               );
             }
           },

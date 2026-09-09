@@ -1,3 +1,4 @@
+import 'package:app/data/models/profile_model.dart';
 import 'package:get/get.dart';
 import '../../../data/providers/api_client.dart';
 import '../../../data/models/options_model.dart';
