@@ -2,7 +2,7 @@
 FROM debian:bullseye-slim AS build
 
 # Install dependencies needed for Flutter
-RUN apt-get update && apt-get install -y \
+RUN apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y \
     curl \
     git \
     unzip \
