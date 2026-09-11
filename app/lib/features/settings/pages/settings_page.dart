@@ -22,7 +22,12 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     Get.put(UserSettingsService(), permanent: true);
     Get.put(SubscriptionController());
-    return _SettingsView();
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: _SettingsView(),
+      ),
+    );
   }
 }
 
@@ -30,326 +35,317 @@ class _SettingsView extends GetView<SubscriptionController> {
   @override
   Widget build(BuildContext context) {
     SettingsService settingsService = SettingsService();
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Obx(() {
-        if (controller.isLoading.value) return _LoadingView();
+    return Obx(() {
+      if (controller.isLoading.value) return _LoadingView();
 
-        final userData = controller.userData;
-        final name = userData?['name']?.toString() ?? 'Your Profile';
-        final email = userData?['email']?.toString() ?? '';
-        final avatarUrl = userData?['avatar_url']?.toString();
-        final isPro = controller.isPro.value;
-        final isGuardian = controller.isGuardian;
+      final userData = controller.userData;
+      final name = userData?['name']?.toString() ?? 'Your Profile';
+      final email = userData?['email']?.toString() ?? '';
+      final avatarUrl = userData?['avatar_url']?.toString();
+      final isPro = controller.isPro.value;
+      final isGuardian = controller.isGuardian;
 
-        return Column(
-          children: [
-            // Page header
-            IslamicPageHeader(
-              title: 'Settings',
-              subtitle: 'Manage your journey with intention',
-              icon:
-                  Icon(Icons.settings_outlined, color: Colors.white, size: 18),
-            ),
-            Divider(height: 1, color: Color(0xFF1B4D3E).withOpacity(0.06)),
+      return SafeArea(
+          child: Column(
+        children: [
+          // Page header
+          IslamicPageHeader(
+            title: 'Settings',
+            subtitle: 'Manage your journey with intention',
+            icon: Icon(Icons.settings_outlined, color: Colors.white, size: 18),
+          ),
+          Divider(height: 1, color: Color(0xFF1B4D3E).withOpacity(0.06)),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(top: 16, bottom: 48),
-                child: Column(
-                  children: [
-                    // ── Pro upgrade banner (non-pro individuals only) ──────
-                    if (!isPro && !isGuardian)
-                      GestureDetector(
-                        onTap: () => Get.to(
-                          () => SubscriptionDetailPage(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(top: 16, bottom: 48),
+              child: Column(
+                children: [
+                  // ── Pro upgrade banner (non-pro individuals only) ──────
+                  if (!isPro && !isGuardian)
+                    GestureDetector(
+                      onTap: () => Get.to(
+                        () => SubscriptionDetailPage(),
+                      ),
+                      child: Container(
+                        margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF1B4D3E),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Color(0xFF1B4D3E).withOpacity(0.25),
+                                blurRadius: 20,
+                                offset: Offset(0, 4))
+                          ],
                         ),
-                        child: Container(
-                          margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF1B4D3E),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Color(0xFF1B4D3E).withOpacity(0.25),
-                                  blurRadius: 20,
-                                  offset: Offset(0, 4))
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(14)),
-                                child: Icon(Icons.workspace_premium,
-                                    color: Color(0xFFFCD34D), size: 24),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(14)),
+                              child: Icon(Icons.workspace_premium,
+                                  color: Color(0xFFFCD34D), size: 24),
+                            ),
+                            SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Upgrade to Premium',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white)),
+                                  SizedBox(height: 2),
+                                  Text(
+                                      'Unlock last seen, priority matching & more',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color:
+                                              Colors.white.withOpacity(0.7))),
+                                ],
                               ),
-                              SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Upgrade to Premium',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white)),
-                                    SizedBox(height: 2),
-                                    Text(
-                                        'Unlock last seen, priority matching & more',
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            color:
-                                                Colors.white.withOpacity(0.7))),
-                                  ],
-                                ),
-                              ),
-                              Icon(Icons.chevron_right,
-                                  color: Colors.white.withOpacity(0.6),
-                                  size: 20),
-                            ],
+                            ),
+                            Icon(Icons.chevron_right,
+                                color: Colors.white.withOpacity(0.6), size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // ── Account section ───────────────────────────────────
+                  SettingsSectionCard(
+                    title: 'Account',
+                    children: [
+                      // Profile row
+                      _ProfileRow(
+                        name: name,
+                        email: email,
+                        avatarUrl: avatarUrl,
+                        isPro: isPro,
+                        onTap: () {
+                          // Navigate to profile page
+                          Get.to(
+                            () => !isGuardian
+                                ? MyProfilePage()
+                                : GuardianProfilePage(),
+                          );
+                        },
+                      ),
+
+                      // Meetings
+                      NavRow(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'Meetings',
+                        sublabel: 'View and manage your meetings',
+                        onTap: () => Get.to(() => MyMeetingsPage()),
+                      ),
+
+                      // Guardian: My Ward
+                      if (isGuardian)
+                        NavRow(
+                          icon: Icons.person_outline,
+                          label: 'My Ward',
+                          sublabel: "Manage your ward's account",
+                          onTap: () {},
+                        ),
+
+                      // Individual: Subscription
+                      if (!isGuardian)
+                        NavRow(
+                          icon: Icons.workspace_premium_outlined,
+                          label: 'Subscription',
+                          sublabel: 'Manage your subscription details',
+                          onTap: () => Get.to(
+                            () => SubscriptionDetailPage(),
                           ),
+                        ),
+
+                      // Verification
+                      NavRow(
+                        icon: Icons.verified_outlined,
+                        label:
+                            isGuardian ? 'Verification' : 'Get Verified Badge',
+                        sublabel: 'Apply for account verification',
+                        onTap: () => Get.to(
+                          () => VerificationPage(),
                         ),
                       ),
 
-                    // ── Account section ───────────────────────────────────
-                    SettingsSectionCard(
-                      title: 'Account',
-                      children: [
-                        // Profile row
-                        _ProfileRow(
-                          name: name,
-                          email: email,
-                          avatarUrl: avatarUrl,
-                          isPro: isPro,
-                          onTap: () {
-                            // Navigate to profile page
-                            Get.to(
-                              () => !isGuardian
-                                  ? MyProfilePage()
-                                  : GuardianProfilePage(),
-                            );
-                          },
-                        ),
-
-                        // Meetings
+                      // Individual: Referral
+                      if (!isGuardian)
                         NavRow(
-                          icon: Icons.calendar_today_outlined,
-                          label: 'Meetings',
-                          sublabel: 'View and manage your meetings',
-                          onTap: () => Get.to(() => MyMeetingsPage()),
-                        ),
-
-                        // Guardian: My Ward
-                        if (isGuardian)
-                          NavRow(
-                            icon: Icons.person_outline,
-                            label: 'My Ward',
-                            sublabel: "Manage your ward's account",
-                            onTap: () {},
-                          ),
-
-                        // Individual: Subscription
-                        if (!isGuardian)
-                          NavRow(
-                            icon: Icons.workspace_premium_outlined,
-                            label: 'Subscription',
-                            sublabel: 'Manage your subscription details',
-                            onTap: () => Get.to(
-                              () => SubscriptionDetailPage(),
-                            ),
-                          ),
-
-                        // Verification
-                        NavRow(
-                          icon: Icons.verified_outlined,
-                          label: isGuardian
-                              ? 'Verification'
-                              : 'Get Verified Badge',
-                          sublabel: 'Apply for account verification',
+                          icon: Icons.people_outline,
+                          label: 'Referral Program',
+                          sublabel: 'Invite friends & earn rewards',
                           onTap: () => Get.to(
-                            () => VerificationPage(),
+                            () => ReferralPage(),
                           ),
                         ),
 
-                        // Individual: Referral
-                        if (!isGuardian)
-                          NavRow(
-                            icon: Icons.people_outline,
-                            label: 'Referral Program',
-                            sublabel: 'Invite friends & earn rewards',
-                            onTap: () => Get.to(
-                              () => ReferralPage(),
-                            ),
-                          ),
-
-                        // Change Password
-                        NavRow(
-                          icon: Icons.lock_outline,
-                          label: 'Change Password',
-                          sublabel: 'Update your account password',
-                          onTap: () => Get.to(
-                            () => ChangePasswordPage(),
-                          ),
-                          isLast: true,
+                      // Change Password
+                      NavRow(
+                        icon: Icons.lock_outline,
+                        label: 'Change Password',
+                        sublabel: 'Update your account password',
+                        onTap: () => Get.to(
+                          () => ChangePasswordPage(),
                         ),
-                      ],
-                    ),
+                        isLast: true,
+                      ),
+                    ],
+                  ),
 
-                    // ── Privacy (individuals only) ────────────────────────
-                    if (!isGuardian)
-                      Obx(() => SettingsSectionCard(
-                            title: 'Privacy',
-                            children: [
-                              ToggleRow(
-                                icon: Icons.access_time,
-                                iconBg: isPro
-                                    ? Color(0xFFF0FDF4)
-                                    : Color(0xFFF5F5F5),
-                                iconColor: isPro
-                                    ? Color(0xFF16A34A)
-                                    : Color(0xFF9CA3AF),
-                                label: 'Show last seen',
-                                sublabel: isPro
-                                    ? 'Let others see when you were last active'
-                                    : 'Upgrade to Pro to control your visibility',
-                                value: controller.settings['is_show_last_seen']
-                                        as bool? ??
-                                    true,
-                                onChange: isPro
-                                    ? (v) => controller.handleToggle(
-                                        'is_show_last_seen', v)
-                                    : (_) => Get.to(
-                                          () => SubscriptionDetailPage(),
-                                        ),
-                                disabled: !isPro,
-                              ),
-                              ToggleRow(
-                                icon: Icons.hide_image_outlined,
-                                iconBg: isPro
-                                    ? Color(0xFFFAF5FF)
-                                    : Color(0xFFF5F5F5),
-                                iconColor: isPro
-                                    ? Color(0xFF7C3AED)
-                                    : Color(0xFF9CA3AF),
-                                label: 'Blur profile photos',
-                                sublabel: isPro
-                                    ? 'Others will see your photos as blurred'
-                                    : 'Upgrade to Pro to restrict photo access',
-                                value: controller.settings['is_blurred_images']
-                                        as bool? ??
-                                    false,
-                                onChange: isPro
-                                    ? (v) => controller.handleToggle(
-                                        'is_blurred_images', v)
-                                    : (_) => Get.to(
-                                          () => SubscriptionDetailPage(),
-                                        ),
-                                disabled: !isPro,
-                                isLast: true,
-                              ),
-                            ],
-                          )),
-
-                    // ── Notifications ─────────────────────────────────────
+                  // ── Privacy (individuals only) ────────────────────────
+                  if (!isGuardian)
                     Obx(() => SettingsSectionCard(
-                          title: 'Notifications',
+                          title: 'Privacy',
                           children: [
                             ToggleRow(
-                              icon: Icons.notifications_outlined,
-                              iconBg: Color(0xFFEFF6FF),
-                              iconColor: Color(0xFF3B82F6),
-                              label: 'Push notifications',
-                              sublabel: 'Interests, matches and messages',
-                              value: controller.settings['notifications']
+                              icon: Icons.access_time,
+                              iconBg:
+                                  isPro ? Color(0xFFF0FDF4) : Color(0xFFF5F5F5),
+                              iconColor:
+                                  isPro ? Color(0xFF16A34A) : Color(0xFF9CA3AF),
+                              label: 'Show last seen',
+                              sublabel: isPro
+                                  ? 'Let others see when you were last active'
+                                  : 'Upgrade to Pro to control your visibility',
+                              value: controller.settings['is_show_last_seen']
                                       as bool? ??
                                   true,
-                              onChange: (v) =>
-                                  controller.handleToggle('notifications', v),
+                              onChange: isPro
+                                  ? (v) => controller.handleToggle(
+                                      'is_show_last_seen', v)
+                                  : (_) => Get.to(
+                                        () => SubscriptionDetailPage(),
+                                      ),
+                              disabled: !isPro,
                             ),
                             ToggleRow(
-                              icon: Icons.email_outlined,
-                              iconBg: Color(0xFFF0FDF4),
-                              iconColor: Color(0xFF16A34A),
-                              label: 'Email updates',
-                              sublabel: 'Weekly digest and platform news',
-                              value: controller.settings['email_updates']
+                              icon: Icons.hide_image_outlined,
+                              iconBg:
+                                  isPro ? Color(0xFFFAF5FF) : Color(0xFFF5F5F5),
+                              iconColor:
+                                  isPro ? Color(0xFF7C3AED) : Color(0xFF9CA3AF),
+                              label: 'Blur profile photos',
+                              sublabel: isPro
+                                  ? 'Others will see your photos as blurred'
+                                  : 'Upgrade to Pro to restrict photo access',
+                              value: controller.settings['is_blurred_images']
                                       as bool? ??
                                   false,
-                              onChange: (v) =>
-                                  controller.handleToggle('email_updates', v),
+                              onChange: isPro
+                                  ? (v) => controller.handleToggle(
+                                      'is_blurred_images', v)
+                                  : (_) => Get.to(
+                                        () => SubscriptionDetailPage(),
+                                      ),
+                              disabled: !isPro,
                               isLast: true,
                             ),
                           ],
                         )),
 
-                    // ── Support ───────────────────────────────────────────
-                    SettingsSectionCard(
-                      title: 'Support',
-                      children: [
-                        NavRow(
-                            icon: Icons.info_outline,
-                            label: 'About Marriage Sunnah',
-                            sublabel: 'Version 1.0.0',
-                            onTap: () {}),
-                        NavRow(
-                            icon: Icons.shield_outlined,
-                            label: 'Privacy Policy',
-                            onTap: () {}),
-                        NavRow(
-                            icon: Icons.phone_outlined,
-                            label: 'Contact Support',
-                            sublabel: 'WhatsApp or email',
-                            onTap: () {},
-                            isLast: true),
-                      ],
-                    ),
-
-                    // ── Danger zone ───────────────────────────────────────
-                    SettingsSectionCard(
-                      title: 'Account Actions',
-                      children: [
-                        NavRow(
-                          icon: Icons.logout,
-                          iconBg: Color(0xFFFFF7ED),
-                          iconColor: Color(0xFFF97316),
-                          label: 'Log out',
-                          onTap: controller.logout,
-                        ),
-                        NavRow(
-                          icon: Icons.delete_outline,
-                          iconBg: Color(0xFFFFF1F2),
-                          iconColor: Color(0xFFEF4444),
-                          label: 'Delete Account',
-                          sublabel: 'Permanently remove all your data',
-                          danger: true,
-                          onTap: () => Get.dialog(
-                            _DeleteAccountModal(
-                              onClose: () => Get.back(),
-                              onConfirm: () {
-                                Get.back();
-                                controller.deleteAccount();
-                              },
-                            ),
-                            barrierColor: Colors.black.withOpacity(0.5),
-                            barrierDismissible: true,
+                  // ── Notifications ─────────────────────────────────────
+                  Obx(() => SettingsSectionCard(
+                        title: 'Notifications',
+                        children: [
+                          ToggleRow(
+                            icon: Icons.notifications_outlined,
+                            iconBg: Color(0xFFEFF6FF),
+                            iconColor: Color(0xFF3B82F6),
+                            label: 'Push notifications',
+                            sublabel: 'Interests, matches and messages',
+                            value:
+                                controller.settings['notifications'] as bool? ??
+                                    true,
+                            onChange: (v) =>
+                                controller.handleToggle('notifications', v),
                           ),
-                          isLast: true,
+                          ToggleRow(
+                            icon: Icons.email_outlined,
+                            iconBg: Color(0xFFF0FDF4),
+                            iconColor: Color(0xFF16A34A),
+                            label: 'Email updates',
+                            sublabel: 'Weekly digest and platform news',
+                            value:
+                                controller.settings['email_updates'] as bool? ??
+                                    false,
+                            onChange: (v) =>
+                                controller.handleToggle('email_updates', v),
+                            isLast: true,
+                          ),
+                        ],
+                      )),
+
+                  // ── Support ───────────────────────────────────────────
+                  SettingsSectionCard(
+                    title: 'Support',
+                    children: [
+                      NavRow(
+                          icon: Icons.info_outline,
+                          label: 'About Marriage Sunnah',
+                          sublabel: 'Version 1.0.0',
+                          onTap: () {}),
+                      NavRow(
+                          icon: Icons.shield_outlined,
+                          label: 'Privacy Policy',
+                          onTap: () {}),
+                      NavRow(
+                          icon: Icons.phone_outlined,
+                          label: 'Contact Support',
+                          sublabel: 'WhatsApp or email',
+                          onTap: () {},
+                          isLast: true),
+                    ],
+                  ),
+
+                  // ── Danger zone ───────────────────────────────────────
+                  SettingsSectionCard(
+                    title: 'Account Actions',
+                    children: [
+                      NavRow(
+                        icon: Icons.logout,
+                        iconBg: Color(0xFFFFF7ED),
+                        iconColor: Color(0xFFF97316),
+                        label: 'Log out',
+                        onTap: controller.logout,
+                      ),
+                      NavRow(
+                        icon: Icons.delete_outline,
+                        iconBg: Color(0xFFFFF1F2),
+                        iconColor: Color(0xFFEF4444),
+                        label: 'Delete Account',
+                        sublabel: 'Permanently remove all your data',
+                        danger: true,
+                        onTap: () => Get.dialog(
+                          _DeleteAccountModal(
+                            onClose: () => Get.back(),
+                            onConfirm: () {
+                              Get.back();
+                              controller.deleteAccount();
+                            },
+                          ),
+                          barrierColor: Colors.black.withOpacity(0.5),
+                          barrierDismissible: true,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
-        );
-      }),
-    );
+          ),
+        ],
+      ));
+    });
   }
 }
 
@@ -438,6 +434,7 @@ class _ProfileRow extends StatelessWidget {
 }
 
 // ─── Delete account modal ─────────────────────────────────────────────────────
+// ─── Delete account modal ─────────────────────────────────────────────────────
 class _DeleteAccountModal extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback onConfirm;
@@ -453,117 +450,124 @@ class _DeleteAccountModalState extends State<_DeleteAccountModal> {
   @override
   Widget build(BuildContext context) {
     final canDelete = _input == 'DELETE';
-    return Center(
-      child: GestureDetector(
-        onTap: () {},
-        child: Container(
-          margin: EdgeInsets.all(20),
-          padding: EdgeInsets.all(24),
-          constraints: BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                    color: Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(16)),
-                child: Icon(Icons.delete_outline,
-                    size: 28, color: Color(0xFFEF4444)),
-              ),
-              SizedBox(height: 16),
-              Text('Delete Account',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A1A))),
-              SizedBox(height: 8),
-              Text(
-                'This will permanently delete your profile, photos, matches, and all data. This cannot be undone.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13, color: Color(0xFF9CA3AF), height: 1.5),
-              ),
-              SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Type DELETE to confirm',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6B7280))),
-              ),
-              SizedBox(height: 6),
-              TextField(
-                onChanged: (v) => setState(() => _input = v),
-                decoration: InputDecoration(
-                  hintText: 'DELETE',
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Color(0xFFFCA5A5)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Color(0xFFFCA5A5)),
-                  ),
-                  filled: true,
-                  fillColor: Color(0xFFFFF5F5),
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: GestureDetector(
+          onTap: () {},
+          child: Container(
+            margin: EdgeInsets.all(20),
+            padding: EdgeInsets.all(24),
+            constraints: BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                      color: Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Icon(Icons.delete_outline,
+                      size: 28, color: Color(0xFFEF4444)),
                 ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: widget.onClose,
-                      child: Container(
-                        height: 44,
-                        decoration: BoxDecoration(
-                            color: Color(0xFFF0F5F3),
-                            borderRadius: BorderRadius.circular(14)),
-                        child: Center(
-                            child: Text('Cancel',
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF1B4D3E)))),
-                      ),
+                SizedBox(height: 16),
+                Text('Delete Account',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A))),
+                SizedBox(height: 8),
+                Text(
+                  'This will permanently delete your profile, photos, matches, and all data. This cannot be undone.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 13, color: Color(0xFF9CA3AF), height: 1.5),
+                ),
+                SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Type DELETE to confirm',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF6B7280))),
+                ),
+                SizedBox(height: 6),
+                TextField(
+                  onChanged: (v) => setState(() => _input = v),
+                  decoration: InputDecoration(
+                    hintText: 'DELETE',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Color(0xFFFCA5A5)),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Color(0xFFFCA5A5)),
+                    ),
+                    filled: true,
+                    fillColor: Color(0xFFFFF5F5),
                   ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: canDelete ? widget.onConfirm : null,
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 200),
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color:
-                              canDelete ? Color(0xFFEF4444) : Color(0xFFFCA5A5),
-                          borderRadius: BorderRadius.circular(14),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: widget.onClose,
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                              color: Color(0xFFF0F5F3),
+                              borderRadius: BorderRadius.circular(14)),
+                          child: Center(
+                              child: Text('Cancel',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1B4D3E)))),
                         ),
-                        child: Center(
-                            child: Text('Delete Forever',
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white))),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: canDelete ? widget.onConfirm : null,
+                        child: AnimatedContainer(
+                          duration: Duration(milliseconds: 200),
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: canDelete
+                                ? Color(0xFFEF4444)
+                                : Color(0xFFFCA5A5),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Center(
+                              child: Text('Delete Forever',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white))),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 200,
+                )
+              ],
+            ),
           ),
         ),
       ),

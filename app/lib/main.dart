@@ -4,6 +4,7 @@ import 'package:app/features/auth/pages/welcome_page.dart';
 import 'package:app/features/auth/services/auth_service.dart';
 import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -38,7 +39,22 @@ void main() async {
   } catch (e) {
     debugPrint('[Main] Settings init error: $e');
   }
-
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness:
+          Brightness.dark, // dark icons for white bg (Android)
+      statusBarBrightness: Brightness.light, // for iOS
+      systemNavigationBarColor: Colors.white, // bottom bar background
+      systemNavigationBarIconBrightness: Brightness.dark, // dark icons/buttons
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
+  // Lock orientation to portrait before building the app
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const MyApp());
 }
 
@@ -69,15 +85,16 @@ class MyApp extends StatelessWidget {
             }
           });
         }
+        initialPage = const BottomTabBar();
       }
     } catch (e) {
       debugPrint('[Main] Auth check error: $e');
     }
 
     return ScreenUtilInit(
-      designSize: const Size(390, 844),
+      designSize: ScreenUtil.defaultSize,
       minTextAdapt: true,
-      splitScreenMode: true,
+      splitScreenMode: false,
       builder: (_, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,

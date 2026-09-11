@@ -1,15 +1,14 @@
-//
-mysqldump \
--h db - mysql - blr1 - 93145 -do -user - 35916285 - 0.l.db.ondigitalocean.com \
--P 25060 \
--u doadmin \
--p \
---ssl - mode=REQUIRED \
---single - transaction \
---routines \
---triggers \
---events \
---set - gtid - purged=OFF \
---hex - blob \
---default -character - set=utf8mb4 \
-defaultdb > full_database_backup.sql
+mysqldump -u root -p \
+  --single-transaction \
+  --routines \
+  --triggers \
+  --events \
+  --hex-blob \
+  --default-character-set=utf8mb4 \
+  marriage_sunna_overseas > full_database_backup.sql
+
+
+
+
+
+

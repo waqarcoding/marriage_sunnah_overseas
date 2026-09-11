@@ -592,8 +592,9 @@ function LimitsSettings({ settings, updateField, isSuperAdmin }) {
                         When enabled, staff/admin must approve profiles before they become visible to others
                     </p>
 
-                    {/* Skip Option */}
-                    <Toggle
+                    {/* Skip Option
+                    
+                       <Toggle
                         label="Show Skip Option After Submit"
                         field="allow_skip_after_submit"
                         value={settings?.manual_profile_approval ? false : settings?.allow_skip_after_submit}
@@ -609,6 +610,8 @@ function LimitsSettings({ settings, updateField, isSuperAdmin }) {
                             When enabled, users can skip optional steps after submitting their profile
                         </p>
                     )}
+                    */}
+
                 </div>
 
                 {/* Flow Preview */}

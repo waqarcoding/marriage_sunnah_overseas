@@ -43,6 +43,7 @@ class AuthController extends GetxController {
     required BuildContext context,
     required Function(String msg) onFailed,
   }) async {
+    logout(); //clear previous data
     try {
       errorMessage.value = '';
       isLoading.value = true;
@@ -73,6 +74,7 @@ class AuthController extends GetxController {
     required Function(String msg) onFailed,
     required BuildContext context,
   }) async {
+    logout(); //clear previous data
     try {
       errorMessage.value = '';
       isLoading.value = true;
@@ -130,9 +132,15 @@ class AuthController extends GetxController {
     }
   }
 
+  void logout() {
+    AuthService authService = AuthService();
+    authService.logout();
+  }
+
   // Register
   Future<void> register(
       Map<String, String> fields, Map<String, String> files) async {
+    logout(); //clear previous data
     try {
       errorMessage.value = '';
       isLoading.value = true;
@@ -260,7 +268,7 @@ class AuthController extends GetxController {
 
   void checkProfile(BuildContext context) {
     ProfileProgressController profileProgressController =
-        ProfileProgressController();
+        Get.find<ProfileProgressController>();
     profileProgressController.checkProfile(context);
   }
 }

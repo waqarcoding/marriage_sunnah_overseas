@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:app/data/models/profile_model.dart';
+import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/auth/widgets/join_as_bottom_sheet.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../data/providers/api_client.dart';
@@ -200,6 +202,8 @@ class AuthService extends GetxService {
     _storage.remove('isOtpVerified');
     _storage.remove('user');
     currentUser.value = null;
+    print("🚪 LOGOUT: SUCCESS");
+    print("🧹 DATA CLEARED: SUCCESS");
   }
 
   // ── JWT decode ─────────────────────────────────────────────────────────────
@@ -221,7 +225,8 @@ class AuthService extends GetxService {
   bool isIndividual() => userRole == 'individual';
   bool isAdmin() => userRole == 'admin' || userRole == 'staff';
 
-  Future<Map<String, dynamic>?> updateRole(JoinAsRole role) async {
+  Future<Map<String, dynamic>?> updateRole(
+      JoinAsRole role, BuildContext context) async {
     try {
       isLoading.value = true;
       // Convert JoinAsRole to string value as expected by the backend
@@ -239,13 +244,16 @@ class AuthService extends GetxService {
         '/profile/update-role',
         data: {'role': roleValue},
       );
-
+      print(response);
       if (response != null && response['success'] == true) {
         // Update user in storage if user data returned
         if (response['user'] != null) {
           _storage.write('user', response['user']);
           currentUser.value = UserModel.fromJson(response['user']);
         }
+
+        AuthController authController = AuthController();
+        authController.checkProfile(context);
       }
 
       return response;

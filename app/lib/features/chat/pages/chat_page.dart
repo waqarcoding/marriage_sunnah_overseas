@@ -33,7 +33,10 @@ class ChatPage extends StatelessWidget {
       });
     }
 
-    return _ChatView();
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(child: _ChatView()),
+    );
   }
 }
 

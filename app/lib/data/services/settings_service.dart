@@ -62,7 +62,7 @@ class SettingsService extends GetxService {
       settings.value?.guardianVerificationRequired ?? false;
   bool get guardianLinkingRequired =>
       settings.value?.guardianLinkingRequired ?? false;
-  bool get allowSkipAfterSubmit => settings.value?.allowSkipAfterSubmit ?? true;
+
   bool get manualProfileApproval =>
       settings.value?.manualProfileApproval ?? false;
 

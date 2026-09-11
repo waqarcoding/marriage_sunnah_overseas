@@ -1,3 +1,5 @@
+import 'package:app/features/auth/controllers/auth_controller.dart';
+import 'package:app/features/auth/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 /// Colors pulled from the design

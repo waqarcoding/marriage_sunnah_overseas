@@ -12,6 +12,7 @@ import 'package:app/features/settings/pages/settings_page.dart';
 import 'package:app/features/userguardian/link_guardian_page.dart';
 import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../core/services/socket_service.dart';
 
@@ -30,7 +31,18 @@ class BottomTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.put(BottomTabBarController());
-
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            Brightness.dark, // dark icons for white bg (Android)
+        statusBarBrightness: Brightness.light, // for iOS
+        systemNavigationBarColor: Colors.white, // bottom bar background
+        systemNavigationBarIconBrightness:
+            Brightness.dark, // dark icons/buttons
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
     return Obx(() {
       // Read badge counts from socket if available
       SocketService? socket;
@@ -68,7 +80,7 @@ class BottomTabBar extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Color(0xFF1B4D3E).withOpacity(0.08),
+                color: Colors.white,
                 blurRadius: 20,
                 offset: Offset(0, -4),
               ),
@@ -109,27 +121,19 @@ Widget getIndividualItems(
         onTap: () => ctrl.goTo(1),
       ),
       _NavItem(
-        icon: Icons.security_outlined,
-        activeIcon: Icons.security,
-        label: 'Guardian',
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        label: 'Chats',
         isActive: ctrl.currentIndex.value == 2,
         badge: chatBadge,
         onTap: () => ctrl.goTo(2),
       ),
       _NavItem(
-        icon: Icons.chat_bubble_outline,
-        activeIcon: Icons.chat_bubble,
-        label: 'Chats',
-        isActive: ctrl.currentIndex.value == 3,
-        badge: chatBadge,
-        onTap: () => ctrl.goTo(3),
-      ),
-      _NavItem(
         icon: Icons.settings_outlined,
         activeIcon: Icons.settings,
         label: 'Settings',
-        isActive: ctrl.currentIndex.value == 4,
-        onTap: () => ctrl.goTo(4),
+        isActive: ctrl.currentIndex.value == 3,
+        onTap: () => ctrl.goTo(3),
       ),
     ],
   );

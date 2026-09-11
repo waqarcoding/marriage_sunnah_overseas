@@ -11,6 +11,7 @@ import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:app/features/verification/pages/verification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ============================================================
 // PROFILE PROGRESS CONTROLLER
@@ -57,49 +58,23 @@ class ProfileProgressController extends GetxController {
 
   Future<void> fetchData() async {
     try {
-      final settingsService = SettingsService();
+      final settingsService = Get.find<SettingsService>();
 
-      // ----------------------------------------------------------
-      // LOAD SETTINGS
-      // ----------------------------------------------------------
-
-      userVerificationRequired.value =
-          await settingsService.userVerificationRequired;
-
-      guardianLinkingRequired.value =
-          await settingsService.guardianLinkingRequired;
-
+      // --- LOAD SETTINGS ---
+      userVerificationRequired.value = settingsService.userVerificationRequired;
+      guardianLinkingRequired.value = settingsService.guardianLinkingRequired;
       guardianVerificationRequired.value =
-          await settingsService.guardianVerificationRequired;
+          settingsService.guardianVerificationRequired;
+      manualProfileApproval.value = settingsService.manualProfileApproval;
 
-      manualProfileApproval.value = await settingsService.manualProfileApproval;
-
+      print("✅ userVerificationRequired: ${userVerificationRequired.value}");
+      print("✅ guardianLinkingRequired: ${guardianLinkingRequired.value}");
       print(
-        "userVerificationRequired "
-        "${userVerificationRequired.value}",
-      );
+          "✅ guardianVerificationRequired: ${guardianVerificationRequired.value}");
+      print("✅ Cnic Verification Required: ${manualProfileApproval.value}");
 
-      print(
-        "guardianLinkingRequired "
-        "${guardianLinkingRequired.value}",
-      );
-
-      print(
-        "guardianVerificationRequired "
-        "${guardianVerificationRequired.value}",
-      );
-
-      print(
-        "manualProfileApproval "
-        "${manualProfileApproval.value}",
-      );
-
-      // ----------------------------------------------------------
-      // GET CURRENT USER
-      // ----------------------------------------------------------
-
+      // --- GET CURRENT USER ---
       final profileService = ProfileService();
-
       final user = await profileService.getCurrentUser();
 
       if (user == null) {
@@ -110,40 +85,25 @@ class ProfileProgressController extends GetxController {
       final profile =
           user['profile'] ?? user['data']?['profile'] ?? user['data'] ?? user;
 
-      // ----------------------------------------------------------
-      // PROFILE
-      // ----------------------------------------------------------
-
+      // --- PROFILE ---
       isProfileCompleted.value = profile?['is_profile_completed'] == true ||
           profile?['is_profile_completed'] == 1;
 
-      // ----------------------------------------------------------
-      // CNIC / USER VERIFICATION
-      // ----------------------------------------------------------
-
-      isCnicVerified.value = user['is_verified'] == true ||
+      // --- CNIC / USER VERIFICATION as admin approved by default if verified ---
+      isAdminApproved.value = user['is_verified'] == true ||
           user['is_verified'] == 1 ||
           profile?['is_verified'] == true ||
           profile?['is_verified'] == 1;
 
-      // ----------------------------------------------------------
-      // GUARDIAN
-      // ----------------------------------------------------------
-
+      // --- GUARDIAN ---
       if (!guardianLinkingRequired.value &&
           !guardianVerificationRequired.value) {
-        // Guardian process isn't required.
-        // Therefore consider it complete.
         isGuardianLinked.value = true;
         isGuardianVerified.value = true;
       }
 
-      // ----------------------------------------------------------
-      // ADMIN APPROVAL
-      // ----------------------------------------------------------
-
+      // --- ADMIN APPROVAL ---
       if (!manualProfileApproval.value) {
-        // Admin approval isn't required.
         isAdminApproved.value = true;
       } else {
         isAdminApproved.value = user['is_approved'] == true ||
@@ -155,35 +115,8 @@ class ProfileProgressController extends GetxController {
             profile?['is_admin_approved'] == true ||
             profile?['is_admin_approved'] == 1;
       }
-
-      print(
-        "isProfileCompleted "
-        "${isProfileCompleted.value}",
-      );
-
-      print(
-        "isCnicVerified "
-        "${isCnicVerified.value}",
-      );
-
-      print(
-        "isGuardianLinked "
-        "${isGuardianLinked.value}",
-      );
-
-      print(
-        "isGuardianVerified "
-        "${isGuardianVerified.value}",
-      );
-
-      print(
-        "isAdminApproved "
-        "${isAdminApproved.value}",
-      );
     } catch (e) {
-      print(
-        "ProfileProgressController error: $e",
-      );
+      print("ProfileProgressController error: $e");
     }
   }
 
@@ -192,31 +125,29 @@ class ProfileProgressController extends GetxController {
   // ============================================================
 
   Future<void> checkProfile(BuildContext context) async {
-    SettingsService settingsService = Get.find<SettingsService>();
-    AuthService authService = Get.find<AuthService>();
+    final settingsService = Get.find<SettingsService>();
+    final authService = Get.find<AuthService>();
+    await fetchData();
 
     print("Profile Checking..");
     try {
-      // Fetch current user (same as React: ProfileService.getCurrentUser())
       final userProfileService = Get.find<UserProfileService>();
       final res = await userProfileService.getCurrentUser();
       if (res == null) return;
+      String? role = res['role'];
 
-      final user = res; // top-level user object
-      final profile = res['profile'] ?? {}; // nested profile
-      final role = user['role']?.toString() ?? 'individual';
+      final user = res;
+      final profile = res['profile'] ?? {};
 
-      // Check here: if provider is email, use OtpPage logic
+      print('role: $role');
+
+      // OTP for email provider if role missing
       if (user['provider'] == "email" &&
           (user['role'] == null || role == null)) {
-        // This block mimics OtpPage logic for non-Google accounts
-
-        // For simplicity, let's check OTP verification
         final bool isOtpVerified =
             user['is_otp_verified'] == true || user['is_otp_verified'] == 1;
 
         if (!isOtpVerified) {
-          // Navigate (or display) OTP Page for verification
           print('OTP verification required');
           Get.off(() => OtpPage(
                 email: user['email']?.toString(),
@@ -224,49 +155,44 @@ class ProfileProgressController extends GetxController {
                     ? user['id']
                     : int.tryParse(user['id'].toString() ?? ''),
               ));
-
           return;
         }
       }
 
+      // Role selection if none
       if (user['role'] == null) {
-        final role = await showJoinAsBottomSheet(
+        final srole = await showJoinAsBottomSheet(
           Get.context!,
-          onSubmit: (selectedRole) async {
-            final updateResponse = await authService.updateRole(selectedRole);
+          onSubmit: (srole) async {
+            final updateResponse = await authService.updateRole(srole, context);
             return updateResponse != null && updateResponse['success'] == true;
           },
         );
 
-        if (role == null) {
-          // Sheet was dismissed without a successful submit
+        if (srole == null) {
+          print("Sheet was dismissed without a successful submit");
           return;
         }
       }
 
-      // ── INDIVIDUAL ──────────────────────────────────────────────────────────
+      // ── INDIVIDUAL ──────────────────────────────────────────────
       if (role == 'individual') {
-        final isProfileComplete = profile['is_profile_completed'] == 1 ||
+        isProfileCompleted.value = profile['is_profile_completed'] == 1 ||
             profile['is_profile_completed'] == true;
 
-        final isVerified =
+        isAdminApproved.value =
             user['is_verified'] == true || user['is_verified'] == 1;
 
-        // Fetch guardian data
-        Map<String, dynamic>? guardianData;
+        // Fetch guardian link data
         bool isGuardianFound = false;
         try {
           final guardianService = Get.find<GuardianService>();
           final gRes = await guardianService.getMyGuardian();
-          guardianData = gRes;
           isGuardianFound = gRes?['data'] != null;
+          isGuardianLinked.value = isGuardianFound;
         } catch (_) {}
 
-        print('User Role: $role');
-        print('isProfileCompleted: ${profile['is_profile_completed']}');
-
-        // Load settings
-
+        // Use settings
         final userVerificationRequired =
             settingsService.userVerificationRequired;
         final guardianLinkingRequired = settingsService.guardianLinkingRequired;
@@ -274,55 +200,50 @@ class ProfileProgressController extends GetxController {
             settingsService.guardianVerificationRequired;
         final manualProfileApproval = settingsService.manualProfileApproval;
 
-        // Step 1: Profile completion
+        print('⚙️  Loaded Settings: '
+            'User Verification Required: $userVerificationRequired | '
+            'Guardian Linking Required: $guardianLinkingRequired | '
+            'Guardian Verification Required: $guardianVerificationRequired | '
+            'Manual Profile Approval: $manualProfileApproval');
 
-        if (!isProfileComplete) {
+        print('👤 User Role: $role');
+        print('✅ isProfileCompleted: ${profile['is_profile_completed']}');
+
+        // 1. Must complete basic profile
+        if (!isProfileCompleted.value) {
           print('navigating to setup:');
           isProfileCompleted.value = false;
           Get.off(() => CompleteProfilePage());
-
           return;
         }
 
-        // Step 2: User CNIC verification
-        if (userVerificationRequired && !isVerified) {
-          print('User CNIC verification required');
+        // 2. (optional: cnic verif, skipped by comment)
 
-          Get.off(() => VerificationPage(
-                hideBackButton: true,
-              ));
-          return;
-        }
-
-        // Step 3: Guardian linking
+        // 3. Guardian must be linked if required
         if (guardianLinkingRequired && !isGuardianFound) {
           print('Guardian linking required');
           Get.off(() => LinkGuardianPage(isShowHeader: false));
-          Get.offAllNamed('/individual/addguardian');
           return;
         }
 
-        // Step 4: Manual approval
+        // 4. Manual admin approval (if required and not yet approved)
         if (manualProfileApproval) {
-          final isApproved =
-              user['is_approved'] == true || user['is_approved'] == 1;
-
-          if (!isApproved) {
+          if (!isAdminApproved.value) {
             print('Profile pending admin approval');
-            Get.off(() => VerificationPage());
+            Get.off(() => VerificationPage(
+                  hideBackButton: true,
+                ));
             return;
           }
         }
 
-        // ✅ All checks passed — go to home
         print('All checks passed - redirecting to home');
         isProfileCompleted.value = true;
-
-        // Get.offAll(() => BottomTabBar());
+        Get.offAll(() => BottomTabBar());
         return;
       }
 
-      // ── GUARDIAN ────────────────────────────────────────────────────────────
+      // ── GUARDIAN ───────────────────────────────────────────────
       else if (role == 'guardian') {
         final guardianVerificationRequired =
             settingsService.guardianVerificationRequired;
@@ -330,32 +251,27 @@ class ProfileProgressController extends GetxController {
         if (guardianVerificationRequired) {
           final isVerified =
               user['is_verified'] == true || user['is_verified'] == 1;
-
           if (!isVerified) {
-            Get.off(() => VerificationPage());
+            Get.off(() => VerificationPage(
+                  hideBackButton: true,
+                ));
             return;
           }
         }
-        // ✅ All checks passed — go to home
         Get.offAll(() => BottomTabBar());
         return;
       }
 
-      // ── ADMIN / STAFF ────────────────────────────────────────────────────────
+      // ── ADMIN / STAFF ─────────────────────────────────────────
       else if (role == 'admin' || role == 'staff') {
-        //
+        print(
+            "Access restricted: Admin and staff accounts are not permitted in this app. Logging out...");
 
-        AuthService authService = AuthService();
-        authService.logout();
-        Get.snackbar(
-            'Message', 'Invalid role! make sure you are individual or guardian',
-            snackPosition: SnackPosition.BOTTOM);
-
+        AuthService().logout();
         return;
       }
     } catch (e) {
       print('Profile check error: $e');
-      Get.offAllNamed('/profilesetup');
     }
   }
 }
@@ -388,19 +304,11 @@ class ProfileProgressWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ProfileProgressController>();
-    print("controller: $controller");
-    print("isProfileCompleted: ${controller.isProfileCompleted.value}");
-    print(
-        "userVerificationRequired: ${controller.userVerificationRequired.value}");
-    print("isCnicVerified: ${controller.isCnicVerified.value}");
-    print(
-        "guardianLinkingRequired: ${controller.guardianLinkingRequired.value}");
-    print("isGuardianLinked: ${controller.isGuardianLinked.value}");
-    print(
-        "guardianVerificationRequired: ${controller.guardianVerificationRequired.value}");
-    print("isGuardianVerified: ${controller.isGuardianVerified.value}");
-    print("manualProfileApproval: ${controller.manualProfileApproval.value}");
-    print("isAdminApproved: ${controller.isAdminApproved.value}");
+    controller.fetchData();
+    final settingsService = Get.find<SettingsService>();
+    print('Profile Completed: ${controller.isProfileCompleted.value}');
+    print('Guardian Linked: ${controller.isGuardianLinked.value}');
+    print('Admin Approved: ${controller.isAdminApproved.value}');
 
     return Obx(() {
       final steps = <ProfileProgressStep>[
@@ -410,24 +318,22 @@ class ProfileProgressWidget extends StatelessWidget {
           completed: controller.isProfileCompleted.value,
         ),
         ProfileProgressStep(
-          title: 'Verification',
-          required: controller.userVerificationRequired.value,
-          completed: controller.isCnicVerified.value,
-        ),
-        ProfileProgressStep(
           title: 'Guardian',
-          required: controller.guardianLinkingRequired.value,
+          required: settingsService.guardianLinkingRequired,
           completed: controller.isGuardianLinked.value,
         ),
         ProfileProgressStep(
-          title: 'Guardian Verification',
-          required: controller.guardianVerificationRequired.value,
-          completed: controller.isGuardianVerified.value,
+          title: 'Verify',
+          required: settingsService.manualProfileApproval,
+          completed: controller.isAdminApproved.value,
         ),
         ProfileProgressStep(
-          title: 'Approval',
-          required: controller.manualProfileApproval.value,
-          completed: controller.isAdminApproved.value,
+          title: 'Go Live',
+          required: true,
+          completed: controller.isProfileCompleted.value &&
+              controller.isGuardianLinked.value &&
+              controller.isGuardianVerified.value &&
+              controller.isAdminApproved.value,
         ),
       ];
 

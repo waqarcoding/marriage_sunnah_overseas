@@ -3,7 +3,7 @@ import '../theme/app_colors.dart';
 
 class AuroraBackground extends StatelessWidget {
   final Widget child;
-  
+
   const AuroraBackground({
     Key? key,
     required this.child,
@@ -11,7 +11,8 @@ class AuroraBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return SafeArea(
+        child: Stack(
       children: [
         // Base gradient background
         Container(
@@ -28,7 +29,7 @@ class AuroraBackground extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Primary Glow - Top Center
         Positioned(
           top: -300,
@@ -48,7 +49,7 @@ class AuroraBackground extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Secondary Glow - Bottom Right
         Positioned(
           bottom: -250,
@@ -68,7 +69,7 @@ class AuroraBackground extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Tertiary Glow - Top Left
         Positioned(
           top: MediaQuery.of(context).size.height * 0.2,
@@ -88,17 +89,17 @@ class AuroraBackground extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Overlay Tint
         Container(
           decoration: BoxDecoration(
             color: AppColors.overlayTint.withOpacity(0.13),
           ),
         ),
-        
+
         // Content
         child,
       ],
-    );
+    ));
   }
 }

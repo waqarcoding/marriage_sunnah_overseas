@@ -82,7 +82,8 @@ class _Header extends GetView<CompleteProfileController> {
       final step = controller.currentStep.value;
       final progress = step / CompleteProfileController.totalSteps;
 
-      return Container(
+      return SafeArea(
+          child: Container(
         color: Colors.white,
         child: Column(
           children: [
@@ -133,7 +134,7 @@ class _Header extends GetView<CompleteProfileController> {
             ),
           ],
         ),
-      );
+      ));
     });
   }
 }
@@ -312,7 +313,7 @@ class _Step2 extends GetView<CompleteProfileController> {
         icon: Icons.location_on_outlined,
         title: 'Location & Contact',
         subtitle: 'Where are you based?',
-        variant: StepCardVariant.muted,
+        variant: StepCardVariant.primary,
         children: [
           InputField(
               label: 'Phone Number',
@@ -438,7 +439,7 @@ class _Step3 extends GetView<CompleteProfileController> {
         icon: Icons.star_outline,
         title: 'Religion & Background',
         subtitle: 'Faith and cultural background',
-        variant: StepCardVariant.accent,
+        variant: StepCardVariant.primary,
         children: [
           RangeSelect(
               label: 'Religion',
@@ -640,7 +641,7 @@ class _Step5 extends GetView<CompleteProfileController> {
         icon: Icons.work_outline,
         title: 'Education & Career',
         subtitle: 'Your professional background',
-        variant: StepCardVariant.muted,
+        variant: StepCardVariant.primary,
         children: [
           RangeSelect(
               label: 'Education Level',

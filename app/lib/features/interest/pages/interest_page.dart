@@ -42,84 +42,90 @@ class _InterestView extends GetView<InterestController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Header
-          IslamicPageHeader(
-            title: 'Interests',
-            subtitle: 'Souls seeking halal connection with you',
-            icon: Icon(Icons.favorite_outline, color: Colors.white, size: 18),
-          ),
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              IslamicPageHeader(
+                title: 'Interests',
+                subtitle: 'Souls seeking halal connection with you',
+                icon:
+                    Icon(Icons.favorite_outline, color: Colors.white, size: 18),
+              ),
 
-          // Tab switcher (sticky)
-          Obx(() => _TwoTabSwitcher(
-                activeTab: controller.activeTab.value,
-                onSelect: controller.selectTab,
-                sentCount: controller.sentCount,
-                receivedCount: controller.receivedCount,
-                isPro: controller.isPro.value,
-              )),
+              // Tab switcher (sticky)
+              Obx(() => _TwoTabSwitcher(
+                    activeTab: controller.activeTab.value,
+                    onSelect: controller.selectTab,
+                    sentCount: controller.sentCount,
+                    receivedCount: controller.receivedCount,
+                    isPro: controller.isPro.value,
+                  )),
 
-          // Content
-          Expanded(
-            child: Stack(
-              children: [
-                Obx(() => SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Premium banner (non-pro users)
-                          if (controller.isPro.value == false)
-                            PremiumBanner(onUpgrade: () {
-                              Get.snackbar(
-                                  'Premium', 'Upgrade feature coming soon',
-                                  snackPosition: SnackPosition.BOTTOM);
-                            }),
+              // Content
+              Expanded(
+                child: Stack(
+                  children: [
+                    Obx(() => SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              // Premium banner (non-pro users)
+                              if (controller.isPro.value == false)
+                                PremiumBanner(onUpgrade: () {
+                                  Get.snackbar(
+                                      'Premium', 'Upgrade feature coming soon',
+                                      snackPosition: SnackPosition.BOTTOM);
+                                }),
 
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
-                            child: controller.isLoading.value
-                                ? _SkeletonGrid()
-                                : controller.interests.isEmpty
-                                    ? _EmptyState(
-                                        tab: controller.activeTab.value,
-                                        onExplore: () => Get.back())
-                                    : _InterestGrid(
-                                        interests: controller.interests,
-                                        activeTab: controller.activeTab.value,
-                                        isPro: controller.isPro.value,
-                                        parseImages: _parseImages,
-                                        onAccept: controller.openAcceptDialog,
-                                        onDecline: controller.openDeclineDialog,
-                                      ),
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
+                                child: controller.isLoading.value
+                                    ? _SkeletonGrid()
+                                    : controller.interests.isEmpty
+                                        ? _EmptyState(
+                                            tab: controller.activeTab.value,
+                                            onExplore: () => Get.back())
+                                        : _InterestGrid(
+                                            interests: controller.interests,
+                                            activeTab:
+                                                controller.activeTab.value,
+                                            isPro: controller.isPro.value,
+                                            parseImages: _parseImages,
+                                            onAccept:
+                                                controller.openAcceptDialog,
+                                            onDecline:
+                                                controller.openDeclineDialog,
+                                          ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    )),
+                        )),
 
-                // Confirm dialog overlay
-                Obx(() => controller.dialog.value != null
-                    ? _ConfirmDialog(
-                        dialog: controller.dialog.value!,
-                        onConfirm: controller.confirmDialog,
-                        onCancel: () => controller.dialog.value = null,
-                      )
-                    : SizedBox.shrink()),
+                    // Confirm dialog overlay
+                    Obx(() => controller.dialog.value != null
+                        ? _ConfirmDialog(
+                            dialog: controller.dialog.value!,
+                            onConfirm: controller.confirmDialog,
+                            onCancel: () => controller.dialog.value = null,
+                          )
+                        : SizedBox.shrink()),
 
-                // Cancel confirm overlay
-                Obx(() => controller.cancelConfirm.value != null
-                    ? _CancelConfirmModal(
-                        data: controller.cancelConfirm.value!,
-                        onClose: () => controller.cancelConfirm.value = null,
-                        onConfirm: controller.confirmCancel,
-                      )
-                    : SizedBox.shrink()),
-              ],
-            ),
+                    // Cancel confirm overlay
+                    Obx(() => controller.cancelConfirm.value != null
+                        ? _CancelConfirmModal(
+                            data: controller.cancelConfirm.value!,
+                            onClose: () =>
+                                controller.cancelConfirm.value = null,
+                            onConfirm: controller.confirmCancel,
+                          )
+                        : SizedBox.shrink()),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 }
 
@@ -144,10 +150,7 @@ class _TwoTabSwitcher extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
       decoration: BoxDecoration(
         boxShadow: [
-          BoxShadow(
-              color: Color(0xFF1B4D3E).withOpacity(0.06),
-              blurRadius: 1,
-              offset: Offset(0, 1))
+          BoxShadow(color: Colors.white, blurRadius: 1, offset: Offset(0, 1))
         ],
       ),
       child: Container(

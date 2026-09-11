@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:app/bottom_tabs.dart';
 import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -37,9 +38,11 @@ class VerificationPage extends StatelessWidget {
                   case VerificationStatus.loading:
                     return _LoadingView();
                   case VerificationStatus.verified:
-                    return _VerifiedPage(ctrl: ctrl);
+                    return _VerifiedPage(
+                        ctrl: ctrl, hideBackButton: hideBackButton);
                   case VerificationStatus.pending:
-                    return _PendingPage(ctrl: ctrl);
+                    return _PendingPage(
+                        ctrl: ctrl, hideBackButton: hideBackButton);
                   case VerificationStatus.submit:
                   default:
                     return _SubmitPage(
@@ -295,32 +298,35 @@ class _UploadCard extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 class _PendingPage extends StatelessWidget {
   final VerificationController ctrl;
-  const _PendingPage({required this.ctrl});
+  final bool hideBackButton;
+  const _PendingPage({required this.ctrl, required this.hideBackButton});
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _BackButton(onTap: ctrl.goBack),
-        SizedBox(height: 16),
+        if (!hideBackButton) _BackButton(onTap: ctrl.goBack),
+        if (!hideBackButton) SizedBox(height: 16),
 
         // Under review pill
-        Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-                color: Color(0xFFFEF9EC),
-                border: Border.all(color: Color(0xFFF5D97A).withOpacity(0.25)),
-                borderRadius: BorderRadius.circular(20)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              _PulsingDot(color: Color(0xFFF0B429)),
-              SizedBox(width: 6),
-              Text('Under Review',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF92650A))),
-            ])),
+        if (!hideBackButton)
+          Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                  color: Color(0xFFFEF9EC),
+                  border:
+                      Border.all(color: Color(0xFFF5D97A).withOpacity(0.25)),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                _PulsingDot(color: Color(0xFFF0B429)),
+                SizedBox(width: 6),
+                Text('Under Review',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF92650A))),
+              ])),
         SizedBox(height: 16),
 
         Text('Verification pending',
@@ -544,7 +550,8 @@ class _DocPlaceholder extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════
 class _VerifiedPage extends StatefulWidget {
   final VerificationController ctrl;
-  const _VerifiedPage({required this.ctrl});
+  final bool hideBackButton;
+  const _VerifiedPage({required this.ctrl, required this.hideBackButton});
 
   @override
   State<_VerifiedPage> createState() => _VerifiedPageState();
@@ -606,8 +613,8 @@ class _VerifiedPageState extends State<_VerifiedPage>
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _BackButton(onTap: ctrl.goBack),
-        SizedBox(height: 16),
+        if (widget.hideBackButton) _BackButton(onTap: ctrl.goBack),
+        if (widget.hideBackButton) SizedBox(height: 16),
 
         // Main badge card
         Obx(() => Container(
@@ -813,7 +820,9 @@ class _VerifiedPageState extends State<_VerifiedPage>
 
         // Back to profile button
         GestureDetector(
-            onTap: ctrl.goBack,
+            onTap: () {
+              Get.offAll(() => BottomTabBar());
+            },
             child: Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(vertical: 14),
