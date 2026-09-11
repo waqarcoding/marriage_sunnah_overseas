@@ -1,0 +1,7 @@
+{
+    "name": "flutter-web-wrapper",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "echo 'handled by custom build command'"
+    }
+}
