@@ -1,0 +1,26 @@
+remote: error: GH013: Repository rule violations found for refs/heads/main.        
+remote: 
+remote: - GITHUB PUSH PROTECTION        
+remote:   —————————————————————————————————————————        
+remote:     Resolve the following violations before pushing again        
+remote: 
+remote:     - Push cannot contain secrets        
+remote: 
+remote:             
+remote:      (?) Learn how to resolve a blocked push        
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push        
+remote:             
+remote:             
+remote:       —— Stripe Test API Secret Key ————————————————————————        
+remote:        locations:        
+remote:          - commit: 4c1f6cf6fac1a1e750222b633c1bbfd0547e64b0        
+remote:            path: full_database_backup.sql:798        
+remote:             
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.        
+remote:        https://github.com/waqarcoding/marriage_sunnah_overseas/security/secret-scanning/unblock-secret/3JAaZvBM9BrY6gZRCbuJH82c6cT        
+remote:             
+remote: 
+remote: 
+To https://github.com/waqarcoding/marriage_sunnah_overseas.git
+ ! [remote rejected]   main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/waqarcoding/marriage_sunnah_overseas.git'

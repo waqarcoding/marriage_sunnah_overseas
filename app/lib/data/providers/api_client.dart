@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
@@ -58,16 +60,36 @@ class ApiClient extends GetxService {
     _storage.remove('isOtpVerified');
     _storage.remove('user');
 
-    Get.snackbar(
-      'Session Expired',
-      'Please log in again',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: Duration(seconds: 3),
-    );
+    // Safely show snackbar — only if GetX's overlay/navigator is ready
+    _safeShowSnackbar();
 
     // Use Get.offAll instead of Get.offAllNamed
     await Future.delayed(Duration(milliseconds: 100));
     // Don't navigate here - let the controller handle it
+  }
+
+  void _safeShowSnackbar() {
+    try {
+      if (Get.key.currentState != null) {
+        Get.snackbar(
+          'Session Expired',
+          'Please log in again',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 3),
+        );
+      } else {
+        // Overlay not ready yet — defer to next frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            print('[API] Session Expired: Please log in again');
+          } catch (e) {
+            print('[API] Deferred snackbar failed: $e');
+          }
+        });
+      }
+    } catch (e) {
+      print('[API] Snackbar error (non-fatal): $e');
+    }
   }
 
   // Handle response
@@ -229,6 +251,53 @@ class ApiClient extends GetxService {
   }
 
   // Upload file (multipart/form-data)
+  Future<dynamic> uploadBytes(
+    String endpoint,
+    Map<String, String> fields,
+    Map<String, Uint8List> filesBytes,
+    Map<String, String> fileNames,
+  ) async {
+    final fullUrl = '$baseUrl$endpoint';
+
+    print('[API] 🌐 UPLOAD (bytes) $fullUrl');
+
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(fullUrl));
+
+      final token = _storage.read('jwtToken');
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      request.fields.addAll(fields);
+
+      for (var entry in filesBytes.entries) {
+        final bytes = entry.value;
+        final filename = fileNames[entry.key] ?? 'upload.jpg';
+        final mimeType = lookupMimeType(filename) ?? 'image/jpeg';
+
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            entry.key,
+            bytes,
+            filename: filename,
+            contentType: http.MediaType.parse(mimeType),
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response, endpoint);
+    } on SocketException {
+      print('[API] Network Error');
+      return {'error': 'Please check your internet connection'};
+    } catch (e) {
+      print('[API] UPLOAD Error: $e');
+      return {'error': 'An unexpected error occurred'};
+    }
+  }
 
   Future<dynamic> upload(
     String endpoint,

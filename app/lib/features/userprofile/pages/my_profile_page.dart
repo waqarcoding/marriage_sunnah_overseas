@@ -42,7 +42,9 @@ class MyProfilePage extends StatelessWidget {
                 SizedBox(height: 8),
 
                 // ── Media (photos + videos) ────────────────────────────
-                MediaSectionWidget(),
+                MediaSectionWidget(
+                  onCountChanged: (count) {},
+                ),
 
                 // ── Stats ──────────────────────────────────────────────
                 Obx(() => Padding(

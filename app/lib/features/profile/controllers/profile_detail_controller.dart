@@ -42,7 +42,10 @@ class ProfileDetailController extends GetxController {
     isLoading.value = true;
     try {
       final profileRes = await _profileService.getCurrentUser();
-      final p = profileRes?['profile'] ?? profileRes?['data']?['profile'] ?? profileRes?['data'] ?? profileRes;
+      final p = profileRes?['profile'] ??
+          profileRes?['data']?['profile'] ??
+          profileRes?['data'] ??
+          profileRes;
       final role = p?['role']?.toString();
       currentUserRole.value = role;
       myProfile.value = p;
@@ -70,12 +73,22 @@ class ProfileDetailController extends GetxController {
 
   int? _calcMatch(Map<String, dynamic>? a, Map<String, dynamic>? b) {
     if (a == null || b == null) return null;
-    final fields = ['religion', 'sect', 'country', 'marital_status', 'religious_practice_level'];
+    final fields = [
+      'religion',
+      'sect',
+      'country',
+      'marital_status',
+      'religious_practice_level'
+    ];
     double score = 0;
     int total = fields.length;
     for (final k in fields) {
-      if (a[k] == null || b[k] == null) { total--; continue; }
-      if (a[k].toString().toLowerCase() == b[k].toString().toLowerCase()) score++;
+      if (a[k] == null || b[k] == null) {
+        total--;
+        continue;
+      }
+      if (a[k].toString().toLowerCase() == b[k].toString().toLowerCase())
+        score++;
     }
     for (final k in ['has_children', 'willing_to_relocate']) {
       if (a[k] != null && b[k] != null) {
@@ -99,14 +112,21 @@ class ProfileDetailController extends GetxController {
     if (v is List) return v.map((e) => e.toString()).toList();
     try {
       final s = v.toString();
-      return s.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    } catch (_) { return []; }
+      return s
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<void> _checkApprovalStatus(dynamic targetId) async {
     try {
       final apiClient = Get.find<ApiClient>();
-      final res = await apiClient.get('/profile/contact-reveal-status/$targetId');
+      final res =
+          await apiClient.get('/profile/contact-reveal-status/$targetId');
       if (res != null && res['data'] != null) {
         final data = res['data'];
         approvalStatus.value = {
@@ -117,8 +137,10 @@ class ProfileDetailController extends GetxController {
         };
         if (data['isRevealed'] == true) {
           final revealType = data['revealType']?.toString() ?? '';
-          if (revealType == 'phone' || revealType == 'both') phoneRevealed.value = true;
-          if (revealType == 'email' || revealType == 'both') emailRevealed.value = true;
+          if (revealType == 'phone' || revealType == 'both')
+            phoneRevealed.value = true;
+          if (revealType == 'email' || revealType == 'both')
+            emailRevealed.value = true;
         }
       }
     } catch (e) {
@@ -142,7 +164,8 @@ class ProfileDetailController extends GetxController {
   bool isFullyApproved() {
     if (approvalStatus['interestExists'] != true) return false;
     if (approvalStatus['interestAccepted'] != true) return false;
-    if (approvalStatus['guardiansInvolved'] == true && approvalStatus['guardiansApproved'] != true) return false;
+    if (approvalStatus['guardiansInvolved'] == true &&
+        approvalStatus['guardiansApproved'] != true) return false;
     return true;
   }
 
@@ -161,7 +184,8 @@ class ProfileDetailController extends GetxController {
     isUnlocking.value = true;
     try {
       final apiClient = Get.find<ApiClient>();
-      final res = await apiClient.post('/profile/reveal-contact/$targetId', data: {'revealType': type});
+      final res = await apiClient.post('/profile/reveal-contact/$targetId',
+          data: {'revealType': type});
       if (res != null && res['success'] == true) {
         if (type == 'phone' || type == 'both') {
           phoneRevealed.value = true;
@@ -174,12 +198,15 @@ class ProfileDetailController extends GetxController {
         if (res['data']?['creditsRemaining'] != null) {
           creditsRemaining.value = res['data']['creditsRemaining'];
         }
-        Get.snackbar('Unlocked!', 'Contact revealed successfully', snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Unlocked!', 'Contact revealed successfully',
+            snackPosition: SnackPosition.BOTTOM);
       } else {
-        Get.snackbar('Error', res?['message'] ?? 'Failed to unlock', snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar('Error', res?['message'] ?? 'Failed to unlock',
+            snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to unlock contact', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', 'Failed to unlock contact',
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       isUnlocking.value = false;
     }

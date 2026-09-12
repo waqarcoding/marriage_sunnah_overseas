@@ -4,3 +4,4 @@
 testing/
 .zip
 server/APP_SPEC.txt
+full_database_backup.sql

@@ -365,40 +365,48 @@ class ProfileProgressWidget extends StatelessWidget {
             ),
           ),
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: List.generate(
-              visibleSteps.length,
-              (index) {
-                final step = visibleSteps[index];
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(
+                      visibleSteps.length,
+                      (index) {
+                        final step = visibleSteps[index];
+                        final bool isLast = index == visibleSteps.length - 1;
+                        final bool isCurrent = !step.completed &&
+                            _isCurrentStep(
+                              visibleSteps,
+                              index,
+                            );
 
-                final bool isLast = index == visibleSteps.length - 1;
-
-                final bool isCurrent = !step.completed &&
-                    _isCurrentStep(
-                      visibleSteps,
-                      index,
-                    );
-
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _StepItem(
-                      title: step.title,
-                      completed: step.completed,
-                      isCurrent: isCurrent,
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _StepItem(
+                              title: step.title,
+                              completed: step.completed,
+                              isCurrent: isCurrent,
+                            ),
+                            if (!isLast)
+                              _StepConnector(
+                                completed: step.completed,
+                              ),
+                          ],
+                        );
+                      },
                     ),
-                    if (!isLast)
-                      _StepConnector(
-                        completed: step.completed,
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     });
@@ -422,7 +430,7 @@ class ProfileProgressWidget extends StatelessWidget {
 // STEP ITEM
 // ============================================================
 
-class _StepItem extends StatelessWidget {
+class _StepItem extends StatefulWidget {
   final String title;
   final bool completed;
   final bool isCurrent;
@@ -434,70 +442,165 @@ class _StepItem extends StatelessWidget {
   });
 
   @override
+  State<_StepItem> createState() => _StepItemState();
+}
+
+class _StepItemState extends State<_StepItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1400),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     Color circleColor;
+    Color borderColor;
 
-    if (completed) {
+    if (widget.completed) {
       circleColor = primaryColor;
-    } else if (isCurrent) {
-      circleColor = primaryColor.withOpacity(0.12);
+      borderColor = primaryColor;
+    } else if (widget.isCurrent) {
+      circleColor = primaryColor.withOpacity(0.10);
+      borderColor = primaryColor;
     } else {
-      circleColor = Colors.grey.withOpacity(0.12);
+      circleColor = Colors.grey.withOpacity(0.08);
+      borderColor = Colors.grey.withOpacity(0.3);
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: circleColor,
-            border: Border.all(
-              color: completed || isCurrent
-                  ? primaryColor
-                  : Colors.grey.withOpacity(0.35),
-              width: 1.5,
-            ),
-          ),
-          child: Center(
-            child: completed
-                ? const Icon(
-                    Icons.check,
-                    size: 17,
-                    color: Colors.white,
-                  )
-                : isCurrent
-                    ? Container(
-                        width: 8,
-                        height: 8,
+        SizedBox(
+          width: 40,
+          height: 40,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer pulse ring — only for current step
+              if (widget.isCurrent)
+                AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _pulseAnimation.value,
+                      child: Container(
+                        width: 34,
+                        height: 34,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: primaryColor,
+                          color: primaryColor.withOpacity(
+                            0.25 * (1.15 - _pulseAnimation.value) / 0.15,
+                          ),
                         ),
-                      )
-                    : null,
+                      ),
+                    );
+                  },
+                ),
+
+              // Main circle
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutBack,
+                tween: Tween(begin: 0.85, end: 1.0),
+                builder: (context, scale, child) {
+                  return Transform.scale(
+                    scale: widget.completed ? scale : 1.0,
+                    child: child,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: circleColor,
+                    border: Border.all(
+                      color: borderColor,
+                      width: 1.6,
+                    ),
+                    boxShadow: widget.completed
+                        ? [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.35),
+                              blurRadius: 8,
+                              spreadRadius: 0.5,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) => ScaleTransition(
+                        scale: animation,
+                        child: child,
+                      ),
+                      child: widget.completed
+                          ? const Icon(
+                              Icons.check_rounded,
+                              key: ValueKey('check'),
+                              size: 17,
+                              color: Colors.white,
+                            )
+                          : widget.isCurrent
+                              ? Container(
+                                  key: const ValueKey('dot'),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: primaryColor,
+                                  ),
+                                )
+                              : const SizedBox.shrink(key: ValueKey('empty')),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 5),
-        Text(
-          title,
+        const SizedBox(height: 6),
+        AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 250),
           style: TextStyle(
-            fontSize: 10,
-            fontWeight:
-                completed || isCurrent ? FontWeight.w600 : FontWeight.w400,
-            color: completed || isCurrent ? primaryColor : Colors.grey.shade600,
+            fontSize: 10.5,
+            fontWeight: widget.completed || widget.isCurrent
+                ? FontWeight.w600
+                : FontWeight.w400,
+            color: widget.completed || widget.isCurrent
+                ? primaryColor
+                : Colors.grey.shade500,
+            letterSpacing: 0.1,
           ),
+          child: Text(widget.title),
         ),
       ],
     );
   }
 }
-
 // ============================================================
 // CONNECTOR
 // ============================================================

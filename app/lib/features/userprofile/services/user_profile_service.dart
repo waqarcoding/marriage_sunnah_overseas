@@ -1,6 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:app/data/models/profile_model.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as _storage;
+import 'package:mime/mime.dart';
 import '../../../data/providers/api_client.dart';
 
 class UserProfileService extends GetxService {
@@ -58,4 +62,19 @@ class UserProfileService extends GetxService {
 
   Future<Map<String, dynamic>?> generatePin() async =>
       await _api.post('/guardian/generate-pin', data: {});
+
+  Future<Map<String, dynamic>?> uploadBytes(
+    String url,
+    Map<String, String> fields,
+    Map<String, Uint8List> files,
+    Map<String, String> filenames,
+  ) async {
+    // Assumes _api.uploadBytes exists; if not, implement accordingly.
+    return await _api.uploadBytes(
+      url,
+      fields,
+      files,
+      filenames,
+    );
+  }
 }

@@ -435,16 +435,18 @@ export const uploadImage = async (req, res) => {
     const PHOTO_COST = settings.cost_upload_image;
 
 
-    let creditResult = { success: true }; // default: assume success if main image
-    if (parseInt(req.body.index, 10) !== 0) {
+    let creditResult = { success: true }; // default: assume success unless 4th image
+    if (parseInt(req.body.index, 10) === 3) {
       creditResult = await deductCredits(userId, PHOTO_COST, 'Photo upload');
 
       if (!creditResult.success) {
         if (creditResult.code === 'INSUFFICIENT_CREDITS') {
           return res.json({
             success: false,
-            message: `Insufficient credits. You have ${creditResult.currentBalance} credits but need ${creditResult.required} credits to upload a photo or upgrade`,
+            message: `Insufficient credits: ${creditResult.currentBalance} available, but ${creditResult.required} required for this upload. Try again after upgrading your plan.`,
             currentBalance: creditResult.currentBalance,
+
+
             required: creditResult.required,
             deficit: creditResult.deficit
           });

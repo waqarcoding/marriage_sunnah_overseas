@@ -70,6 +70,7 @@ class AuthController extends GetxController {
   }
 
 // Google Login
+// Google Login (Mobile/iOS/Android)
   Future<void> googleLogin({
     required Function(String msg) onFailed,
     required BuildContext context,
@@ -81,54 +82,93 @@ class AuthController extends GetxController {
 
       final GoogleSignInAccount googleUser =
           await GoogleSignIn.instance.authenticate();
+// Note: no need to check for null — v7 throws GoogleSignInException on cancel instead
+
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+// Note: .authentication is now a getter, not an async call — no `await` needed
+      if (googleUser == null) {
+        // User closed/cancelled the Google account picker.
+        errorMessage.value = 'Google sign in cancelled by user.';
+        onFailed(errorMessage.value);
+        return;
+      }
 
       print('👤 Google account: ${googleUser.email}');
 
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      await _completeGoogleLogin(googleUser, context, onFailed);
 
-      final String? idToken = googleAuth.idToken;
-
-      if (idToken == null || idToken.isEmpty) {
-        errorMessage.value = 'Unable to get Google ID token';
-        onFailed(errorMessage.value);
-        return;
-      }
-
-      print('🔐 Google ID token received');
-
-      final response = await _authService.googleLogin(idToken);
-
-      print('🎯 Google Controller received: $response');
-
-      if (response != null && response['success'] == true) {
-        final AuthController authController = Get.find<AuthController>();
-        authController.checkProfile(context);
-      } else {
-        errorMessage.value = response?['error'] ??
-            response?['message'] ??
-            'Google login failed. Please try again.';
-
-        onFailed(errorMessage.value);
-      }
-    } on GoogleSignInException catch (e) {
-      print('❌ Google Sign-In: ${e.code} - ${e.description}');
-
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        // User closed/cancelled the Google account picker.
-        return;
-      }
-
-      errorMessage.value = e.description ?? 'Google Sign-In failed';
-
+      // Removed redundant assignment; error handling is managed in the catch block.
       onFailed(errorMessage.value);
     } catch (e) {
       print('❌ Google login error: $e');
-
       errorMessage.value = 'An error occurred: ${e.toString()}';
-
       onFailed(errorMessage.value);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+// Google Login (Web) — called from the rendered Google button's event listener
+  Future<void> handleGoogleSignInSuccess(
+    GoogleSignInAccount googleUser,
+    BuildContext context, {
+    Function(String msg)? onFailed,
+  }) async {
+    logout(); //clear previous data
+    try {
+      errorMessage.value = '';
+      isLoading.value = true;
+
+      print('👤 Google account (web): ${googleUser.email}');
+
+      await _completeGoogleLogin(
+        googleUser,
+        context,
+        onFailed ??
+            (msg) => Get.snackbar('Google Sign In', msg,
+                snackPosition: SnackPosition.BOTTOM),
+      );
+    } catch (e) {
+      print('❌ Google login error (web): $e');
+      errorMessage.value = 'An error occurred: ${e.toString()}';
+      (onFailed ??
+          (msg) => Get.snackbar('Google Sign In', msg,
+              snackPosition: SnackPosition.BOTTOM))(errorMessage.value);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+// Shared logic — used by BOTH mobile and web paths after we have a GoogleSignInAccount
+  Future<void> _completeGoogleLogin(
+    GoogleSignInAccount googleUser,
+    BuildContext context,
+    Function(String msg) onFailed,
+  ) async {
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+    final String? idToken = googleAuth.idToken;
+
+    if (idToken == null || idToken.isEmpty) {
+      errorMessage.value = 'Unable to get Google ID token';
+      onFailed(errorMessage.value);
+      return;
+    }
+
+    print('🔐 Google ID token received');
+
+    final response = await _authService.googleLogin(idToken);
+
+    print('🎯 Google Controller received: $response');
+
+    if (response != null && response['success'] == true) {
+      final AuthController authController = Get.find<AuthController>();
+      authController.checkProfile(context);
+    } else {
+      errorMessage.value = response?['error'] ??
+          response?['message'] ??
+          'Google login failed. Please try again.';
+      onFailed(errorMessage.value);
     }
   }
 

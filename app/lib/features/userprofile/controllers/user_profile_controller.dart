@@ -1,8 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/user_profile_service.dart';
+import '../../../core/widgets/crop_screen.dart';
 
 class UserProfileController extends GetxController {
   final UserProfileService _service = Get.find<UserProfileService>();
@@ -121,22 +128,69 @@ class UserProfileController extends GetxController {
   }
 
   // ── Upload photo ──────────────────────────────────────────────────────────
+
   Future<void> pickAndUploadPhoto(int idx) async {
     final picked =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
     if (picked == null) return;
 
-    uploadingIdx.value = idx;
-    // Insert placeholder
-    final temp = picked.path;
-    if (idx < photos.length) {
-      photos[idx] = temp;
+    Uint8List? croppedBytes;
+    File? croppedFile;
+
+    if (kIsWeb) {
+      // ── WEB: use crop_your_image ──────────────────────────────
+      final imageBytes = await picked.readAsBytes();
+      croppedBytes = await Get.to<Uint8List>(
+        () => CropScreen(imageBytes: imageBytes),
+      );
+      if (croppedBytes == null) return; // user cancelled
     } else {
-      photos.add(temp);
+      // ── MOBILE: use image_cropper (native) ────────────────────
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        aspectRatio: const CropAspectRatio(ratioX: 3, ratioY: 4),
+        compressQuality: 50,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Photo',
+            toolbarColor: const Color(0xFF1B4D3E),
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.ratio3x2,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Crop Photo',
+            aspectRatioLockEnabled: true,
+          ),
+        ],
+      );
+      if (cropped == null) return; // user cancelled
+      croppedFile = File(cropped.path);
+    }
+
+    uploadingIdx.value = idx;
+
+    // ── Insert placeholder ──────────────────────────────────────
+    String tempPreview;
+    if (kIsWeb) {
+      final base64Str = base64Encode(croppedBytes!);
+      tempPreview = 'data:image/jpeg;base64,$base64Str';
+    } else {
+      tempPreview = croppedFile!.path;
+    }
+
+    if (idx < photos.length) {
+      photos[idx] = tempPreview;
+    } else {
+      photos.add(tempPreview);
     }
 
     try {
-      final res = await _service.uploadImage(File(picked.path), idx);
+      // ── Upload — branch by platform ────────────────────────────
+      final res = kIsWeb
+          ? await uploadImageBytes(croppedBytes!, idx)
+          : await _service.uploadImage(croppedFile!, idx);
+
       if (res != null && res['success'] == true) {
         final url = res['imageUrl']?.toString() ?? '';
         if (idx < photos.length) {
@@ -144,8 +198,7 @@ class UserProfileController extends GetxController {
         } else {
           photos.add(url);
         }
-        Get.snackbar('✅', 'Photo uploaded! (5 credits deducted)',
-            snackPosition: SnackPosition.BOTTOM);
+        print('✅ Image uploaded Successfull');
       } else {
         Get.snackbar('Error', res?['message'] ?? 'Upload failed',
             snackPosition: SnackPosition.BOTTOM);
@@ -158,6 +211,15 @@ class UserProfileController extends GetxController {
       uploadingIdx.value = null;
     }
   }
+
+  Future<Map<String, dynamic>?> uploadImageBytes(
+          Uint8List bytes, int index) async =>
+      await _service.uploadBytes(
+        '/profile/upload-image',
+        {'index': index.toString()},
+        {'image': bytes},
+        {'image': 'photo_$index.jpg'},
+      );
 
   Future<void> deletePhoto(int idx) async {
     try {
@@ -197,8 +259,7 @@ class UserProfileController extends GetxController {
         if (updatedVideos.isNotEmpty) {
           videos.value = updatedVideos;
         }
-        Get.snackbar('✅', 'Video uploaded! (20 credits deducted)',
-            snackPosition: SnackPosition.BOTTOM);
+        print('✅ Video uploaded Successfull');
       } else {
         Get.snackbar('Error', res?['message'] ?? 'Upload failed',
             snackPosition: SnackPosition.BOTTOM);

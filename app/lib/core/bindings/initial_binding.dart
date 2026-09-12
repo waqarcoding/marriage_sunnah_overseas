@@ -3,6 +3,7 @@ import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/guardian/services/guardian_service.dart';
 import 'package:app/features/meeting/services/meeting_service.dart';
 import 'package:app/features/profile/widgets/profile_progress_widget.dart';
+import 'package:app/features/userprofile/controllers/user_profile_controller.dart';
 
 import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:app/features/verification/services/verification_service.dart';
@@ -63,7 +64,9 @@ class InitialBinding extends Bindings {
     reg(MeetingService());
     reg(GuardianService());
     reg(VerificationService());
+    reg(SettingsService());
     Get.put(AuthController());
+    Get.put(UserProfileController());
     Get.put(ProfileProgressController());
   }
 }

@@ -1,4 +1,7 @@
+import 'package:app/core/widgets/phone_field.dart';
+import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/profile/widgets/profile_progress_widget.dart';
+import 'package:app/features/userprofile/widgets/media_section_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
@@ -25,10 +28,12 @@ class CompleteProfilePage extends StatelessWidget {
 class _CompleteProfileView extends GetView<CompleteProfileController> {
   @override
   Widget build(BuildContext context) {
+    AuthController authController = Get.find<AuthController>();
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Obx(() {
-        if (controller.isDone.value) return _DoneScreen();
+        if (controller.isDone.value) authController.checkProfile(context);
+
         return Column(
           children: [
             _Header(),
@@ -87,21 +92,19 @@ class _Header extends GetView<CompleteProfileController> {
         color: Colors.white,
         child: Column(
           children: [
-            // Profile process progress
-            ProfileProgressWidget(),
-
             // Current profile-page progress
             AnimatedContainer(
+              margin: EdgeInsets.only(left: 20, right: 20, top: 20),
               duration: const Duration(milliseconds: 600),
               curve: Curves.easeInOutCubic,
-              height: 3,
+              height: 6,
               width: double.infinity,
               child: Stack(
                 children: [
                   // Background track for subtle effect
                   Container(
                     width: double.infinity,
-                    height: 3,
+                    height: 6,
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.14),
                       borderRadius: BorderRadius.circular(1.5),
@@ -117,7 +120,7 @@ class _Header extends GetView<CompleteProfileController> {
                       curve: Curves.easeInOutCubic,
                       width: (progress * MediaQuery.of(context).size.width)
                           .clamp(0.0, MediaQuery.of(context).size.width),
-                      height: 3,
+                      height: 6,
                       decoration: const BoxDecoration(
                         borderRadius: BorderRadius.all(Radius.circular(1.5)),
                         gradient: LinearGradient(
@@ -196,6 +199,12 @@ class _Step1 extends GetView<CompleteProfileController> {
         variant: StepCardVariant.primary,
         children: [
           // Gender selector
+          MediaSectionWidget(
+              hideprofeature: true,
+              onCountChanged: (count) {
+                print('Number of images selected: $count');
+                controller.profileimagecount.value = count;
+              }),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Gender',
                 style: TextStyle(
@@ -222,15 +231,31 @@ class _Step1 extends GetView<CompleteProfileController> {
                         width: isSelected ? 1.5 : 1),
                   ),
                   child: Center(
-                      child: Text(g == 'Male' ? '♂ Male' : '♀ Female',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          g == 'Male' ? Icons.male : Icons.female,
+                          size: 18,
+                          color:
+                              isSelected ? Colors.white : AppColors.foreground,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          g == 'Male' ? 'Male' : 'Female',
                           style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppColors.foreground))),
+                            fontSize: 14,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.foreground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ));
             }).toList()),
@@ -296,6 +321,7 @@ class _Step2 extends GetView<CompleteProfileController> {
 
   @override
   Widget build(BuildContext context) {
+    controller.requestLocation();
     return Obx(() {
       final opts = controller.opts.value;
       final countries = opts?.countries ?? <String>[];
@@ -315,13 +341,20 @@ class _Step2 extends GetView<CompleteProfileController> {
         subtitle: 'Where are you based?',
         variant: StepCardVariant.primary,
         children: [
-          InputField(
+          Obx(() {
+            final phoneValue = controller.getForm('phone')?.toString() ?? '';
+            return PhoneInputField(
               label: 'Phone Number',
-              value: controller.getForm('phone')?.toString() ?? '',
-              onChange: (v) => controller.setForm('phone', v),
+              value: phoneValue,
+              initialCountryCode: 'PK',
+              optional: true,
+              onChange: (fullNumber, countryCode, isValid) {
+                controller.setForm('phone', fullNumber);
+                controller.setForm('is_phone_valid', isValid);
+              },
               placeholder: '+92 300 0000000',
-              type: 'tel',
-              optional: true),
+            );
+          }),
 
           SelectOption(
               label: 'Country of Residence',
@@ -937,126 +970,5 @@ class _Footer extends GetView<CompleteProfileController> {
             ])),
       );
     });
-  }
-}
-
-// ─── Done Screen ─────────────────────────────────────────────────────────────
-class _DoneScreen extends StatefulWidget {
-  @override
-  State<_DoneScreen> createState() => _DoneScreenState();
-}
-
-class _DoneScreenState extends State<_DoneScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ac;
-  late Animation<double> _scale, _fade;
-
-  @override
-  void initState() {
-    super.initState();
-    _ac =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 700));
-    _scale = Tween<double>(begin: 0, end: 1)
-        .animate(CurvedAnimation(parent: _ac, curve: Curves.elasticOut));
-    _fade = Tween<double>(begin: 0, end: 1)
-        .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOut));
-    _ac.forward();
-  }
-
-  @override
-  void dispose() {
-    _ac.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-          child: Center(
-              child: Padding(
-        padding: EdgeInsets.all(32),
-        child: FadeTransition(
-            opacity: _fade,
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              ScaleTransition(
-                  scale: _scale,
-                  child: Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [AppColors.primary, Color(0xFF2d7a5e)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
-                            blurRadius: 24,
-                            offset: Offset(0, 8))
-                      ],
-                    ),
-                    child: Icon(Icons.check_circle_outline,
-                        color: Colors.white, size: 48),
-                  )),
-              SizedBox(height: 32),
-              Text('Profile Complete!',
-                  style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.cardForeground,
-                      fontFamily: 'Playfair Display')),
-              SizedBox(height: 16),
-              Text(
-                  'Congratulations! Your profile is complete. You are now live. Linking your guardian is recommended to access all features and improve your experience.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.mutedForeground,
-                      height: 1.6)),
-              SizedBox(height: 40),
-              GestureDetector(
-                onTap: () => Get.offAll(() => _HomePagePlaceholder()),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                        colors: [AppColors.primary, Color(0xFF2d7a5e)]),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: Offset(0, 4))
-                    ],
-                  ),
-                  child: Center(
-                      child: Text('View Matches',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16))),
-                ),
-              ),
-            ])),
-      ))),
-    );
-  }
-}
-
-class _HomePagePlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        body: Center(
-            child: Text('Welcome!',
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary))));
   }
 }

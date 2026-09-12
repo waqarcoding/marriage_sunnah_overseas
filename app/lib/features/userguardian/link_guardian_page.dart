@@ -18,39 +18,41 @@ class LinkGuardianPage extends GetView<LinkGuardianController> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(LinkGuardianController());
-    return SafeArea(
-        child: Container(
-      color: Colors.white,
-      child: Column(
-        children: [
-          // ── Header ──
-          isShowHeader
-              ? const IslamicPageHeader(
-                  title: 'Guardian',
-                  subtitle: 'Fulfilling your sacred duty with honor',
-                )
-              : SizedBox.shrink(),
-          // Profile process progress
-          if (!isShowHeader) ProfileProgressWidget(),
-          // ── Content ──
-          Expanded(
-            child: Obx(() {
-              if (controller.loading.value) return const _LoadingState();
+    return Scaffold(
+      body: SafeArea(
+          child: Container(
+        color: Colors.white,
+        child: Column(
+          children: [
+            // ── Header ──
+            isShowHeader
+                ? const IslamicPageHeader(
+                    title: 'Guardian',
+                    subtitle: 'Fulfilling your sacred duty with honor',
+                  )
+                : SizedBox.shrink(),
+            // Profile process progress
+            if (!isShowHeader) ProfileProgressWidget(),
+            // ── Content ──
+            Expanded(
+              child: Obx(() {
+                if (controller.loading.value) return const _LoadingState();
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: controller.guardian.value != null
-                      ? _GuardianLinkedView(controller: controller)
-                      : _PinFlowView(controller: controller),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    ));
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: controller.guardian.value != null
+                        ? _GuardianLinkedView(controller: controller)
+                        : _PinFlowView(controller: controller),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      )),
+    );
   }
 }
 

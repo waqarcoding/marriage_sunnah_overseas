@@ -1,3 +1,4 @@
+import 'package:app/features/profile/controllers/profile_detail_controller.dart';
 import 'package:app/features/userprofile/controllers/user_profile_controller.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
@@ -15,6 +16,7 @@ class CompleteProfileController extends GetxController {
   var optsLoading = true.obs;
   var isDone = false.obs;
   var currentStep = 1.obs;
+  var profileimagecount = 0.obs;
   var errorMessage = ''.obs;
 
   static const int totalSteps = 6;
@@ -458,6 +460,9 @@ class CompleteProfileController extends GetxController {
   // ─── Validation ───────────────────────────────────────────────────────────
   List<String> validateStep(int step) {
     final missing = <String>[];
+    CompleteProfileController controller =
+        Get.find<CompleteProfileController>();
+
     if (step == 1) {
       if (form['date_of_birth'] == null ||
           form['date_of_birth'].toString().isEmpty)
@@ -465,8 +470,18 @@ class CompleteProfileController extends GetxController {
       if (form['marital_status'] == null ||
           form['marital_status'].toString().isEmpty)
         missing.add('Marital Status');
+      if (form['gender'] == null || form['gender'].toString().isEmpty)
+        missing.add('Gender');
+
+      if (controller.profileimagecount.value <= 2) {
+        missing.add("At least three profile images are required");
+      }
     }
     if (step == 2) {
+      if (form['phone'] == null || form['phone'].toString().isEmpty) {
+        missing.add('Phone');
+      }
+
       if (form['country'] == null || form['country'].toString().isEmpty)
         missing.add('Country');
       if (form['city'] == null || form['city'].toString().isEmpty)
