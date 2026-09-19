@@ -12,7 +12,9 @@ class ApiClient extends GetxService {
 
   // Base URL - change this to your server URL
   // static const String baseUrl = 'http://localhost:5000/api'; //for live server use this
-  static const String baseUrl = 'http://192.168.100.54:5000/api';
+  static const String baseUrl = bool.fromEnvironment('dart.vm.product')
+      ? 'https://www.marriagesunnaoverseas.com/api'
+      : 'http://192.168.100.54:5000/api';
 
   DateTime _lastPing = DateTime.now();
 

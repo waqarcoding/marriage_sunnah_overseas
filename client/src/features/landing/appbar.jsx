@@ -67,7 +67,7 @@ export const AppBar = ({ onLogout, onSidebarLogout, isScrolled, isopacityon }) =
                         size="lg"
                         className="border-white/30 text-white hover:bg-white/10 h-10 px-6"
                         onClick={() => {
-                            window.history.pushState({}, '', '/login');
+                            window.history.pushState({}, '', '/app');
                             window.dispatchEvent(new PopStateEvent('popstate'));
                         }}
                     >
@@ -75,7 +75,11 @@ export const AppBar = ({ onLogout, onSidebarLogout, isScrolled, isopacityon }) =
                     </Button>
 
 
-                    <Button
+
+
+                    {/*
+                   
+                   <Button
                         variant="default"
                         size="lg"
                         className="bg-white text-emerald-900 h-10 px-6 hover:bg-white active:bg-white focus:bg-white shadow-2xl transition-all transform hover:scale-105 active:scale-95 focus:scale-105"
@@ -89,6 +93,7 @@ export const AppBar = ({ onLogout, onSidebarLogout, isScrolled, isopacityon }) =
                     >
                         <span className="text-emerald-900 font-semibold">Register</span>
                     </Button>
+                   */}
 
 
 
@@ -131,20 +136,7 @@ export const AppBar = ({ onLogout, onSidebarLogout, isScrolled, isopacityon }) =
                             >
                                 Login
                             </Button>
-                            <Button
-                                variant="default"
-                                size="lg"
-                                className="bg-white text-emerald-900 h-10 px-6 hover:bg-white active:bg-white focus:bg-white shadow-2xl transition-all transform hover:scale-105 active:scale-95 focus:scale-105"
 
-                                onClick={() => {
-                                    window.history.pushState({}, '', '/register');
-                                    window.dispatchEvent(new PopStateEvent('popstate'));
-                                }}
-                                style={{ backgroundColor: 'white' }}
-                                tabIndex={0}
-                            >
-                                <span className="text-emerald-900 font-semibold">Register</span>
-                            </Button>
                         </div>
                     </nav>
                 </div>
