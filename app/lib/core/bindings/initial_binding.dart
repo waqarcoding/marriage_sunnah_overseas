@@ -1,11 +1,12 @@
 import 'package:app/data/services/settings_service.dart';
 import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/guardian/services/guardian_service.dart';
+import 'package:app/features/intro/profile_progress_widget.dart';
 import 'package:app/features/meeting/services/meeting_service.dart';
-import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:app/features/userprofile/controllers/user_profile_controller.dart';
 
 import 'package:app/features/userprofile/services/user_profile_service.dart';
+import 'package:app/features/verification/controllers/liveness_controller.dart';
 import 'package:app/features/verification/services/verification_service.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -55,18 +56,27 @@ class InitialBinding extends Bindings {
 
     reg(AuthService());
     reg(SocketService());
+    reg(SettingsService());
     reg(ProfileService());
     reg(ExploreService());
     reg(InterestService());
     reg(ChatService());
-    reg(UserSettingsService());
-    reg(UserProfileService());
-    reg(MeetingService());
-    reg(GuardianService());
-    reg(VerificationService());
-    reg(SettingsService());
+    if (!Get.isRegistered<UserSettingsService>())
+      Get.lazyPut<UserSettingsService>(() => UserSettingsService(),
+          fenix: true);
+    if (!Get.isRegistered<UserProfileService>())
+      Get.lazyPut<UserProfileService>(() => UserProfileService(), fenix: true);
+    if (!Get.isRegistered<MeetingService>())
+      Get.lazyPut<MeetingService>(() => MeetingService(), fenix: true);
+    if (!Get.isRegistered<GuardianService>())
+      Get.lazyPut<GuardianService>(() => GuardianService(), fenix: true);
+    if (!Get.isRegistered<VerificationService>())
+      Get.lazyPut<VerificationService>(() => VerificationService(),
+          fenix: true);
+
     Get.put(AuthController());
     Get.put(UserProfileController());
     Get.put(ProfileProgressController());
+    Get.lazyPut<LivenessController>(() => LivenessController());
   }
 }

@@ -5,7 +5,7 @@
 import 'package:app/core/theme/app_colors.dart';
 import 'package:app/core/widgets/islamic_page_header.dart';
 import 'package:app/data/models/guardian_model.dart';
-import 'package:app/features/profile/widgets/profile_progress_widget.dart';
+import 'package:app/features/intro/profile_progress_widget.dart';
 import 'package:app/features/userguardian/link_guardian_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

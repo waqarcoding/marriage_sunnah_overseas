@@ -4,9 +4,12 @@ import '../../../data/providers/api_client.dart';
 class VerificationService extends GetxService {
   final ApiClient _api = Get.find<ApiClient>();
 
-  // ── Upload ID card (front + back) ──────────────────────────────────────────
-  Future<Map<String, dynamic>?> uploadIdCard(
-      String frontPath, String backPath) async =>
+  /// Uploads front and back verification photos to `/profile/upload-idcard`.
+  ///
+  /// [frontPath] and [backPath] are local file paths captured by the
+  /// device camera.
+  Future<Map<String, dynamic>?> uploadLivenessPhoto(
+          String frontPath, String backPath) async =>
       await _api.upload(
         '/profile/upload-idcard',
         {},

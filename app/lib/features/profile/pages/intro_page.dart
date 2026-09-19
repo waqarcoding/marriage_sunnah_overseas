@@ -1,6 +1,5 @@
 import 'package:app/core/widgets/phone_field.dart';
 import 'package:app/features/auth/controllers/auth_controller.dart';
-import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:app/features/userprofile/widgets/media_section_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,7 +12,7 @@ import '../../../core/widgets/multi_chips.dart';
 import '../../../core/widgets/toggle_group.dart';
 import '../../../core/widgets/input_field.dart';
 import '../../../core/widgets/app_textarea.dart';
-import '../controllers/complete_profile_controller.dart';
+import '../controllers/intro_controller.dart';
 
 class CompleteProfilePage extends StatelessWidget {
   const CompleteProfilePage({Key? key}) : super(key: key);

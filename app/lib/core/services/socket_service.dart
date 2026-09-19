@@ -3,6 +3,7 @@
 // Flutter port of SocketContext.jsx
 // Uses socket_io_client ^2.0.3 — same events, same path, same auth
 //
+import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -166,6 +167,14 @@ class SocketService extends GetxService {
         case 'guardian_assigned':
         case 'guardian_removed':
         case 'ward_added':
+          {
+            final authController = Get.find<AuthController>();
+            final ctx = Get.context;
+            if (ctx != null) {
+              authController.checkProfile(ctx);
+            }
+          }
+          break;
         case 'ward_removed':
           break;
         default:

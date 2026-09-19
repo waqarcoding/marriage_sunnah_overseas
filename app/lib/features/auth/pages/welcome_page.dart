@@ -1,17 +1,16 @@
-import 'dart:async';
-
+import 'package:app/core/widgets/terms.dart';
 import 'package:app/features/auth/controllers/auth_controller.dart';
+import 'package:app_component/widgets/image_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
-import 'package:google_sign_in_web/google_sign_in_web.dart' as web;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'auth_sheet.dart';
+import 'package:app/features/auth/widgets/google_overlay_button_stub.dart'
+    if (dart.library.js_interop) 'package:app/features/auth/widgets/google_overlay_button_web.dart';
 
 /// MSO-style welcome / register screen.
 ///
@@ -25,8 +24,10 @@ class WellcomePage extends StatelessWidget {
   // Single hero image used as the background instead of the old
   // scrolling product collage. Swap this path for whichever asset
   // you want to feature.
-  static const String _backgroundImage = 'assets/images/sample1.jpg';
-
+  static const String _backgroundImage =
+      'https://marriage-sunna-overseas.sgp1.cdn.digitaloceanspaces.com/assets/sample3.jpg';
+  static const String _backgroundImagedesktop =
+      'https://marriage-sunna-overseas.sgp1.cdn.digitaloceanspaces.com/assets/sample3.jpg';
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -43,16 +44,24 @@ class WellcomePage extends StatelessWidget {
         backgroundColor: theme.colorScheme.primary,
         body: Stack(
           children: [
-            // Single static hero image instead of the animated collage.
-            SizedBox(
-              height: 0.64.sh,
-              width: double.infinity,
-              child: Image.asset(
-                _backgroundImage,
+            // Full-page background image.
+            Positioned.fill(
+              child: ImageWidget(
+                path: isWideScreen ? _backgroundImagedesktop : _backgroundImage,
+                sourceType: ImageSourceType.network,
+                width: double.infinity,
+                height: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('❌ Failed to load $_backgroundImage: $error');
-                  return Container(color: Colors.grey.shade300);
+                borderRadius: 0,
+                isShimmer: true, // shimmer instead of spinkit while loading
+                errorWidget: const Icon(Icons.broken_image,
+                    color: Colors.grey, size: 32),
+                onSuccess: () {
+                  debugPrint('Image loaded successfully');
+                },
+                onError: (error, stackTrace) {
+                  debugPrint('Image failed to load: $error');
+                  // e.g. log to analytics/crash reporting
                 },
               ),
             ),
@@ -95,7 +104,11 @@ class WellcomePage extends StatelessWidget {
                       SizedBox(height: 28.h),
                       _actions(context, theme, isWideScreen),
                       SizedBox(height: 16.h),
-                      SizedBox(height: 8.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 24.0, vertical: 8.0),
+                        child: TermsText(),
+                      ),
                     ],
                   ),
                 ),
@@ -115,12 +128,13 @@ class WellcomePage extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: isWideScreen ? 0 : 20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Continue with Google
           SizedBox(
             height: 54.h,
             child: kIsWeb
-                ? _OverlayGoogleButton(authController: authController)
+                ? OverlayGoogleButton(authController: authController)
                 : ElevatedButton(
                     onPressed: () {
                       authController.googleLogin(
@@ -164,7 +178,7 @@ class WellcomePage extends StatelessWidget {
 
           // Already have an account? Login
           Align(
-            alignment: Alignment.centerRight,
+            alignment: Alignment.center,
             child: TextButton(
               onPressed: () {
                 showAuthSheet(
@@ -241,115 +255,6 @@ class WellcomePage extends StatelessWidget {
               fontSize: isWideScreen ? 16 : 15.sp,
               fontWeight: FontWeight.w500,
               height: 1.35,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OverlayGoogleButton extends StatefulWidget {
-  final AuthController authController;
-  const _OverlayGoogleButton({required this.authController});
-
-  @override
-  State<_OverlayGoogleButton> createState() => _OverlayGoogleButtonState();
-}
-
-class _OverlayGoogleButtonState extends State<_OverlayGoogleButton> {
-  StreamSubscription? _authSub;
-
-  @override
-  void initState() {
-    super.initState();
-    _authSub = GoogleSignIn.instance.authenticationEvents.listen((event) {
-      if (event is GoogleSignInAuthenticationEventSignIn) {
-        widget.authController.handleGoogleSignInSuccess(
-          event.user,
-          context,
-          onFailed: (msg) {
-            Get.snackbar('Google Sign In', msg,
-                snackPosition: SnackPosition.BOTTOM);
-          },
-        );
-      }
-    }, onError: (error) {
-      Get.snackbar(
-        'Google Sign In',
-        'Sign in failed: $error',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(18.r),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary,
-          width: 2,
-        ),
-      ),
-      width: 260,
-      height: 60,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Visible layer: your exact custom button, purely visual
-          IgnorePointer(
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14.r),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  BrandLogo.google(26),
-                  const SizedBox(width: 14),
-                  const Text(
-                    'Continue with Google',
-                    style: TextStyle(
-                      fontSize: 17,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Invisible layer: real Google iframe, receives the actual tap
-          Opacity(
-            opacity: 0.01,
-            child: (GoogleSignInPlatform.instance as web.GoogleSignInPlugin)
-                .renderButton(
-              configuration: web.GSIButtonConfiguration(
-                type: web.GSIButtonType.standard,
-                theme: web.GSIButtonTheme.filledBlue,
-                size: web.GSIButtonSize.large,
-                shape: web.GSIButtonShape.pill,
-                minimumWidth: 260,
-              ),
             ),
           ),
         ],

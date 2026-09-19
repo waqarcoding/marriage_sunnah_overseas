@@ -1,7 +1,9 @@
 import 'package:app/splash.dart';
+import 'package:app_component/widgets/image_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:video_player/video_player.dart';
 
 import 'core/theme/app_theme.dart';
 
@@ -27,22 +29,9 @@ class MyApp extends StatelessWidget {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Marriage Sunnah',
-          theme: AppTheme.lightTheme,
+          theme: AppTheme.lightTheme(context),
           defaultTransition: Transition.fadeIn,
-          home: Center(
-            child: Image.asset(
-              'assets/images/sample1.jpg',
-              width: 200,
-              height: 200,
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('❌ TEST FAILED: $error');
-                return const Text(
-                  'IMAGE FAILED',
-                  style: TextStyle(color: Colors.red, fontSize: 24),
-                );
-              },
-            ),
-          ),
+          home: SplashScreen(),
         );
       },
     );

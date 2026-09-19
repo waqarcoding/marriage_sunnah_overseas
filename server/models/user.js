@@ -192,6 +192,11 @@ module.exports = (sequelize, DataTypes) => {
     is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
     is_pro: { type: DataTypes.BOOLEAN, defaultValue: false },
+    is_otp_verified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    },
     frontid_url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
     backid_url: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
     credits: {

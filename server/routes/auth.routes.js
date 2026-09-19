@@ -9,15 +9,15 @@ const router = express.Router();
 
 router.post(
   '/register',
-  upload.fields([{ name: 'image', maxCount: 1 }]),
+  // upload.fields([{ name: 'image', maxCount: 1 }]),
   validateBody(
     Joi.object({
       name: Joi.string().required(),
-      gender: Joi.string().required(),
+      // gender: Joi.string().required(),
       email: Joi.string().email().required(),
-      mobile: Joi.string().optional().allow('', null),
+      // mobile: Joi.string().optional().allow('', null),
       password_hash: Joi.string().required(),
-      role: Joi.string().optional().default('individual'),
+      // role: Joi.string().optional().default('individual'),
     }).unknown(true)
   ),
   authController.signup

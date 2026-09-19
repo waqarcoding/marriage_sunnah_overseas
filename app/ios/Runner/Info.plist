@@ -6,6 +6,8 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 <string>Allow access to photos to upload profile pictures</string>
+<key>NSCameraUsageDescription</key>
+<string>We need camera access to verify you're a real person.</string>
 	<key>CFBundleDisplayName</key>
 	<string>App</string>
 	<key>CFBundleExecutable</key>

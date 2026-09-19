@@ -14,6 +14,9 @@ class ProfileService extends GetxService {
     return await _apiClient.put('/profile/update-profile', data: data);
   }
 
+  Future<Map<String, dynamic>?> updateUser(Map<String, dynamic> data) async =>
+      await _apiClient.patch('/profile/update-user', data: data);
+
   Future<Map<String, dynamic>?> updatePrefs(Map<String, dynamic> data) async {
     return await _apiClient.put('/profile/update-prefs', data: data);
   }

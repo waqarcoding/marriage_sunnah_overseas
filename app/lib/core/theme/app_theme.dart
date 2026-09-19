@@ -7,6 +7,20 @@ class AppTheme {
   // Font families matching web
   static const String fontSans = 'DM Sans';
   static const String fontHeading = 'Playfair Display';
+  static const double _desktopBreakpoint = 1024;
+
+  /// Returns a font size appropriate for the current screen width.
+  /// On mobile, uses ScreenUtil's `.sp` (scales with device pixel density).
+  /// On desktop, uses a fixed logical size so text doesn't balloon with
+  /// ScreenUtil's mobile-oriented scaling.
+  static double _fontSize(
+      BuildContext context, double mobileSp, double desktopSize) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > _desktopBreakpoint) {
+      return desktopSize;
+    }
+    return mobileSp.sp;
+  }
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
@@ -25,11 +39,10 @@ class AppTheme {
   static const Color primaryLight = Color(0xFFE4E4E7);
   static const Color primaryDark = Color(0xFFA1A1AA);
 
-  static ThemeData get lightTheme {
+  static ThemeData lightTheme(BuildContext context) {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
@@ -40,12 +53,9 @@ class AppTheme {
         onSurface: AppColors.foreground,
         onError: Colors.white,
       ),
-
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.secondary,
-
-      // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -53,8 +63,6 @@ class AppTheme {
           side: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
-
-      // AppBar Theme — white background, dark icons/text, dark status bar icons
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.foreground,
@@ -70,33 +78,29 @@ class AppTheme {
         ),
         titleTextStyle: TextStyle(
           fontFamily: fontHeading,
-          fontSize: 22.sp,
+          fontSize: _fontSize(context, 22, 24),
           fontWeight: FontWeight.bold,
           color: AppColors.foreground,
         ),
         iconTheme: IconThemeData(color: AppColors.foreground, size: 24.sp),
       ),
-
-      // Bottom Navigation Bar Theme — white background
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.mutedForeground,
         selectedLabelStyle: TextStyle(
           fontFamily: fontSans,
-          fontSize: 12.sp,
+          fontSize: _fontSize(context, 12, 13),
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: TextStyle(
           fontFamily: fontSans,
-          fontSize: 12.sp,
+          fontSize: _fontSize(context, 12, 13),
           fontWeight: FontWeight.w500,
         ),
         elevation: 8,
         type: BottomNavigationBarType.fixed,
       ),
-
-      // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.input,
@@ -123,17 +127,15 @@ class AppTheme {
         ),
         labelStyle: TextStyle(
           fontFamily: fontSans,
-          fontSize: 14.sp,
+          fontSize: _fontSize(context, 14, 15),
           color: AppColors.mutedForeground,
         ),
         hintStyle: TextStyle(
           fontFamily: fontSans,
-          fontSize: 14.sp,
+          fontSize: _fontSize(context, 14, 15),
           color: AppColors.mutedForeground,
         ),
       ),
-
-      // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -145,25 +147,21 @@ class AppTheme {
           ),
           textStyle: TextStyle(
             fontFamily: fontSans,
-            fontSize: 15.sp,
+            fontSize: _fontSize(context, 15, 16),
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-
-      // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           textStyle: TextStyle(
             fontFamily: fontSans,
-            fontSize: 14.sp,
+            fontSize: _fontSize(context, 14, 15),
             fontWeight: FontWeight.w500,
           ),
         ),
       ),
-
-      // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
@@ -174,142 +172,131 @@ class AppTheme {
           ),
           textStyle: TextStyle(
             fontFamily: fontSans,
-            fontSize: 15.sp,
+            fontSize: _fontSize(context, 15, 16),
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-
-      // Bottom Sheet Theme
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
       ),
-
-      // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20.r),
         ),
         elevation: 8,
       ),
-
-      // Divider Theme
       dividerTheme: DividerThemeData(
         color: AppColors.border,
         thickness: 1,
         space: 1,
       ),
-
-      // Icon Theme
       iconTheme: IconThemeData(
         color: AppColors.foreground,
         size: 24.sp,
       ),
-
-      // Text Theme
       textTheme: TextTheme(
         displayLarge: TextStyle(
           fontFamily: fontHeading,
-          fontSize: 40.sp,
+          fontSize: _fontSize(context, 40, 44),
           fontWeight: FontWeight.bold,
           color: AppColors.foreground,
           height: 1.2,
         ),
         displayMedium: TextStyle(
           fontFamily: fontHeading,
-          fontSize: 34.sp,
+          fontSize: _fontSize(context, 34, 38),
           fontWeight: FontWeight.bold,
           color: AppColors.foreground,
           height: 1.2,
         ),
         displaySmall: TextStyle(
           fontFamily: fontHeading,
-          fontSize: 28.sp,
+          fontSize: _fontSize(context, 28, 30),
           fontWeight: FontWeight.bold,
           color: AppColors.foreground,
           height: 1.2,
         ),
         headlineLarge: TextStyle(
           fontFamily: fontHeading,
-          fontSize: 26.sp,
+          fontSize: _fontSize(context, 26, 28),
           fontWeight: FontWeight.w600,
           color: AppColors.foreground,
         ),
         headlineMedium: TextStyle(
           fontFamily: fontSans,
-          fontSize: 24.sp,
+          fontSize: _fontSize(context, 24, 25),
           fontWeight: FontWeight.w600,
           color: AppColors.foreground,
         ),
         headlineSmall: TextStyle(
           fontFamily: fontSans,
-          fontSize: 22.sp,
+          fontSize: _fontSize(context, 22, 23),
           fontWeight: FontWeight.w600,
           color: AppColors.foreground,
         ),
         titleLarge: TextStyle(
           fontFamily: fontSans,
-          fontSize: 20.sp,
+          fontSize: _fontSize(context, 20, 21),
           fontWeight: FontWeight.w600,
           color: AppColors.foreground,
         ),
         titleMedium: TextStyle(
           fontFamily: fontSans,
-          fontSize: 17.sp,
+          fontSize: _fontSize(context, 17, 18),
           fontWeight: FontWeight.w500,
           color: AppColors.foreground,
         ),
         titleSmall: TextStyle(
           fontFamily: fontSans,
-          fontSize: 15.sp,
+          fontSize: _fontSize(context, 15, 16),
           fontWeight: FontWeight.w500,
           color: AppColors.foreground,
         ),
         bodyLarge: TextStyle(
           fontFamily: fontSans,
-          fontSize: 17.sp,
+          fontSize: _fontSize(context, 17, 17),
           fontWeight: FontWeight.normal,
           color: AppColors.cardForeground,
           height: 1.5,
         ),
         bodyMedium: TextStyle(
           fontFamily: fontSans,
-          fontSize: 15.sp,
+          fontSize: _fontSize(context, 15, 15),
           fontWeight: FontWeight.normal,
           color: AppColors.cardForeground,
           height: 1.5,
         ),
         bodySmall: TextStyle(
           fontFamily: fontSans,
-          fontSize: 13.sp,
+          fontSize: _fontSize(context, 13, 13),
           fontWeight: FontWeight.normal,
           color: AppColors.mutedForeground,
           height: 1.4,
         ),
         labelLarge: TextStyle(
           fontFamily: fontSans,
-          fontSize: 15.sp,
+          fontSize: _fontSize(context, 15, 15),
           fontWeight: FontWeight.w600,
           color: AppColors.foreground,
         ),
         labelMedium: TextStyle(
           fontFamily: fontSans,
-          fontSize: 13.sp,
+          fontSize: _fontSize(context, 13, 13),
           fontWeight: FontWeight.w500,
           color: AppColors.foreground,
         ),
         labelSmall: TextStyle(
           fontFamily: fontSans,
-          fontSize: 12.sp,
+          fontSize: _fontSize(context, 12, 12),
           fontWeight: FontWeight.w500,
           color: AppColors.mutedForeground,
         ),
       ),
-
       fontFamily: fontSans,
     );
   }

@@ -1,9 +1,10 @@
 import 'package:app/bottom_tabs.dart';
+import 'package:app/core/widgets/terms.dart';
 import 'package:app/features/auth/pages/forgot_password_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -14,28 +15,98 @@ import '../controllers/auth_controller.dart';
 /// Which flow the auth sheet opens in.
 enum AuthMode { signUp, signIn }
 
-/// Light, theme-driven auth bottom sheet that handles both sign-up and
-/// sign-in, wired to [AuthController] for real network calls.
+/// Above this width we stop behaving like a phone: the sheet becomes a
+/// centred dialog and sizing switches to raw logical pixels.
+const double kAuthWideBreakpoint = 700;
+
+/// The form never gets wider than this, on any layout. Long single-column
+/// inputs stretched across a 1920px monitor are unusable.
+const double kAuthMaxContentWidth = 440;
+
+/// ScreenUtil scales every dimension against a phone design size, so on a
+/// 1440px-wide window `22.w` becomes ~84px and the sheet falls apart. On wide
+/// layouts we bypass it and use logical pixels directly.
+class _Scale {
+  const _Scale(this.useScreenUtil);
+
+  final bool useScreenUtil;
+
+  double w(double v) => useScreenUtil ? v.w : v;
+  double h(double v) => useScreenUtil ? v.h : v;
+  double sp(double v) => useScreenUtil ? v.sp : v;
+  double r(double v) => useScreenUtil ? v.r : v;
+}
+
+/// Light, theme-driven auth surface that handles both sign-up and sign-in,
+/// wired to [AuthController] for real network calls.
 ///
-/// Users start on the social-provider screen and can expand an inline email
-/// form. A footer link toggles between the two modes without closing the sheet.
+/// On phones it opens as a bottom sheet. On tablets, desktop and web it opens
+/// as a centred dialog with a fixed max width, keyboard navigation and
+/// hover cursors.
 Future<void> showAuthSheet(BuildContext context, {required AuthMode mode}) {
   final theme = Theme.of(context);
+  final isWide = MediaQuery.sizeOf(context).width >= kAuthWideBreakpoint;
+
+  if (isWide) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (_) => Dialog(
+        backgroundColor: theme.colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: kAuthMaxContentWidth + 64, // content + horizontal padding
+            maxHeight: 660,
+          ),
+          child: _AuthSheetHost(initialMode: mode),
+        ),
+      ),
+    );
+  }
+
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: theme.colorScheme.surface,
     isScrollControlled: true,
+    // Keeps the sheet sane on foldables and small desktop windows that sit
+    // just under the breakpoint.
+    constraints: const BoxConstraints(maxWidth: 560),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
     ),
-    builder: (_) => _AuthSheet(initialMode: mode),
+    builder: (_) => _AuthSheetHost(initialMode: mode),
   );
 }
 
-class _AuthSheet extends StatefulWidget {
-  const _AuthSheet({required this.initialMode});
+/// Reads the live width so the sheet reflows if the window is resized while
+/// it's open — a desktop-only situation that would otherwise leave the layout
+/// stuck at whatever size it opened with.
+class _AuthSheetHost extends StatelessWidget {
+  const _AuthSheetHost({required this.initialMode});
 
   final AuthMode initialMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = MediaQuery.sizeOf(context).width >= kAuthWideBreakpoint;
+        return _AuthSheet(initialMode: initialMode, isWide: isWide);
+      },
+    );
+  }
+}
+
+class _AuthSheet extends StatefulWidget {
+  const _AuthSheet({required this.initialMode, required this.isWide});
+
+  final AuthMode initialMode;
+  final bool isWide;
 
   @override
   State<_AuthSheet> createState() => _AuthSheetState();
@@ -59,13 +130,26 @@ class _AuthSheetState extends State<_AuthSheet> {
   final _email = TextEditingController();
   final _password = TextEditingController();
 
+  // Focus nodes drive tab order and Enter-to-advance on desktop.
+  final _nameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
+  final _scrollController = ScrollController();
+
   bool get _isSignUp => _mode == AuthMode.signUp;
+  bool get _isWide => widget.isWide;
+  _Scale get _s => _Scale(!_isWide);
 
   @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _password.dispose();
+    _nameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -75,6 +159,16 @@ class _AuthSheetState extends State<_AuthSheet> {
       _emailMode = false;
       _auth.errorMessage.value = '';
       _formKey.currentState?.reset();
+    });
+  }
+
+  void _openEmailMode() {
+    setState(() => _emailMode = true);
+    // Land the caret in the first field so a desktop user can start typing
+    // without reaching for the mouse.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      (_isSignUp ? _nameFocus : _emailFocus).requestFocus();
     });
   }
 
@@ -99,6 +193,7 @@ class _AuthSheetState extends State<_AuthSheet> {
   }
 
   Future<void> _submitEmail(BuildContext context) async {
+    if (_auth.isLoading.value) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     FocusScope.of(context).unfocus();
     _auth.errorMessage.value = '';
@@ -107,16 +202,15 @@ class _AuthSheetState extends State<_AuthSheet> {
       await _auth.register({
         'name': _name.text.trim(),
         'email': _email.text.trim(),
-        'password': _password.text,
+        'password_hash': _password.text,
       }, {});
     } else {
       await _auth.login(
-          email: _email.text.trim(),
-          password: _password.text,
-          context: context,
-          onFailed: (msg) {
-            print(msg.toString());
-          });
+        email: _email.text.trim(),
+        password: _password.text,
+        context: context,
+        onFailed: (msg) => debugPrint(msg.toString()),
+      );
     }
     // login() and register() navigate to the OTP screen themselves on
     // success. On failure, errorMessage is set and the inline error text
@@ -127,35 +221,68 @@ class _AuthSheetState extends State<_AuthSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!_isWide) ...[
+          _grabHandle(theme),
+          SizedBox(height: _s.h(18)),
+        ],
+        _header(theme),
+        SizedBox(height: _s.h(24)),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: _emailMode ? _emailForm(theme) : _providers(theme),
+        ),
+        SizedBox(height: _s.h(20)),
+        _modeToggle(theme),
+        if (_isSignUp) ...[SizedBox(height: _s.h(16)), TermsText()],
+      ],
+    );
+
+    final padded = Padding(
+      padding: _isWide
+          ? const EdgeInsets.fromLTRB(32, 28, 32, 28)
+          : EdgeInsets.fromLTRB(_s.w(22), _s.h(12), _s.w(22), _s.h(22)),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: kAuthMaxContentWidth),
+          child: content,
+        ),
+      ),
+    );
+
+    // Scrollbar so a long form is obviously scrollable with a mouse.
+    final scrollable = Scrollbar(
+      controller: _scrollController,
+      thumbVisibility: _isWide,
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        child: padded,
+      ),
+    );
+
+    if (_isWide) return scrollable;
+
     return AnimatedPadding(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(22.w, 12.h, 22.w, 22.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _grabHandle(theme),
-              SizedBox(height: 18.h),
-              _header(theme),
-              SizedBox(height: 24.h),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _emailMode ? _emailForm(theme) : _providers(theme),
-              ),
-              SizedBox(height: 20.h),
-              _modeToggle(theme),
-              if (_isSignUp) ...[
-                SizedBox(height: 16.h),
-                _terms(theme),
-              ],
-            ],
-          ),
-        ),
+      child: SafeArea(top: false, child: scrollable),
+    );
+  }
+
+  /// Pointer cursor + opaque hit area. Bare [GestureDetector]s leave a text
+  /// cursor over links on desktop, which reads as non-interactive.
+  Widget _clickable({required Widget child, required VoidCallback onTap}) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: child,
       ),
     );
   }
@@ -163,11 +290,11 @@ class _AuthSheetState extends State<_AuthSheet> {
   Widget _grabHandle(ThemeData theme) {
     return Center(
       child: Container(
-        width: 44.w,
-        height: 4.h,
+        width: _s.w(44),
+        height: _s.h(4),
         decoration: BoxDecoration(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(4.r),
+          borderRadius: BorderRadius.circular(_s.r(4)),
         ),
       ),
     );
@@ -186,31 +313,37 @@ class _AuthSheetState extends State<_AuthSheet> {
                 style: TextStyle(
                   fontFamily: 'round',
                   color: theme.colorScheme.onSurface,
-                  fontSize: 26.sp,
+                  fontSize: _s.sp(26),
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
                 ),
               ),
-              SizedBox(height: 6.h),
+              SizedBox(height: _s.h(6)),
               Text(
                 _isSignUp
                     ? 'Join millions buying and selling pre-loved fashion.'
                     : 'Log in to pick up where you left off.',
                 style: TextStyle(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontSize: 14.sp,
+                  fontSize: _s.sp(14),
                   height: 1.3,
                 ),
               ),
             ],
           ),
         ),
-        GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Icon(
-            Iconsax.close_circle,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-            size: 28.sp,
+        Tooltip(
+          message: 'Close',
+          child: _clickable(
+            onTap: () => Navigator.of(context).pop(),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Iconsax.close_circle,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                size: _s.sp(28),
+              ),
+            ),
           ),
         ),
       ],
@@ -224,9 +357,10 @@ class _AuthSheetState extends State<_AuthSheet> {
       children: [
         /*
         _ProviderButton(
+          scale: _s,
           label: 'Continue with Apple',
           icon:
-              FaIcon(FontAwesomeIcons.apple, color: Colors.white, size: 22.sp),
+              FaIcon(FontAwesomeIcons.apple, color: Colors.white, size: _s.sp(22)),
           background: Colors.black,
           foreground: Colors.white,
           loading: _busyProvider == 'apple',
@@ -234,21 +368,36 @@ class _AuthSheetState extends State<_AuthSheet> {
           onTap: () => _handleProvider('apple'),
         ),
         */
-        SizedBox(height: 12.h),
-        _ProviderButton(
-          label: 'Continue with Google',
-          icon: BrandLogo.google(22.sp),
-          borderColor: theme.colorScheme.outline,
-          foreground: theme.colorScheme.onSurface,
-          loading: _busyProvider == 'google',
-          dimmed: _socialBusy && _busyProvider != 'google',
-          onTap: () => _handleProvider('google'),
+        OutlinedButton.icon(
+          onPressed: _openEmailMode,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: theme.colorScheme.onSurface,
+            side: BorderSide(color: theme.colorScheme.outline, width: 1.5),
+            padding: EdgeInsets.symmetric(vertical: _s.h(16)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(_s.r(14))),
+          ).copyWith(
+            // Hover/focus feedback for pointer and keyboard users.
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.hovered) ||
+                  states.contains(WidgetState.focused)) {
+                return theme.colorScheme.primary.withValues(alpha: 0.06);
+              }
+              return null;
+            }),
+          ),
+          icon: Icon(Iconsax.sms, size: _s.sp(20)),
+          label: Text(
+            _isSignUp ? 'Sign up with email' : 'Log in with email',
+            style: TextStyle(fontSize: _s.sp(15), fontWeight: FontWeight.w700),
+          ),
         ),
-        SizedBox(height: 12.h),
+        SizedBox(height: _s.h(12)),
         /*
         _ProviderButton(
+          scale: _s,
           label: 'Continue with Facebook',
-          icon: BrandLogo.facebook(22.sp),
+          icon: BrandLogo.facebook(_s.sp(22)),
           borderColor: theme.colorScheme.outline,
           foreground: theme.colorScheme.onSurface,
           loading: _busyProvider == 'facebook',
@@ -256,22 +405,6 @@ class _AuthSheetState extends State<_AuthSheet> {
           onTap: () => _handleProvider('facebook'),
         ),
         */
-
-        OutlinedButton.icon(
-          onPressed: () => setState(() => _emailMode = true),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: theme.colorScheme.onSurface,
-            side: BorderSide(color: theme.colorScheme.outline, width: 1.5),
-            padding: EdgeInsets.symmetric(vertical: 16.h),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14.r)),
-          ),
-          icon: Icon(Iconsax.sms, size: 20.sp),
-          label: Text(
-            _isSignUp ? 'Sign up with email' : 'Log in with email',
-            style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w700),
-          ),
-        ),
       ],
     );
   }
@@ -279,133 +412,161 @@ class _AuthSheetState extends State<_AuthSheet> {
   Widget _emailForm(ThemeData theme) {
     return Form(
       key: _formKey,
-      child: Column(
-        key: const ValueKey('email'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_isSignUp) ...[
+      child: AutofillGroup(
+        child: Column(
+          key: const ValueKey('email'),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_isSignUp) ...[
+              _field(
+                theme: theme,
+                controller: _name,
+                focusNode: _nameFocus,
+                hint: 'Full name',
+                icon: Iconsax.user,
+                keyboardType: TextInputType.name,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.name],
+                onSubmitted: (_) => _emailFocus.requestFocus(),
+                validator: (v) => (v == null || v.trim().length < 2)
+                    ? 'Enter your name'
+                    : null,
+              ),
+              SizedBox(height: _s.h(12)),
+            ],
             _field(
               theme: theme,
-              controller: _name,
-              hint: 'Full name',
-              icon: Iconsax.user,
-              keyboardType: TextInputType.name,
-              validator: (v) =>
-                  (v == null || v.trim().length < 2) ? 'Enter your name' : null,
+              controller: _email,
+              focusNode: _emailFocus,
+              hint: 'Email address',
+              icon: Iconsax.sms,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [
+                AutofillHints.email,
+                AutofillHints.username
+              ],
+              onSubmitted: (_) => _passwordFocus.requestFocus(),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Enter your email';
+                final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
+                return ok ? null : 'Enter a valid email';
+              },
             ),
-            SizedBox(height: 12.h),
-          ],
-          _field(
-            theme: theme,
-            controller: _email,
-            hint: 'Email address',
-            icon: Iconsax.sms,
-            keyboardType: TextInputType.emailAddress,
-            validator: (v) {
-              if (v == null || v.isEmpty) return 'Enter your email';
-              final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
-              return ok ? null : 'Enter a valid email';
-            },
-          ),
-          SizedBox(height: 12.h),
-          _field(
-            theme: theme,
-            controller: _password,
-            hint: 'Password',
-            icon: Iconsax.lock,
-            obscure: _obscure,
-            validator: (v) =>
-                (v == null || v.length < 6) ? 'At least 6 characters' : null,
-            suffix: GestureDetector(
-              onTap: () => setState(() => _obscure = !_obscure),
-              child: Icon(
-                _obscure ? Iconsax.eye_slash : Iconsax.eye,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-                size: 20.sp,
+            SizedBox(height: _s.h(12)),
+            _field(
+              theme: theme,
+              controller: _password,
+              focusNode: _passwordFocus,
+              hint: 'Password',
+              icon: Iconsax.lock,
+              obscure: _obscure,
+              textInputAction: TextInputAction.done,
+              autofillHints: [
+                _isSignUp ? AutofillHints.newPassword : AutofillHints.password,
+              ],
+              // Enter submits the form, as a desktop user expects.
+              onSubmitted: (_) => _submitEmail(context),
+              validator: (v) =>
+                  (v == null || v.length < 6) ? 'At least 6 characters' : null,
+              suffix: Tooltip(
+                message: _obscure ? 'Show password' : 'Hide password',
+                child: _clickable(
+                  onTap: () => setState(() => _obscure = !_obscure),
+                  child: Icon(
+                    _obscure ? Iconsax.eye_slash : Iconsax.eye,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                    size: _s.sp(20),
+                  ),
+                ),
               ),
             ),
-          ),
-          if (!_isSignUp) ...[
-            SizedBox(height: 8.h),
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () {
-                  Get.to(() => ForgotPasswordPage());
-                },
+            if (!_isSignUp) ...[
+              SizedBox(height: _s.h(8)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _clickable(
+                  onTap: () => Get.to(() => ForgotPasswordPage()),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      'Forgot password?',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: _s.sp(13),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            Obx(() {
+              final err = _auth.errorMessage.value;
+              if (err.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: EdgeInsets.only(top: _s.h(12)),
                 child: Text(
-                  'Forgot password?',
+                  err,
                   style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.error, fontSize: _s.sp(12.5)),
+                ),
+              );
+            }),
+            SizedBox(height: _s.h(18)),
+            Obx(() {
+              final loading = _auth.isLoading.value;
+              return SizedBox(
+                height: _s.h(54),
+                child: ElevatedButton(
+                  onPressed: loading ? null : () => _submitEmail(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    disabledBackgroundColor:
+                        theme.colorScheme.primary.withValues(alpha: 0.5),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(_s.r(14))),
+                  ),
+                  child: loading
+                      ? SizedBox(
+                          width: _s.w(22),
+                          height: _s.w(22),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        )
+                      : Text(
+                          _isSignUp ? 'Create account' : 'Log in',
+                          style: TextStyle(
+                              fontSize: _s.sp(16), fontWeight: FontWeight.w800),
+                        ),
+                ),
+              );
+            }),
+            SizedBox(height: _s.h(12)),
+            Center(
+              child: _clickable(
+                onTap: () => setState(() {
+                  _emailMode = false;
+                  _auth.errorMessage.value = '';
+                }),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    '← Back to all options',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: _s.sp(13),
+                    ),
                   ),
                 ),
               ),
             ),
           ],
-          Obx(() {
-            final err = _auth.errorMessage.value;
-            if (err.isEmpty) return const SizedBox.shrink();
-            return Padding(
-              padding: EdgeInsets.only(top: 12.h),
-              child: Text(
-                err,
-                style: TextStyle(
-                    color: theme.colorScheme.error, fontSize: 12.5.sp),
-              ),
-            );
-          }),
-          SizedBox(height: 18.h),
-          Obx(() {
-            final loading = _auth.isLoading.value;
-            return SizedBox(
-              height: 54.h,
-              child: ElevatedButton(
-                onPressed: loading ? null : () => _submitEmail(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  disabledBackgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.5),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r)),
-                ),
-                child: loading
-                    ? SizedBox(
-                        width: 22.w,
-                        height: 22.w,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      )
-                    : Text(
-                        _isSignUp ? 'Create account' : 'Log in',
-                        style: TextStyle(
-                            fontSize: 16.sp, fontWeight: FontWeight.w800),
-                      ),
-              ),
-            );
-          }),
-          SizedBox(height: 12.h),
-          Center(
-            child: GestureDetector(
-              onTap: () => setState(() {
-                _emailMode = false;
-                _auth.errorMessage.value = '';
-              }),
-              child: Text(
-                '← Back to all options',
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                  fontSize: 13.sp,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -415,63 +576,73 @@ class _AuthSheetState extends State<_AuthSheet> {
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    FocusNode? focusNode,
     String? Function(String?)? validator,
     TextInputType? keyboardType,
+    TextInputAction? textInputAction,
+    Iterable<String>? autofillHints,
+    ValueChanged<String>? onSubmitted,
     bool obscure = false,
     Widget? suffix,
   }) {
     final muted = theme.colorScheme.onSurface.withValues(alpha: 0.35);
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
       validator: validator,
       keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      autofillHints: autofillHints,
+      onFieldSubmitted: onSubmitted,
       obscureText: obscure,
-      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15.sp),
+      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: _s.sp(15)),
       cursorColor: theme.colorScheme.primary,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: muted, fontSize: 15.sp),
-        prefixIcon: Icon(icon, color: muted, size: 20.sp),
+        hintStyle: TextStyle(color: muted, fontSize: _s.sp(15)),
+        prefixIcon: Icon(icon, color: muted, size: _s.sp(20)),
         suffixIcon: suffix == null
             ? null
-            : Padding(padding: EdgeInsets.only(right: 14.w), child: suffix),
+            : Padding(padding: EdgeInsets.only(right: _s.w(14)), child: suffix),
         suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         filled: true,
         fillColor:
             theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        contentPadding: EdgeInsets.symmetric(vertical: 16.h),
+        contentPadding: EdgeInsets.symmetric(vertical: _s.h(16)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(_s.r(14)),
           borderSide: BorderSide(color: theme.colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(_s.r(14)),
           borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(_s.r(14)),
           borderSide: BorderSide(color: theme.colorScheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(_s.r(14)),
           borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
         ),
-        errorStyle: TextStyle(color: theme.colorScheme.error, fontSize: 12.sp),
+        errorStyle:
+            TextStyle(color: theme.colorScheme.error, fontSize: _s.sp(12)),
       ),
     );
   }
 
+  // ignore: unused_element
   Widget _orDivider(ThemeData theme) {
     return Row(
       children: [
         Expanded(child: Divider(color: theme.colorScheme.outline)),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          padding: EdgeInsets.symmetric(horizontal: _s.w(12)),
           child: Text(
             'or',
             style: TextStyle(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-              fontSize: 13.sp,
+              fontSize: _s.sp(13),
             ),
           ),
         ),
@@ -487,18 +658,18 @@ class _AuthSheetState extends State<_AuthSheet> {
           text: _isSignUp ? 'Already have an account?  ' : 'New to MSO?  ',
           style: TextStyle(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            fontSize: 14.sp,
+            fontSize: _s.sp(14),
           ),
           children: [
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
-              child: GestureDetector(
+              child: _clickable(
                 onTap: _switchMode,
                 child: Text(
                   _isSignUp ? 'Log in' : 'Sign up',
                   style: TextStyle(
                     color: theme.colorScheme.primary,
-                    fontSize: 14.sp,
+                    fontSize: _s.sp(14),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -509,22 +680,11 @@ class _AuthSheetState extends State<_AuthSheet> {
       ),
     );
   }
-
-  Widget _terms(ThemeData theme) {
-    return Text(
-      'By signing up you agree to MSO\'s Terms & Conditions and Privacy Policy.',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-        fontSize: 11.5.sp,
-        height: 1.4,
-      ),
-    );
-  }
 }
 
 class _ProviderButton extends StatelessWidget {
   const _ProviderButton({
+    required this.scale,
     required this.label,
     required this.icon,
     required this.onTap,
@@ -535,6 +695,7 @@ class _ProviderButton extends StatelessWidget {
     this.dimmed = false,
   });
 
+  final _Scale scale;
   final String label;
   final Widget icon;
   final VoidCallback onTap;
@@ -554,51 +715,59 @@ class _ProviderButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final disabled = loading || dimmed;
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
       opacity: dimmed ? 0.4 : 1,
-      child: GestureDetector(
-        onTap: (loading || dimmed) ? null : onTap,
-        child: Container(
-          height: 54.h,
-          padding: EdgeInsets.symmetric(horizontal: 18.w),
-          decoration: BoxDecoration(
-            color: background ?? Colors.transparent,
-            borderRadius: BorderRadius.circular(14.r),
-            border: borderColor == null
-                ? null
-                : Border.all(color: borderColor!, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              // Leading brand mark (or spinner); the trailing SizedBox of equal
-              // width keeps the label optically centred in the button.
-              SizedBox(
-                width: 22.sp,
-                height: 22.sp,
-                child: Center(
-                  child: loading
-                      ? SizedBox(
-                          width: 18.sp,
-                          height: 18.sp,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.2, color: foreground),
-                        )
-                      : icon,
-                ),
+      child: MouseRegion(
+        cursor: disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
+        child: Material(
+          color: background ?? Colors.transparent,
+          borderRadius: BorderRadius.circular(scale.r(14)),
+          child: InkWell(
+            onTap: disabled ? null : onTap,
+            borderRadius: BorderRadius.circular(scale.r(14)),
+            child: Container(
+              height: scale.h(54),
+              padding: EdgeInsets.symmetric(horizontal: scale.w(18)),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(scale.r(14)),
+                border: borderColor == null
+                    ? null
+                    : Border.all(color: borderColor!, width: 1.5),
               ),
-              Expanded(
-                child: Text(
-                  loading ? 'Connecting…' : label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: foreground,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700),
-                ),
+              child: Row(
+                children: [
+                  // Leading brand mark (or spinner); the trailing SizedBox of
+                  // equal width keeps the label optically centred.
+                  SizedBox(
+                    width: scale.sp(22),
+                    height: scale.sp(22),
+                    child: Center(
+                      child: loading
+                          ? SizedBox(
+                              width: scale.sp(18),
+                              height: scale.sp(18),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2.2, color: foreground),
+                            )
+                          : icon,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      loading ? 'Connecting…' : label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: foreground,
+                          fontSize: scale.sp(15),
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  SizedBox(width: scale.sp(22)),
+                ],
               ),
-              SizedBox(width: 22.sp),
-            ],
+            ),
           ),
         ),
       ),

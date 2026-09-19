@@ -8,8 +8,15 @@ class SettingsService extends GetxService {
 
   final Rx<SettingsModel?> settings = Rx<SettingsModel?>(null);
   final RxBool isLoaded = false.obs;
+  @override
+  void onInit() {
+    super.onInit();
+    // onInit() itself must stay synchronous (GetX calls it that way), so
+    // kick off the async load without awaiting it here.
+    _loadSettings();
+  }
 
-  Future<SettingsService> init() async {
+  Future<SettingsService> _loadSettings() async {
     try {
       final data = await _apiClient.get('/settings');
 
@@ -183,7 +190,7 @@ class SettingsService extends GetxService {
   // Refresh settings
   Future<void> refresh() async {
     isLoaded.value = false;
-    await init();
+    await _loadSettings();
   }
 }
 

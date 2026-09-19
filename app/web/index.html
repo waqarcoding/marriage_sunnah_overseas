@@ -2,20 +2,9 @@
 <html>
 
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-  -->
-  <!-- cropperjs (now self-hosted — see web/cropper.min.css and web/cropper.min.js)
-   
-   <link rel="stylesheet" href="cropper.min.css" />
-  <script src="cropper.min.js"></script>
-
-  -->
-
   <base href="$FLUTTER_BASE_HREF">
   <meta name="google-signin-client_id"
-    content="1017969673235-d4r3u8hikquj19ojia8j7i4mp3186e63.apps.googleusercontent.com">
+    content="1017969673235-1njaqdcusd703etaprns3nujn1j3n73o.apps.googleusercontent.com">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
@@ -31,55 +20,10 @@
 
   <title>app</title>
   <link rel="manifest" href="manifest.json">
-
-  <style>
-    /* Instant splash shown before Flutter's engine has even started.
-       Keep this visually close to your in-app SplashScreen widget so
-       there's no visible flash/mismatch when Flutter takes over. */
-    #splash {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #ffffff;
-      z-index: 9999;
-    }
-
-    #splash img {
-      width: 96px;
-      height: 96px;
-    }
-  </style>
 </head>
 
 <body>
-  <div id="splash">
-    <img src="icons/Icon-192.png" alt="Loading" />
-  </div>
-
   <script src="flutter_bootstrap.js" async></script>
-  <script>
-    // Remove the static splash the moment Flutter has actually painted
-    // its first frame. Without this listener, #splash stays forever
-    // regardless of whether Flutter loaded successfully underneath.
-    window.addEventListener('flutter-first-frame', function () {
-      var splash = document.getElementById('splash');
-      if (splash) splash.remove();
-    });
-
-    // Safety net: if flutter-first-frame never fires (e.g. your app's
-    // own bootstrap logic hangs before calling runApp/Get.offAll), force
-    // the splash away after a timeout so the page isn't stuck forever.
-    // Remove this once you've confirmed first-frame fires reliably.
-    setTimeout(function () {
-      var splash = document.getElementById('splash');
-      if (splash) {
-        console.warn('[Splash] flutter-first-frame never fired within 20s — removing splash anyway.');
-        splash.remove();
-      }
-    }, 20000);
-  </script>
 </body>
 
 </html>

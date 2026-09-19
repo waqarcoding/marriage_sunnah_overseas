@@ -6,8 +6,8 @@ import 'package:app/features/auth/pages/welcome_page.dart';
 import 'package:app/features/auth/widgets/join_as_bottom_sheet.dart';
 import 'package:app/features/guardian/pages/link_ward_page.dart';
 import 'package:app/features/guardian/services/guardian_service.dart';
+import 'package:app/features/intro/profile_progress_widget.dart';
 import 'package:app/features/profile/services/profile_service.dart';
-import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:app/features/userguardian/link_guardian_page.dart';
 import 'package:app/features/userprofile/services/user_profile_service.dart';
 import 'package:app/features/verification/pages/verification_page.dart';
@@ -20,7 +20,7 @@ import 'package:get_storage/get_storage.dart';
 import '../services/auth_service.dart';
 import '../pages/otp_page.dart';
 import '../pages/email_login_page.dart';
-import '../../profile/pages/complete_profile_page.dart';
+import '../../profile/pages/intro_page.dart';
 import '../../explore/pages/explore_page.dart';
 
 class AuthController extends GetxController {
@@ -30,8 +30,6 @@ class AuthController extends GetxController {
   var errorMessage = ''.obs;
   var successMessage = ''.obs;
 
-  SettingsService settingsService =
-      SettingsService(); //use in checkprofile method
   @override
   void onInit() {
     super.onInit();
@@ -131,9 +129,7 @@ class AuthController extends GetxController {
     } catch (e) {
       print('❌ Google login error (web): $e');
       errorMessage.value = 'An error occurred: ${e.toString()}';
-      (onFailed ??
-          (msg) => Get.snackbar('Google Sign In', msg,
-              snackPosition: SnackPosition.BOTTOM))(errorMessage.value);
+      print('❌ Google login error : $errorMessage.value');
     } finally {
       isLoading.value = false;
     }
@@ -219,6 +215,7 @@ class AuthController extends GetxController {
           if (uid != null) Get.find<SocketService>().connect(uid);
         } catch (_) {}
         final AuthController authController = Get.find<AuthController>();
+
         authController.checkProfile(context);
         Get.snackbar('Success', 'OTP verified successfully!',
             snackPosition: SnackPosition.BOTTOM);

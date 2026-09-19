@@ -67,103 +67,151 @@ class InputField extends StatelessWidget {
         SizedBox(height: 6),
         type == 'date'
             ? _buildDateField(context)
-            : TextFormField(
-                initialValue: value,
-                onChanged: onChange,
-                keyboardType: _getKeyboardType(),
-                readOnly: readOnly,
-                minLines: minLines,
-                maxLines: maxLines,
-                maxLength: maxLength ?? max,
-                inputFormatters: type == 'number'
-                    ? [FilteringTextInputFormatter.digitsOnly]
-                    : null,
-                decoration: InputDecoration(
-                  hintText: placeholder,
-                  hintStyle:
-                      TextStyle(color: AppColors.mutedForeground, fontSize: 14),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                  counterText: '',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.border),
+            : MouseRegion(
+                cursor: readOnly
+                    ? SystemMouseCursors.basic
+                    : SystemMouseCursors.text,
+                child: TextFormField(
+                  initialValue: value,
+                  onChanged: onChange,
+                  keyboardType: _getKeyboardType(),
+                  readOnly: readOnly,
+                  minLines: minLines,
+                  maxLines: maxLines,
+                  maxLength: maxLength ?? max,
+                  // Lets desktop users submit with Enter/Tab instead of
+                  // only relying on an on-screen action.
+                  textInputAction: (maxLines ?? 1) > 1
+                      ? TextInputAction.newline
+                      : TextInputAction.next,
+                  inputFormatters: type == 'number'
+                      ? [FilteringTextInputFormatter.digitsOnly]
+                      : null,
+                  decoration: InputDecoration(
+                    hintText: placeholder,
+                    hintStyle: TextStyle(
+                        color: AppColors.mutedForeground, fontSize: 14),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                    counterText: '',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        BorderSide(color: AppColors.primary, width: 1.5),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
+                  style: TextStyle(fontSize: 14, color: AppColors.foreground),
                 ),
-                style: TextStyle(fontSize: 14, color: AppColors.foreground),
               ),
       ],
     );
   }
 
   Widget _buildDateField(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        final DateTime? picked = await showDatePicker(
-          context: context,
-          initialDate: value != null && value!.isNotEmpty
-              ? DateTime.tryParse(value!) ?? DateTime(1990)
-              : DateTime(1990),
-          firstDate: DateTime(1940),
-          lastDate: DateTime.now().subtract(Duration(days: 365 * 18)),
-          builder: (ctx, child) {
-            return Theme(
-              data: Theme.of(ctx).copyWith(
-                colorScheme: ColorScheme.light(
-                  primary: AppColors.primary,
-                  onPrimary: Colors.white,
-                  surface: Colors.white,
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (picked != null) {
-          onChange(
-              '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
-        }
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: BoxDecoration(
-          color: Colors.white,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: value != null && value!.isNotEmpty
-                ? AppColors.primary.withOpacity(0.4)
-                : AppColors.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                value != null && value!.isNotEmpty ? value! : placeholder,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: value != null && value!.isNotEmpty
-                      ? AppColors.foreground
-                      : AppColors.mutedForeground,
-                ),
+          onTap: () => _openDatePicker(context),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: value != null && value!.isNotEmpty
+                    ? AppColors.primary.withOpacity(0.4)
+                    : AppColors.border,
               ),
             ),
-            Icon(Icons.calendar_today_outlined,
-                size: 18, color: AppColors.mutedForeground),
-          ],
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value != null && value!.isNotEmpty ? value! : placeholder,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: value != null && value!.isNotEmpty
+                          ? AppColors.foreground
+                          : AppColors.mutedForeground,
+                    ),
+                  ),
+                ),
+                Icon(Icons.calendar_today_outlined,
+                    size: 18, color: AppColors.mutedForeground),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _openDatePicker(BuildContext context) async {
+    final width = MediaQuery.of(context).size.width;
+    final isDesktop = width >= 700;
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: value != null && value!.isNotEmpty
+          ? DateTime.tryParse(value!) ?? DateTime(1990)
+          : DateTime(1990),
+      firstDate: DateTime(1940),
+      lastDate: DateTime.now().subtract(Duration(days: 365 * 18)),
+      // On desktop, a compact calendar-grid dialog reads better than the
+      // mobile-oriented spinner/input entry mode.
+      initialEntryMode: isDesktop
+          ? DatePickerEntryMode.calendarOnly
+          : DatePickerEntryMode.calendar,
+      builder: (ctx, child) {
+        final theme = Theme.of(ctx).copyWith(
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+          ),
+          // The app's global theme (larger icon size / comfortable density)
+          // was leaking into the picker and blowing up the prev/next/dropdown
+          // arrows. Pin these back to Material's normal defaults for the
+          // dialog only.
+          iconTheme: const IconThemeData(size: 24),
+          visualDensity: VisualDensity.standard,
+          iconButtonTheme: IconButtonThemeData(
+            style: IconButton.styleFrom(
+              iconSize: 24,
+              minimumSize: const Size(40, 40),
+            ),
+          ),
+        );
+
+        return Theme(
+          data: theme,
+          // Also ignore any app-wide text scaling so the header/arrows
+          // don't get scaled up along with body text elsewhere in the app.
+          child: MediaQuery(
+            data: MediaQuery.of(ctx).copyWith(
+              textScaler: const TextScaler.linear(1.0),
+            ),
+            child: child!,
+          ),
+        );
+      },
+    );
+    if (picked != null) {
+      onChange(
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+    }
   }
 }

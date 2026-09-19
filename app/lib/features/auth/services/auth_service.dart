@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:app/data/models/profile_model.dart';
 import 'package:app/features/auth/controllers/auth_controller.dart';
 import 'package:app/features/auth/widgets/join_as_bottom_sheet.dart';
+import 'package:app/features/profile/services/profile_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -38,7 +39,7 @@ class AuthService extends GetxService {
       Map<String, String> fields, Map<String, String> files) async {
     try {
       isLoading.value = true;
-      final data = await _apiClient.upload('/auth/register', fields, files);
+      final data = await _apiClient.post('/auth/register', data: fields);
       if (data != null && data['success'] == true) {
         _storage.write('isLoggedIn', true);
         _storage.write('jwtToken', data['token']);
@@ -110,12 +111,13 @@ class AuthService extends GetxService {
 
   // ── Verify OTP ─────────────────────────────────────────────────────────────
   Future<bool> verifyOtp(String otp) async {
+    final ProfileService profileService = Get.find<ProfileService>();
+
     try {
       isLoading.value = true;
       final data =
           await _apiClient.post('/auth/verify-otp', data: {'otp': otp});
       if (data != null && data['success'] == true) {
-        _storage.write('isOtpVerified', true);
         return true;
       }
       return false;

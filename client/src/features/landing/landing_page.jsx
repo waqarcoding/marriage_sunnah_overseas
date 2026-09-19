@@ -135,11 +135,12 @@ export default function Landing() {
                                     variant="default"
                                     size="lg"
                                     className="h-13 sm:h-14 px-6 sm:px-10 text-base sm:text-lg bg-white text-emerald-900 hover:bg-white/95 shadow-2xl shadow-black/30 hover:-translate-y-0.5 transition-all font-semibold group w-full sm:w-auto"
-                                    onClick={() => go("/register")}
+                                    onClick={() => go("/app")}
                                 >
                                     Start Your Journey
                                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                                 </Button>
+
                                 <Button
                                     variant="outline"
                                     size="lg"
@@ -375,7 +376,7 @@ export default function Landing() {
                                             </ul>
                                             <Button
                                                 className={`w-full ${plan.popular ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`}
-                                                onClick={() => go("/register")}
+                                                onClick={() => go("/app")}
                                             >
                                                 Choose {plan.name}
                                             </Button>
@@ -509,7 +510,7 @@ export default function Landing() {
                             <p className="text-white/85 text-lg mb-10 max-w-xl mx-auto">
                                 Join thousands of families who have found their perfect match through our halal matchmaking platform.
                             </p>
-                            <Button variant="default" size="lg" className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" onClick={() => go("/register")}>
+                            <Button variant="default" size="lg" className="h-14 px-12 text-lg bg-white text-primary hover:bg-white/90 shadow-2xl hover:-translate-y-1 transition-all font-semibold" onClick={() => go("/app")}>
                                 Register Now — It's Free<ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
                         </motion.div>

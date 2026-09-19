@@ -84,7 +84,7 @@ class VerificationController extends GetxController {
 
     try {
       final res =
-          await _service.uploadIdCard(frontFile.value!, backFile.value!);
+          await _service.uploadLivenessPhoto(frontFile.value!, backFile.value!);
       if (res?['success'] == true || res != null) {
         // Move to pending
         frontIdUrl.value = frontPreview.value;

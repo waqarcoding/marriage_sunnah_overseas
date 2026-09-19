@@ -15,6 +15,9 @@ router.put('/change-password', authenticate, profileController.changePassword);
 router.put('/update-about', authenticate, profileController.updateAboutInterest);
 // Route for updating user role
 router.patch('/update-role', authenticate, profileController.updateRole);
+// Update user details (user table - NOT profile)
+router.put('/update-user', authenticate, profileController.updateUser);
+
 
 router.put('/update-profile', authenticate, profileController.updateProfile);
 router.put('/update-guardian', authenticate, profileController.updateGuardian);

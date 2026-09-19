@@ -71,12 +71,7 @@ class ApiClient extends GetxService {
   void _safeShowSnackbar() {
     try {
       if (Get.key.currentState != null) {
-        Get.snackbar(
-          'Session Expired',
-          'Please log in again',
-          snackPosition: SnackPosition.BOTTOM,
-          duration: Duration(seconds: 3),
-        );
+        print('[API] Session Expired: Please log in again');
       } else {
         // Overlay not ready yet — defer to next frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -140,9 +135,8 @@ class ApiClient extends GetxService {
       final response = await http.get(uri, headers: _headers());
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] GET Error: $e');
       return {'error': 'An unexpected error occurred'};
@@ -167,9 +161,8 @@ class ApiClient extends GetxService {
       );
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] POST Error: $e');
       return {'error': 'An unexpected error occurred'};
@@ -194,9 +187,8 @@ class ApiClient extends GetxService {
       );
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] PUT Error: $e');
       return {'error': 'An unexpected error occurred'};
@@ -218,9 +210,8 @@ class ApiClient extends GetxService {
       );
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] PATCH Error: $e');
       return {'error': 'An unexpected error occurred'};
@@ -241,9 +232,8 @@ class ApiClient extends GetxService {
       );
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] DELETE Error: $e');
       return {'error': 'An unexpected error occurred'};
@@ -290,13 +280,17 @@ class ApiClient extends GetxService {
       final response = await http.Response.fromStream(streamedResponse);
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] UPLOAD Error: $e');
       return {'error': 'An unexpected error occurred'};
     }
+  }
+
+  socketError(String error) {
+    print('SocketException :' + error);
+    return {'error': error};
   }
 
   Future<dynamic> upload(
@@ -336,9 +330,8 @@ class ApiClient extends GetxService {
       final response = await http.Response.fromStream(streamedResponse);
 
       return _handleResponse(response, endpoint);
-    } on SocketException {
-      print('[API] Network Error');
-      return {'error': 'Please check your internet connection'};
+    } on SocketException catch (e) {
+      return socketError(e.message.toString());
     } catch (e) {
       print('[API] UPLOAD Error: $e');
       return {'error': 'An unexpected error occurred'};

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:app/bottom_tabs.dart';
-import 'package:app/features/profile/widgets/profile_progress_widget.dart';
+import 'package:app/features/intro/profile_progress_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,9 +14,9 @@ const _kPrimaryFg = Color(0xFFF5F0E8);
 const _kSecondary = Color(0xFFF0F5F3);
 const _kAccent = Color(0xFFF5F0E8);
 
-class VerificationPage extends StatelessWidget {
+class VerificationCNICPage extends StatelessWidget {
   final bool hideBackButton;
-  const VerificationPage({Key? key, this.hideBackButton = false})
+  const VerificationCNICPage({Key? key, this.hideBackButton = false})
       : super(key: key);
 
   @override

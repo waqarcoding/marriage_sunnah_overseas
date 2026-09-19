@@ -7,7 +7,6 @@ import 'package:app/features/guardian/pages/guardian_profile_page.dart';
 import 'package:app/features/guardian/pages/guardian_shell.dart';
 import 'package:app/features/guardian/pages/link_ward_page.dart';
 import 'package:app/features/interest/pages/interest_page.dart';
-import 'package:app/features/profile/widgets/profile_progress_widget.dart';
 import 'package:app/features/settings/pages/settings_page.dart';
 import 'package:app/features/userguardian/link_guardian_page.dart';
 import 'package:app/features/userprofile/services/user_profile_service.dart';

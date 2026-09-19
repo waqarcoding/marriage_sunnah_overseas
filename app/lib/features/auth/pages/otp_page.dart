@@ -1,3 +1,4 @@
+import 'package:app/features/auth/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:async';
@@ -123,26 +124,33 @@ class _OtpPageState extends State<OtpPage> {
     final isDesktop = size.width > 1024;
 
     return Scaffold(
-      body: AuroraBackground(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : 500),
-              margin: EdgeInsets.all(16),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: isDesktop
-                    ? Row(
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            constraints: BoxConstraints(maxWidth: isDesktop ? 1000 : 500),
+            margin: EdgeInsets.all(10),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: isDesktop
+                  ? SizedBox(
+                      height: size.height * 0.9, // 90% height of the screen
+                      width: size.width * 0.9,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(child: _buildLeftPanel()),
                           Expanded(child: _buildFormPanel()),
                         ],
-                      )
-                    : _buildFormPanel(),
-              ),
+                      ),
+                    )
+                  : SizedBox(
+                      height: size.height * 0.9,
+                      width: size.width * 0.9,
+                      child: _buildFormPanel(),
+                    ),
             ),
           ),
         ),
@@ -173,7 +181,12 @@ class _OtpPageState extends State<OtpPage> {
                   color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.favorite, color: AppColors.accent, size: 18),
+                child: Image.asset(
+                  'assets/images/appicon.png',
+                  color: AppColors.accent,
+                  width: 18,
+                  height: 18,
+                ),
               ),
               SizedBox(width: 12),
               Text(
@@ -256,9 +269,13 @@ class _OtpPageState extends State<OtpPage> {
   }
 
   Widget _buildFormPanel() {
+    final authservice = Get.find<AuthService>();
+    final email = authservice.currentUser.value!.email;
+
     return Container(
       padding: EdgeInsets.all(40),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -319,7 +336,7 @@ class _OtpPageState extends State<OtpPage> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  widget.email ?? 'your email',
+                  widget.email ?? email ?? 'your email',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 14,
@@ -425,25 +442,28 @@ class _OtpPageState extends State<OtpPage> {
 
           // Verify Button
           Obx(() {
-            return ElevatedButton(
-              onPressed: (_authController.isLoading.value || _timer <= 0)
-                  ? null
-                  : () => _handleVerify(context),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 48),
+            return Center(
+              child: SizedBox(
+                width: 300,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: (_authController.isLoading.value || _timer <= 0)
+                      ? null
+                      : () => _handleVerify(context),
+                  child: _authController.isLoading.value
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.accent,
+                            ),
+                          ),
+                        )
+                      : Text('Verify'),
+                ),
               ),
-              child: _authController.isLoading.value
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.accent,
-                        ),
-                      ),
-                    )
-                  : Text('Verify'),
             );
           }),
 
@@ -451,18 +471,21 @@ class _OtpPageState extends State<OtpPage> {
 
           // Resend Button
           Obx(() {
-            return OutlinedButton(
-              onPressed:
-                  (_authController.isLoading.value || _resendCooldown > 0)
-                      ? null
-                      : _handleResend,
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size(double.infinity, 48),
-              ),
-              child: Text(
-                _resendCooldown > 0
-                    ? 'Resend in ${_resendCooldown}s'
-                    : 'Resend OTP',
+            return Center(
+              child: SizedBox(
+                width: 300,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed:
+                      (_authController.isLoading.value || _resendCooldown > 0)
+                          ? null
+                          : _handleResend,
+                  child: Text(
+                    _resendCooldown > 0
+                        ? 'Resend in ${_resendCooldown}s'
+                        : 'Resend OTP',
+                  ),
+                ),
               ),
             );
           }),

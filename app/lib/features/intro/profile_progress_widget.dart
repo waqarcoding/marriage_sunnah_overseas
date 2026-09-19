@@ -4,10 +4,11 @@ import 'package:app/features/auth/services/auth_service.dart';
 import 'package:app/data/services/settings_service.dart';
 import 'package:app/features/auth/widgets/join_as_bottom_sheet.dart';
 import 'package:app/features/guardian/services/guardian_service.dart';
-import 'package:app/features/profile/pages/complete_profile_page.dart';
+import 'package:app/features/profile/pages/intro_page.dart';
 import 'package:app/features/profile/services/profile_service.dart';
 import 'package:app/features/userguardian/link_guardian_page.dart';
 import 'package:app/features/userprofile/services/user_profile_service.dart';
+import 'package:app/features/verification/pages/live_verification_page.dart';
 import 'package:app/features/verification/pages/verification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -127,6 +128,7 @@ class ProfileProgressController extends GetxController {
   Future<void> checkProfile(BuildContext context) async {
     final settingsService = Get.find<SettingsService>();
     final authService = Get.find<AuthService>();
+
     await fetchData();
 
     print("Profile Checking..");
@@ -142,8 +144,7 @@ class ProfileProgressController extends GetxController {
       print('role: $role');
 
       // OTP for email provider if role missing
-      if (user['provider'] == "email" &&
-          (user['role'] == null || role == null)) {
+      if (user['provider'] == "email") {
         final bool isOtpVerified =
             user['is_otp_verified'] == true || user['is_otp_verified'] == 1;
 

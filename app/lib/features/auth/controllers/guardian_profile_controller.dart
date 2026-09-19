@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
 import '../../../core/widgets/crop_screen.dart';
 import '../../../data/providers/api_client.dart';
 
@@ -54,37 +53,12 @@ class GuardianProfileController extends GetxController {
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
     if (picked == null) return;
 
-    Uint8List? croppedBytes;
+    final imageBytes = await picked.readAsBytes();
 
-    if (kIsWeb) {
-      final imageBytes = await picked.readAsBytes();
-      croppedBytes = await Get.to<Uint8List>(
-        () => CropScreen(imageBytes: imageBytes),
-      );
-      if (croppedBytes == null) return;
-    } else {
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: picked.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        compressQuality: 90,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Photo',
-            toolbarColor: const Color(0xFF1B4D3E),
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.square,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Photo',
-            aspectRatioLockEnabled: true,
-            aspectRatioPickerButtonHidden: true,
-          ),
-        ],
-      );
-      if (cropped == null) return;
-      croppedBytes = await File(cropped.path).readAsBytes();
-    }
+    final croppedBytes = await Get.to<Uint8List>(
+      () => CropScreen(imageBytes: imageBytes, aspectRatio: 1), // square
+    );
+    if (croppedBytes == null) return; // user cancelled
 
     isPhotoUploading.value = true;
 
@@ -145,7 +119,7 @@ class GuardianProfileController extends GetxController {
 
     isSaving.value = true;
     try {
-      final res = await _api.post(
+      final res = await _api.put(
         '/profile/update-profile',
         data: {
           'name': getForm('guardian_name'),

@@ -133,10 +133,32 @@ export const initSocket = (server) => {
         process.env.CLIENT_URL,
         'http://localhost:5173',
         'http://localhost:5000',
+        'http://localhost:8000', // Flutter web dev build
         'https://marriagesunnaoverseas.com',
         'https://www.marriagesunnaoverseas.com',
         'https://marriage-sunnah-overseas-pdniv.ondigitalocean.app',
     ].filter(Boolean);
+    // ← ADD THE LOG LINE RIGHT HERE
+    console.log('🔍 Actual NODE_ENV at runtime:', process.env.NODE_ENV);
+
+    // In production, only the exact allowedOrigins list is accepted.
+    // Outside production, also allow any localhost/127.0.0.1 port — Flutter
+    // web's dev port changes between runs unless you pin --web-port, so
+    // hardcoding every port you might use is brittle.
+    const corsOrigin =
+        process.env.NODE_ENV === 'production'
+            ? allowedOrigins
+            : (origin, callback) => {
+                if (
+                    !origin || // same-origin / non-browser requests (curl, server-to-server)
+                    allowedOrigins.includes(origin) ||
+                    /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)
+                ) {
+                    return callback(null, true);
+                }
+                console.warn('❌ Blocked CORS origin:', origin);
+                return callback(new Error('Not allowed by CORS'));
+            };
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🔌 Initializing Socket.IO (FIRST TIME)');
@@ -145,7 +167,7 @@ export const initSocket = (server) => {
 
     try {
         io = new Server(server, {
-            cors: { origin: allowedOrigins, methods: ['GET', 'POST'], credentials: true },
+            cors: { origin: corsOrigin, methods: ['GET', 'POST'], credentials: true },
             path: '/socket.io/',
             transports: ['polling', 'websocket'],
             allowUpgrades: true,

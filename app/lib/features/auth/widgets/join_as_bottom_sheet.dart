@@ -15,13 +15,37 @@ class _JoinAsColors {
 
 enum JoinAsRole { individual, guardian }
 
+const double _desktopBreakpoint = 1024;
+
 /// [onSubmit] is called with the chosen role when Submit is tapped.
 /// Return `true` on success (the sheet will close and return the role),
 /// or `false`/throw on failure (the sheet stays open so the user can retry).
+///
+/// On mobile this shows as a bottom sheet (unchanged behavior).
+/// On desktop (width > 1024) it shows as a centered dialog instead.
 Future<JoinAsRole?> showJoinAsBottomSheet(
   BuildContext context, {
   required Future<bool> Function(JoinAsRole role) onSubmit,
 }) {
+  final isDesktop = MediaQuery.of(context).size.width > _desktopBreakpoint;
+
+  if (isDesktop) {
+    return showDialog<JoinAsRole>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Center(
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: _JoinAsSheet(onSubmit: onSubmit),
+          ),
+        ),
+      ),
+    );
+  }
+
   return showModalBottomSheet<JoinAsRole>(
     context: context,
     isScrollControlled: true,

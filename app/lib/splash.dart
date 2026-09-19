@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
       } else {
         await GoogleSignIn.instance.initialize(
           serverClientId:
-              '1017969673235-d4r3u8hikquj19ojia8j7i4mp3186e63.apps.googleusercontent.com',
+              '1017969673235-1njaqdcusd703etaprns3nujn1j3n73o.apps.googleusercontent.com',
         );
       }
     } catch (e) {
@@ -55,13 +55,6 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     // ── Settings service (separate from InitialBinding's own services) ──
-    try {
-      if (!Get.isRegistered<SettingsService>()) {
-        await Get.putAsync(() => SettingsService().init(), permanent: true);
-      }
-    } catch (e) {
-      debugPrint('[Splash] Settings init error: $e');
-    }
 
     // ── Mobile-only system UI setup ──
     if (!kIsWeb) {

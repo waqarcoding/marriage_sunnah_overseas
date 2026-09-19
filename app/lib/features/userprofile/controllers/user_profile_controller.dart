@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/user_profile_service.dart';
 import '../../../core/widgets/crop_screen.dart';
@@ -128,56 +127,26 @@ class UserProfileController extends GetxController {
   }
 
   // ── Upload photo ──────────────────────────────────────────────────────────
+  bool get _isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   Future<void> pickAndUploadPhoto(int idx) async {
     final picked =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 90);
     if (picked == null) return;
 
-    Uint8List? croppedBytes;
-    File? croppedFile;
+    final imageBytes = await picked.readAsBytes();
 
-    if (kIsWeb) {
-      // ── WEB: use crop_your_image ──────────────────────────────
-      final imageBytes = await picked.readAsBytes();
-      croppedBytes = await Get.to<Uint8List>(
-        () => CropScreen(imageBytes: imageBytes),
-      );
-      if (croppedBytes == null) return; // user cancelled
-    } else {
-      // ── MOBILE: use image_cropper (native) ────────────────────
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: picked.path,
-        aspectRatio: const CropAspectRatio(ratioX: 3, ratioY: 4),
-        compressQuality: 50,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Photo',
-            toolbarColor: const Color(0xFF1B4D3E),
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.ratio3x2,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Photo',
-            aspectRatioLockEnabled: true,
-          ),
-        ],
-      );
-      if (cropped == null) return; // user cancelled
-      croppedFile = File(cropped.path);
-    }
+    final croppedBytes = await Get.to<Uint8List>(
+      () => CropScreen(imageBytes: imageBytes, aspectRatio: 3 / 4),
+    );
+    if (croppedBytes == null) return; // user cancelled
 
     uploadingIdx.value = idx;
 
     // ── Insert placeholder ──────────────────────────────────────
-    String tempPreview;
-    if (kIsWeb) {
-      final base64Str = base64Encode(croppedBytes!);
-      tempPreview = 'data:image/jpeg;base64,$base64Str';
-    } else {
-      tempPreview = croppedFile!.path;
-    }
+    final base64Str = base64Encode(croppedBytes);
+    final tempPreview = 'data:image/jpeg;base64,$base64Str';
 
     if (idx < photos.length) {
       photos[idx] = tempPreview;
@@ -186,10 +155,7 @@ class UserProfileController extends GetxController {
     }
 
     try {
-      // ── Upload — branch by platform ────────────────────────────
-      final res = kIsWeb
-          ? await uploadImageBytes(croppedBytes!, idx)
-          : await _service.uploadImage(croppedFile!, idx);
+      final res = await uploadImageBytes(croppedBytes, idx);
 
       if (res != null && res['success'] == true) {
         final url = res['imageUrl']?.toString() ?? '';

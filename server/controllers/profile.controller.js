@@ -26,6 +26,45 @@ export const createProfile = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+export const updateUser = async (req, res) => {
+  try {
+    // Update only the fields provided in req.body; ignore any not present
+    const updates = {};
+
+    // Collect all fields that are provided (and not undefined) from req.body
+    for (const key in req.body) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        updates[key] = req.body[key];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: "No valid fields provided for update." });
+    }
+
+    // req.user is the raw JWT payload — fetch the real Sequelize instance here
+    const userInstance = await User.findByPk(req.user.id);
+
+    if (!userInstance) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    await userInstance.update(updates);
+
+    const updatedUser = await User.findByPk(userInstance.id, {
+      attributes: { exclude: ['password_hash'] },
+    });
+
+    return res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error('❌ updateRole error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err || 'Server error',
+    });
+  }
+};
 export const updateRole = async (req, res) => {
   try {
     const { role } = req.body;

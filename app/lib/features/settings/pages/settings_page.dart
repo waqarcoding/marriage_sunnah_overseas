@@ -4,6 +4,7 @@ import 'package:app/data/services/settings_service.dart';
 import 'package:app/features/guardian/pages/guardian_profile_page.dart';
 import 'package:app/features/meeting/pages/my_meetings_page.dart';
 import 'package:app/features/userprofile/pages/my_profile_page.dart';
+import 'package:app/features/verification/pages/live_verification_page.dart';
 import 'package:app/features/verification/pages/verification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -34,7 +35,6 @@ class SettingsPage extends StatelessWidget {
 class _SettingsView extends GetView<SubscriptionController> {
   @override
   Widget build(BuildContext context) {
-    SettingsService settingsService = SettingsService();
     return Obx(() {
       if (controller.isLoading.value) return _LoadingView();
 

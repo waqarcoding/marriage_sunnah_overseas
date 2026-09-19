@@ -4,8 +4,12 @@ import 'package:app_component/widgets/image_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../controllers/user_profile_controller.dart';
+
+// Cap so grid cells stay a sensible size on wide desktop cards instead of
+// stretching to fill the whole card width.
+const double _kMediaGridMaxWidth = 400;
 
 class MediaSectionWidget extends StatefulWidget {
   final bool hideprofeature;
@@ -51,87 +55,104 @@ class _MediaSectionWidgetState extends State<MediaSectionWidget> {
         return Column(
           children: [
             // ── Photos 4-grid ──────────────────────────────────────────────
-            GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 3 / 4,
-              ),
-              itemCount: 4,
-              itemBuilder: (_, idx) {
-                final hasPhoto = idx < photos.length;
-                final photo = hasPhoto ? photos[idx] : null;
-                final uploading = upIdx == idx;
-                final canAdd = idx <= photos.length;
-                final isDragOver = _dragOverIdx == idx;
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: _kMediaGridMaxWidth),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 3 / 4,
+                  ),
+                  itemCount: 4,
+                  itemBuilder: (_, idx) {
+                    final hasPhoto = idx < photos.length;
+                    final photo = hasPhoto ? photos[idx] : null;
+                    final uploading = upIdx == idx;
+                    final canAdd = idx <= photos.length;
+                    final isDragOver = _dragOverIdx == idx;
 
-                if (hasPhoto && photo != null) {
-                  return _PhotoCell(
-                    photo: photo,
-                    idx: idx,
-                    isUploading: uploading,
-                    isMain: idx == 0,
-                    isDragOver: isDragOver,
-                    onTap: () => _viewMedia(ctrl, idx, 'image'),
-                    onDelete: () => ctrl.deletePhoto(idx),
-                    onDragStart: () => setState(() => _draggedIdx = idx),
-                    onDragAccept: () => _handleDrop(ctrl, idx),
-                    onDragOver: () => setState(() => _dragOverIdx = idx),
-                    onDragLeave: () => setState(() => _dragOverIdx = null),
-                  );
-                }
-                return _EmptyPhotoCell(
-                  idx: idx,
-                  isUploading: uploading,
-                  canAdd: canAdd,
-                  onTap: canAdd ? () => ctrl.pickAndUploadPhoto(idx) : null,
-                );
-              },
+                    if (hasPhoto && photo != null) {
+                      return _PhotoCell(
+                        photo: photo,
+                        idx: idx,
+                        isUploading: uploading,
+                        isMain: idx == 0,
+                        isDragOver: isDragOver,
+                        onTap: () => _viewMedia(ctrl, idx, 'image'),
+                        onDelete: () => ctrl.deletePhoto(idx),
+                        onDragStart: () => setState(() => _draggedIdx = idx),
+                        onDragAccept: () => _handleDrop(ctrl, idx),
+                        onDragOver: () => setState(() => _dragOverIdx = idx),
+                        onDragLeave: () => setState(() => _dragOverIdx = null),
+                      );
+                    }
+                    return _EmptyPhotoCell(
+                      idx: idx,
+                      isUploading: uploading,
+                      canAdd: canAdd,
+                      onTap: canAdd ? () => ctrl.pickAndUploadPhoto(idx) : null,
+                    );
+                  },
+                ),
+              ),
             ),
             if (!widget.hideprofeature) SizedBox(height: 10),
 
             // ── Video section ──────────────────────────────────────────────
             if (!widget.hideprofeature)
               if (videos.isEmpty)
-                _VideoAddSlot(
-                  isPremium: isPro,
-                  isUploading: upVidIdx == 0,
-                  onTap: () => ctrl.pickAndUploadVideo(0),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: _kMediaGridMaxWidth),
+                    child: _VideoAddSlot(
+                      isPremium: isPro,
+                      isUploading: upVidIdx == 0,
+                      onTap: () => ctrl.pickAndUploadVideo(0),
+                    ),
+                  ),
                 )
               else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 3 / 4,
-                  ),
-                  itemCount: 4,
-                  itemBuilder: (_, idx) {
-                    final hasVideo = idx < videos.length;
-                    final video = hasVideo ? videos[idx] : null;
-                    final uploading = upVidIdx == idx;
-                    final canAdd = isPro && idx <= videos.length;
+                Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: _kMediaGridMaxWidth),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 8,
+                        childAspectRatio: 3 / 4,
+                      ),
+                      itemCount: 4,
+                      itemBuilder: (_, idx) {
+                        final hasVideo = idx < videos.length;
+                        final video = hasVideo ? videos[idx] : null;
+                        final uploading = upVidIdx == idx;
+                        final canAdd = isPro && idx <= videos.length;
 
-                    if (hasVideo && video != null) {
-                      return _VideoCell(
-                        idx: idx,
-                        onTap: () => _viewMedia(ctrl, idx, 'video'),
-                        onDelete: () => ctrl.deleteVideo(idx),
-                      );
-                    }
-                    return _EmptyVideoCell(
-                      idx: idx,
-                      isPremium: isPro,
-                      isUploading: uploading,
-                      canAdd: canAdd,
-                      onTap: canAdd ? () => ctrl.pickAndUploadVideo(idx) : null,
-                    );
-                  },
+                        if (hasVideo && video != null) {
+                          return _VideoCell(
+                            idx: idx,
+                            onTap: () => _viewMedia(ctrl, idx, 'video'),
+                            onDelete: () => ctrl.deleteVideo(idx),
+                          );
+                        }
+                        return _EmptyVideoCell(
+                          idx: idx,
+                          isPremium: isPro,
+                          isUploading: uploading,
+                          canAdd: canAdd,
+                          onTap: canAdd
+                              ? () => ctrl.pickAndUploadVideo(idx)
+                              : null,
+                        );
+                      },
+                    ),
+                  ),
                 ),
           ],
         );

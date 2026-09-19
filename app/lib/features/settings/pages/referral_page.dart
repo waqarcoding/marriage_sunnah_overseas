@@ -31,7 +31,7 @@ class _ReferralPageState extends State<ReferralPage> {
     'referred_users': [],
   };
   Map<String, dynamic>? _referrer;
-  SettingsService settingsService = SettingsService();
+  final SettingsService settingsService = Get.find<SettingsService>();
   // Settings-based values (fallback constants)
   double get _commissionRate =>
       settingsService.referralCommissionPercentage ?? 10.0;

@@ -63,22 +63,25 @@ const createOtp = async (userId, issignup) => {
  * Signup user
  */
 export const signup = async (req, res) => {
-  console.log("req.body:", req.body);
-  console.log("req.files:", req.files);
+  if (!req.body) {
+    return res.status(400).json({ success: false, message: "Request body is missing" });
+  }
+
+
 
   const t = await sequelize.transaction();
   try {
-    const { name, email, mobile, password_hash, role, gender, referrerId } = req.body;
+    const { name, email, password_hash, referrerId } = req.body;
 
-    const photoFile = req.files?.['image']?.[0] || null;
-    const photoPath = photoFile ? getUploadedUrl(photoFile) : null;
-    console.log("avatar_url:", photoPath);
+    // const photoFile = req.files?.['image']?.[0] || null;
+    // const photoPath = photoFile ? getUploadedUrl(photoFile) : null;
+
 
     const existingUser = await User.findOne({
       where: {
         [Op.or]: [
           email ? { email } : null,
-          mobile ? { mobile } : null,
+
         ].filter(Boolean),
       },
       transaction: t,
@@ -97,10 +100,7 @@ export const signup = async (req, res) => {
     const user = await User.create({ //new user
       name,
       email,
-      mobile,
-      avatar_url: photoPath,
 
-      role: role?.trim() || null,
 
       provider: "email",
       password_hash: hashedPassword,
@@ -110,9 +110,9 @@ export const signup = async (req, res) => {
       name,
       guardian_id: user.id,
       individual_id: user.id,
-      gender,
-      phone: mobile,
-      images: JSON.stringify(photoPath ? [photoPath] : []),
+
+
+
     }, { transaction: t });
 
     await t.commit();
@@ -131,12 +131,12 @@ export const signup = async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
-        role: user.role,
-        avatar_url: photoPath,
+
+
 
         email: user.email,
         name: user.name,
-        mobile: user.mobile
+
       },
       // @ts-ignore
       process.env.JWT_SECRET,
@@ -165,7 +165,7 @@ export const signup = async (req, res) => {
       message: "Signup successful",
       token,
       userid: user.id,
-      photo: photoPath,
+
       user: { ...user.toJSON(), password_hash: undefined },
       referral: referralResult
     });
@@ -183,6 +183,7 @@ export const signup = async (req, res) => {
 export const googleLogin = async (req, res) => {
   try {
     const { idToken } = req.body;
+    const { referrerId } = req.body;
     let needsProfileCompletion = false;
     if (!idToken) {
       return res.status(400).json({
@@ -396,6 +397,25 @@ export const googleLogin = async (req, res) => {
       }
     );
 
+
+    try {
+      await sendWelcomeEmail(user);
+    } catch (emailErr) {
+      console.error("Failed to send welcome email:", emailErr);
+      // Don't fail signup if email fails
+    }
+    // Apply referral reward AFTER user creation is committed
+    let referralResult = null;
+    if (referrerId !== undefined && referrerId !== null && referrerId !== '' && !isNaN(Number(referrerId))) {
+      referralResult = await applyReferralReward(user.id, referrerId, 0, true);
+    }
+    else {
+      // No referrer, apply signup free credits to user
+      const settings = await Setting.getAllSettings();
+      await user.update({ credits: settings.free_credits_on_signup });
+    }
+
+
     // --------------------------------------------------
     // RESPONSE
     // Same structure as login()
@@ -486,11 +506,10 @@ export const login = async (req, res) => {
 export const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
-    const currentUser = await User.findByPk(req.user.id);
-    const userid = currentUser.id;
+    const userId = req.user.id;
 
     const record = await Otp.findOne({
-      where: { user_id: userid, otp },
+      where: { user_id: userId, otp },
       order: [['created_at', 'DESC']],
     });
 
@@ -498,23 +517,27 @@ export const verifyOtp = async (req, res) => {
       return res.json({ error: 'Invalid or expired OTP' });
     }
 
-    const profile = await Profile.findOne({ where: { individual_id: userid } });
-
-
-    const user = await User.findOne({ where: { id: userid } });
-    if (user) {
-
-      return res.json({
-        success: true,
-        message: 'OTP Verified successfully',
-        profile: profile
-      });
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.json({ error: 'User not found' });
     }
 
-    res.json({ error: 'User not found' });
+    // Mark the user as verified now that OTP check has passed
+    await user.update({ is_otp_verified: true });
+
+    // Invalidate the OTP so it can't be reused
+    await record.destroy();
+
+    const profile = await Profile.findOne({ where: { individual_id: userId } });
+
+    return res.json({
+      success: true,
+      message: 'OTP Verified successfully',
+      profile,
+    });
 
   } catch (err) {
-    console.error(err);
+    console.error('❌ verifyOtp error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 };

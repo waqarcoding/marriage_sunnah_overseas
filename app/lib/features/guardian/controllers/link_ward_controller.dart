@@ -1,29 +1,58 @@
 import 'package:get/get.dart';
 import '../services/guardian_service.dart';
+import '../../../core/services/socket_service.dart';
 
 const kRelationships = [
-  'Father', 'Mother', 'Brother', 'Sister',
-  'Uncle', 'Aunt', 'Grandfather', 'Grandmother',
-  'Guardian', 'Other',
+  'Father',
+  'Mother',
+  'Brother',
+  'Sister',
+  'Uncle',
+  'Aunt',
+  'Grandfather',
+  'Grandmother',
+  'Guardian',
+  'Other',
 ];
 
 class LinkWardController extends GetxController {
   final GuardianService _service = Get.find<GuardianService>();
 
-  var view         = 'loading'.obs; // loading | linked | not-linked
-  var wards        = <Map<String, dynamic>>[].obs;
-  var step         = 1.obs;         // 1=enter pin, 2=confirm, 3=success
-  var pin          = ''.obs;
+  var view = 'loading'.obs; // loading | linked | not-linked
+  var wards = <Map<String, dynamic>>[].obs;
+  var step = 1.obs; // 1=enter pin, 2=confirm, 3=success
+  var pin = ''.obs;
   var relationship = 'Guardian'.obs;
-  var wardDetails  = Rx<Map<String, dynamic>?>(null);
-  var isLoading    = false.obs;
-  var isRemoving   = false.obs;
-  var showAddNew   = false.obs;
+  var wardDetails = Rx<Map<String, dynamic>?>(null);
+  var isLoading = false.obs;
+  var isRemoving = false.obs;
+  var showAddNew = false.obs;
+
+  late final Worker _wardSocketListener;
 
   @override
   void onInit() {
     super.onInit();
     loadWards();
+
+    // Refresh the list whenever a ward is added/removed from anywhere else
+    // (e.g. approved on another device, or a different flow in this app).
+    _wardSocketListener = ever<SocketNotification?>(
+      Get.find<SocketService>().lastNotification,
+      (notification) {
+        if (notification == null) return;
+        if (notification.type == 'ward_added' ||
+            notification.type == 'ward_removed') {
+          loadWards();
+        }
+      },
+    );
+  }
+
+  @override
+  void onClose() {
+    _wardSocketListener.dispose();
+    super.onClose();
   }
 
   Future<void> loadWards() async {
@@ -35,15 +64,18 @@ class LinkWardController extends GetxController {
         wards.value = data.map((g) {
           final profile = g['individualProfile'] ?? {};
           return <String, dynamic>{
-            'id':           g['individual_id'],
-            'name':         profile['name']        ?? 'Unknown Ward',
-            'email':        profile['email']        ?? '',
-            'phone':        profile['phone']        ?? g['guardian_phone'] ?? '',
-            'avatar':       profile['avatar']       ?? profile['image']    ?? g['guardian_image'] ?? '',
-            'age':          profile['age']          ?? '',
-            'gender':       profile['gender']       ?? '',
-            'city':         profile['city']         ?? '',
-            'country':      profile['country']      ?? '',
+            'id': g['individual_id'],
+            'name': profile['name'] ?? 'Unknown Ward',
+            'email': profile['email'] ?? '',
+            'phone': profile['phone'] ?? g['guardian_phone'] ?? '',
+            'avatar': profile['avatar'] ??
+                profile['image'] ??
+                g['guardian_image'] ??
+                '',
+            'age': profile['age'] ?? '',
+            'gender': profile['gender'] ?? '',
+            'city': profile['city'] ?? '',
+            'country': profile['country'] ?? '',
             'relationship': g['guardian_relationship'] ?? 'Guardian',
           };
         }).toList();
